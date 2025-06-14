@@ -31,6 +31,7 @@ import SwiftUI
 
 /// Safe fallback AuthService for background app launches  
 /// Implements all AuthServiceProtocol methods with safe no-op behavior
+@MainActor
 private final class DummyAuthService: AuthServiceProtocol {
     
     /// Safe fallback auth state that emits nil user
