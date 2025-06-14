@@ -1,10 +1,3 @@
-//
-//  HealthMetricCardView.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import SwiftUI
 
 struct HealthMetricCardView: View {
@@ -15,7 +8,7 @@ struct HealthMetricCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                if let systemImageName = systemImageName {
+                if let systemImageName {
                     Image(systemName: systemImageName)
                         .font(.headline)
                         .foregroundColor(.accentColor)
@@ -23,7 +16,7 @@ struct HealthMetricCardView: View {
                 Text(title)
                     .font(.headline)
             }
-            
+
             Text(value)
                 .font(.title)
                 .fontWeight(.semibold)
@@ -33,4 +26,4 @@ struct HealthMetricCardView: View {
         .background(Color(.systemGray6))
         .cornerRadius(12)
     }
-} 
+}

@@ -1,13 +1,6 @@
-//
-//  ChatView.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import SwiftUI
 #if canImport(UIKit) && DEBUG
-import UIKit
+    import UIKit
 #endif
 
 struct ChatView: View {
@@ -16,7 +9,7 @@ struct ChatView: View {
 
     var body: some View {
         VStack {
-            if let viewModel = viewModel {
+            if let viewModel {
                 ScrollView {
                     ScrollViewReader { proxy in
                         VStack(spacing: 12) {
@@ -34,14 +27,14 @@ struct ChatView: View {
                         }
                     }
                 }
-                
+
                 HStack {
                     TextField("Ask about your health...", text: Binding(
                         get: { viewModel.currentInput },
                         set: { viewModel.currentInput = $0 }
                     ))
-                        .textFieldStyle(.roundedBorder)
-                    
+                    .textFieldStyle(.roundedBorder)
+
                     Button(action: viewModel.sendMessage) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.title)
@@ -65,7 +58,7 @@ struct ChatView: View {
 }
 
 #Preview {
-                NavigationStack {
+    NavigationStack {
         ChatView()
     }
-} 
+}

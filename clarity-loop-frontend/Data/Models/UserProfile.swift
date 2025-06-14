@@ -69,7 +69,7 @@ final class UserProfile {
         self.lastLogin = lastLogin
         self.lastSyncedAt = lastSyncedAt
     }
-    
+
     /// A convenience initializer to create a `UserProfile` from a `UserSessionResponseDTO`.
     convenience init(from dto: UserSessionResponseDTO) {
         self.init(
@@ -86,5 +86,4 @@ final class UserProfile {
             lastLogin: dto.lastLogin
         )
     }
-} 
- 
+}

@@ -1,31 +1,30 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 /// Contract validation tests for health data endpoints
 /// Ensures all health data DTOs and API contracts match backend expectations
 @MainActor
 final class HealthDataContractValidationTests: XCTestCase {
-    
     private var encoder: JSONEncoder!
     private var decoder: JSONDecoder!
-    
+
     override func setUp() {
         super.setUp()
-        
+
         // Configure encoder to match backend expectations
         encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
-        
+
         // Configure decoder to match backend responses
         decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .convertFromSnakeCase
     }
-    
+
     // MARK: - HealthKit Upload Contract Tests
-    
+
     func testHealthKitUploadRequestContract() throws {
         // Given - HealthKit upload request
         let request = HealthKitUploadRequestDTO(
@@ -40,7 +39,7 @@ final class HealthDataContractValidationTests: XCTestCase {
                     endDate: Date(),
                     metadata: [
                         "device": AnyCodable("Apple Watch"),
-                        "workout_type": AnyCodable("running")
+                        "workout_type": AnyCodable("running"),
                     ],
                     sourceRevision: SourceRevisionDTO(
                         source: SourceDTO(
@@ -51,7 +50,7 @@ final class HealthDataContractValidationTests: XCTestCase {
                         productType: "iPhone",
                         operatingSystemVersion: "18.0"
                     )
-                )
+                ),
             ],
             deviceInfo: DeviceInfoDTO(
                 deviceModel: "iPhone16,1",
@@ -62,33 +61,33 @@ final class HealthDataContractValidationTests: XCTestCase {
             ),
             timestamp: Date()
         )
-        
+
         // When - Encode to JSON
         let jsonData = try encoder.encode(request)
         let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
-        
+
         // Then - Verify backend contract
         XCTAssertNotNil(json)
         XCTAssertEqual(json?["user_id"] as? String, "test-user-123")
         XCTAssertNotNil(json?["samples"])
         XCTAssertNotNil(json?["device_info"])
         XCTAssertNotNil(json?["timestamp"])
-        
+
         let samples = json?["samples"] as? [[String: Any]]
         XCTAssertEqual(samples?.count, 1)
-        
+
         let sample = samples?.first
         XCTAssertEqual(sample?["sample_type"] as? String, "heartRate")
         XCTAssertEqual(sample?["value"] as? Double, 72.5)
         XCTAssertEqual(sample?["unit"] as? String, "count/min")
         XCTAssertNotNil(sample?["start_date"])
         XCTAssertNotNil(sample?["end_date"])
-        
+
         let metadata = sample?["metadata"] as? [String: Any]
         XCTAssertEqual(metadata?["device"] as? String, "Apple Watch")
         XCTAssertEqual(metadata?["workout_type"] as? String, "running")
     }
-    
+
     func testHealthKitUploadResponseContract() throws {
         // Given - Backend upload response
         let backendJSON = """
@@ -101,10 +100,10 @@ final class HealthDataContractValidationTests: XCTestCase {
             "message": "Upload processed successfully"
         }
         """
-        
+
         // When - Decode response
         let response = try decoder.decode(HealthKitUploadResponseDTO.self, from: backendJSON.data(using: .utf8)!)
-        
+
         // Then - Verify all fields decoded correctly
         XCTAssertTrue(response.success)
         XCTAssertEqual(response.uploadId, "123e4567-e89b-12d3-a456-426614174000")
@@ -113,9 +112,9 @@ final class HealthDataContractValidationTests: XCTestCase {
         XCTAssertEqual(response.errors?.first, "Duplicate sample at index 5")
         XCTAssertEqual(response.message, "Upload processed successfully")
     }
-    
+
     // MARK: - HealthKit Sync Contract Tests
-    
+
     func testHealthKitSyncRequestContract() throws {
         // Given - Sync request
         let request = HealthKitSyncRequestDTO(
@@ -125,27 +124,27 @@ final class HealthDataContractValidationTests: XCTestCase {
             dataTypes: ["stepCount", "heartRate", "sleepAnalysis"],
             forceRefresh: true
         )
-        
+
         // When - Encode to JSON
         let jsonData = try encoder.encode(request)
         let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any]
-        
+
         // Then - Verify backend contract
         XCTAssertNotNil(json)
         XCTAssertEqual(json?["user_id"] as? String, "test-user-123")
         XCTAssertNotNil(json?["start_date"])
         XCTAssertNotNil(json?["end_date"])
         XCTAssertEqual(json?["force_refresh"] as? Bool, true)
-        
+
         let dataTypes = json?["data_types"] as? [String]
         XCTAssertEqual(dataTypes?.count, 3)
         XCTAssertTrue(dataTypes?.contains("stepCount") ?? false)
         XCTAssertTrue(dataTypes?.contains("heartRate") ?? false)
         XCTAssertTrue(dataTypes?.contains("sleepAnalysis") ?? false)
     }
-    
+
     // MARK: - Paginated Health Data Contract Tests
-    
+
     func testPaginatedMetricsResponseContract() throws {
         // Given - Backend paginated response
         let backendJSON = """
@@ -175,27 +174,27 @@ final class HealthDataContractValidationTests: XCTestCase {
             ]
         }
         """
-        
+
         // When - Decode response
         let response = try decoder.decode(PaginatedMetricsResponseDTO.self, from: backendJSON.data(using: .utf8)!)
-        
+
         // Then - Verify structure
         XCTAssertEqual(response.data.count, 2)
-        
+
         let firstMetric = response.data[0]
         XCTAssertEqual(firstMetric.metricId.uuidString.lowercased(), "123e4567-e89b-12d3-a456-426614174000")
         XCTAssertEqual(firstMetric.metricType, "biometric")
         XCTAssertNotNil(firstMetric.biometricData)
         XCTAssertEqual(firstMetric.biometricData?.heartRate, 72.5)
-        
+
         let secondMetric = response.data[1]
         XCTAssertEqual(secondMetric.metricType, "activity")
         XCTAssertNotNil(secondMetric.activityData)
         XCTAssertEqual(secondMetric.activityData?.steps, 5432)
     }
-    
+
     // MARK: - Processing Status Contract Tests
-    
+
     func testHealthDataProcessingStatusContract() throws {
         // Given - Processing status response
         let backendJSON = """
@@ -211,10 +210,10 @@ final class HealthDataContractValidationTests: XCTestCase {
             "message": "Processing completed successfully"
         }
         """
-        
+
         // When - Decode response
         let response = try decoder.decode(HealthDataProcessingStatusDTO.self, from: backendJSON.data(using: .utf8)!)
-        
+
         // Then - Verify all fields
         XCTAssertEqual(response.processingId.uuidString.lowercased(), "123e4567-e89b-12d3-a456-426614174000")
         XCTAssertEqual(response.status, "completed")
@@ -226,9 +225,9 @@ final class HealthDataContractValidationTests: XCTestCase {
         XCTAssertEqual(response.errors?.count, 0)
         XCTAssertEqual(response.message, "Processing completed successfully")
     }
-    
+
     // MARK: - Data Type Validation Tests
-    
+
     func testSupportedHealthKitDataTypes() {
         // Verify all supported data types match backend expectations
         let supportedTypes = [
@@ -241,9 +240,9 @@ final class HealthDataContractValidationTests: XCTestCase {
             "oxygen_saturation",
             "activity_energy",
             "exercise_minutes",
-            "stand_hours"
+            "stand_hours",
         ]
-        
+
         // These should match backend's expected data_type values
         for type in supportedTypes {
             // In a real test, we'd verify these against an actual backend enum/list
@@ -251,9 +250,9 @@ final class HealthDataContractValidationTests: XCTestCase {
             XCTAssertEqual(type, type.lowercased(), "Data types must be lowercase")
         }
     }
-    
+
     // MARK: - Unit Validation Tests
-    
+
     func testHealthMetricUnits() {
         // Verify units match backend expectations
         let unitMappings = [
@@ -263,17 +262,17 @@ final class HealthDataContractValidationTests: XCTestCase {
             "body_temperature": "celsius",
             "oxygen_saturation": "percent",
             "blood_pressure_systolic": "mmHg",
-            "blood_pressure_diastolic": "mmHg"
+            "blood_pressure_diastolic": "mmHg",
         ]
-        
+
         for (dataType, expectedUnit) in unitMappings {
             // In a real implementation, we'd validate these against actual HealthKit conversions
             XCTAssertFalse(expectedUnit.isEmpty, "Unit for \(dataType) must not be empty")
         }
     }
-    
+
     // MARK: - Error Response Contract Tests
-    
+
     func testHealthDataErrorResponses() throws {
         // Test various error response formats
         let quotaExceededJSON = """
@@ -288,7 +287,7 @@ final class HealthDataContractValidationTests: XCTestCase {
             "status_code": 429
         }
         """
-        
+
         let invalidDataJSON = """
         {
             "error": "invalid_data",
@@ -300,12 +299,12 @@ final class HealthDataContractValidationTests: XCTestCase {
             "status_code": 400
         }
         """
-        
+
         // Decode and verify error structures
         let quotaError = try JSONSerialization.jsonObject(with: quotaExceededJSON.data(using: .utf8)!) as? [String: Any]
         XCTAssertEqual(quotaError?["error"] as? String, "quota_exceeded")
         XCTAssertEqual(quotaError?["status_code"] as? Int, 429)
-        
+
         let invalidError = try JSONSerialization.jsonObject(with: invalidDataJSON.data(using: .utf8)!) as? [String: Any]
         XCTAssertEqual(invalidError?["error"] as? String, "invalid_data")
         XCTAssertEqual(invalidError?["status_code"] as? Int, 400)

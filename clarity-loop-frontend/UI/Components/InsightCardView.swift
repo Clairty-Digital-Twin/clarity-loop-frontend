@@ -1,10 +1,3 @@
-//
-//  InsightCardView.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import SwiftUI
 
 struct InsightCardView: View {
@@ -18,11 +11,11 @@ struct InsightCardView: View {
                 Text("Insight of the Day")
                     .font(.headline)
             }
-            
+
             Text(insight.narrative)
                 .font(.body)
                 .lineLimit(3)
-            
+
             HStack {
                 Spacer()
                 Text(insight.generatedAt, style: .date)
@@ -34,4 +27,4 @@ struct InsightCardView: View {
         .background(Color.blue.opacity(0.1))
         .cornerRadius(12)
     }
-} 
+}

@@ -20,5 +20,4 @@ struct RegistrationResponseDTO: Codable {
     let status: String
     let verificationEmailSent: Bool
     let createdAt: Date
-} 
- 
+}

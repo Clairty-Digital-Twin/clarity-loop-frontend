@@ -1,10 +1,3 @@
-//
-//  InsightsDTOs.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import Foundation
 
 // Note: The `AnyCodable` type from the `AnyCodable.swift` file is used here
@@ -30,7 +23,7 @@ struct InsightGenerationResponseDTO: Codable {
 
 struct HealthInsightDTO: Codable, Identifiable {
     var id: String { userId } // This might need a more stable ID from the backend.
-    
+
     let userId: String
     let narrative: String
     let keyInsights: [String]
@@ -104,4 +97,4 @@ struct InsightProcessingStatusDTO: Codable {
     let error: String?
     let createdAt: Date
     let updatedAt: Date
-} 
+}

@@ -1,10 +1,3 @@
-//
-//  MessageBubbleView.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import SwiftUI
 
 struct MessageBubbleView: View {
@@ -15,10 +8,10 @@ struct MessageBubbleView: View {
             if message.sender == .user {
                 Spacer()
             }
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(message.text)
-                
+
                 if message.isError {
                     Text("Error")
                         .font(.caption)
@@ -29,24 +22,24 @@ struct MessageBubbleView: View {
             .background(bubbleColor)
             .foregroundColor(textColor)
             .cornerRadius(16)
-            
+
             if message.sender == .assistant {
                 Spacer()
             }
         }
     }
-    
+
     private var bubbleColor: Color {
         if message.isError {
             return .red.opacity(0.2)
         }
         return message.sender == .user ? .blue : Color(.systemGray5)
     }
-    
+
     private var textColor: Color {
         if message.isError {
             return .primary
         }
         return message.sender == .user ? .white : .primary
     }
-} 
+}

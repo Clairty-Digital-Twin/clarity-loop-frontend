@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class FetchDailyHealthSummaryUseCaseTests: XCTestCase {
-
     var fetchDailyHealthSummaryUseCase: FetchDailyHealthSummaryUseCase!
     var mockHealthDataRepository: MockHealthDataRepository!
     var mockHealthKitService: MockHealthKitService!
@@ -29,10 +28,10 @@ final class FetchDailyHealthSummaryUseCaseTests: XCTestCase {
     func testExecute_Success() async throws {
         // Given - Mock repository returns valid data
         mockHealthDataRepository.shouldSucceed = true
-        
+
         // When
         let summary = try await fetchDailyHealthSummaryUseCase.execute(for: Date())
-        
+
         // Then
         XCTAssertNotNil(summary)
         XCTAssertGreaterThan(summary.remoteMetrics.count, 0)
@@ -42,7 +41,7 @@ final class FetchDailyHealthSummaryUseCaseTests: XCTestCase {
     func testExecute_Failure() async throws {
         // Given - Mock repository throws error
         mockHealthDataRepository.shouldSucceed = false
-        
+
         // When/Then
         do {
             _ = try await fetchDailyHealthSummaryUseCase.execute(for: Date())
@@ -61,13 +60,13 @@ final class FetchDailyHealthSummaryUseCaseTests: XCTestCase {
             restingHeartRate: nil,
             sleepData: nil
         )
-        
+
         // When
         let summary = try await fetchDailyHealthSummaryUseCase.execute(for: Date())
-        
+
         // Then
         XCTAssertNotNil(summary)
         XCTAssertEqual(summary.remoteMetrics.count, 0)
         XCTAssertFalse(summary.hasCompleteData)
     }
-} 
+}

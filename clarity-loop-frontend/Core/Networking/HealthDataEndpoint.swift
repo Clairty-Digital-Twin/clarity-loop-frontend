@@ -1,10 +1,3 @@
-//
-//  HealthDataEndpoint.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import Foundation
 
 enum HealthDataEndpoint {
@@ -20,40 +13,40 @@ extension HealthDataEndpoint: Endpoint {
     var path: String {
         switch self {
         case .getMetrics:
-            return "/api/v1/health-data"
+            "/api/v1/health-data"
         case .uploadHealthKit:
-            return "/api/v1/health-data/upload"
+            "/api/v1/health-data/upload"
         case .syncHealthKit:
-            return "/api/v1/health-data/sync"
-        case .getSyncStatus(let syncId):
-            return "/api/v1/health-data/sync/\(syncId)"
-        case .getUploadStatus(let uploadId):
-            return "/api/v1/health-data/upload/\(uploadId)/status"
-        case .getProcessingStatus(let id):
-            return "/api/v1/health-data/processing/\(id.uuidString)"
+            "/api/v1/health-data/sync"
+        case let .getSyncStatus(syncId):
+            "/api/v1/health-data/sync/\(syncId)"
+        case let .getUploadStatus(uploadId):
+            "/api/v1/health-data/upload/\(uploadId)/status"
+        case let .getProcessingStatus(id):
+            "/api/v1/health-data/processing/\(id.uuidString)"
         }
     }
 
     var method: HTTPMethod {
         switch self {
         case .getMetrics, .getSyncStatus, .getUploadStatus, .getProcessingStatus:
-            return .get
+            .get
         case .uploadHealthKit, .syncHealthKit:
-            return .post
+            .post
         }
     }
 
     func body(encoder: JSONEncoder) throws -> Data? {
         switch self {
         case .getMetrics, .getSyncStatus, .getUploadStatus, .getProcessingStatus:
-            return nil
-        case .uploadHealthKit(let dto):
-            return try encoder.encode(dto)
-        case .syncHealthKit(let dto):
-            return try encoder.encode(dto)
+            nil
+        case let .uploadHealthKit(dto):
+            try encoder.encode(dto)
+        case let .syncHealthKit(dto):
+            try encoder.encode(dto)
         }
     }
-    
+
     // We can extend this to handle query parameters.
     func asURLRequest(baseURL: URL, encoder: JSONEncoder) throws -> URLRequest {
         // First, create the basic request.
@@ -61,10 +54,10 @@ extension HealthDataEndpoint: Endpoint {
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try body(encoder: encoder)
-        
+
         // Then, add query parameters if necessary.
         switch self {
-        case .getMetrics(let page, let limit):
+        case let .getMetrics(page, limit):
             guard let url = request.url else {
                 throw APIError.invalidURL
             }
@@ -78,7 +71,7 @@ extension HealthDataEndpoint: Endpoint {
             // These endpoints don't need query parameters
             break
         }
-        
+
         return request
     }
-} 
+}

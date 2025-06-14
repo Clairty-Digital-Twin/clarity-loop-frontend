@@ -21,19 +21,19 @@ enum APIError: Error, LocalizedError {
 
     /// An unknown or uncategorized error occurred.
     case unknown(Error)
-    
+
     /// Functionality not yet implemented (for mocks and testing).
     case notImplemented
-    
+
     /// Validation error for invalid input data
     case validationError(String)
-    
+
     /// HTTP error with status code and response data
     case httpError(statusCode: Int, data: Data)
-    
+
     /// Missing authentication token
     case missingAuthToken
-    
+
     /// Invalid response from server
     case invalidResponse
 
@@ -41,28 +41,27 @@ enum APIError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "The URL provided was invalid."
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .serverError(let statusCode, let message):
-            return "Server error \(statusCode): \(message ?? "No message")"
+            "The URL provided was invalid."
+        case let .networkError(error):
+            "Network error: \(error.localizedDescription)"
+        case let .serverError(statusCode, message):
+            "Server error \(statusCode): \(message ?? "No message")"
         case .decodingError:
-            return "There was a problem decoding the data from the server."
+            "There was a problem decoding the data from the server."
         case .unauthorized:
-            return "You are not authorized. Please log in again."
+            "You are not authorized. Please log in again."
         case .unknown:
-            return "An unknown error occurred."
+            "An unknown error occurred."
         case .notImplemented:
-            return "This functionality is not yet implemented."
-        case .validationError(let message):
-            return "Validation error: \(message)"
-        case .httpError(let statusCode, _):
-            return "HTTP error: \(statusCode)"
+            "This functionality is not yet implemented."
+        case let .validationError(message):
+            "Validation error: \(message)"
+        case let .httpError(statusCode, _):
+            "HTTP error: \(statusCode)"
         case .missingAuthToken:
-            return "Authentication token is missing"
+            "Authentication token is missing"
         case .invalidResponse:
-            return "Invalid response from server"
+            "Invalid response from server"
         }
     }
-} 
- 
+}

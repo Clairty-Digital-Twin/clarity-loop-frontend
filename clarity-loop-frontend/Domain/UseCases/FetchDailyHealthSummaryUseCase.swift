@@ -1,10 +1,9 @@
 import Foundation
 
 final class FetchDailyHealthSummaryUseCase {
-    
     private let healthDataRepository: HealthDataRepositoryProtocol
     private let healthKitService: HealthKitServiceProtocol
-    
+
     init(
         healthDataRepository: HealthDataRepositoryProtocol,
         healthKitService: HealthKitServiceProtocol
@@ -12,14 +11,14 @@ final class FetchDailyHealthSummaryUseCase {
         self.healthDataRepository = healthDataRepository
         self.healthKitService = healthKitService
     }
-    
+
     func execute(for date: Date = Date()) async throws -> DailyHealthSummary {
         // Fetch latest metrics from local HealthKit data
         let localMetrics = try await healthKitService.fetchAllDailyMetrics(for: date)
-        
+
         // Fetch synchronized data from remote API
         let remoteData = try await healthDataRepository.getHealthData(page: 1, limit: 10)
-        
+
         // Combine and process the data
         return DailyHealthSummary(
             date: date,
@@ -39,17 +38,17 @@ struct DailyHealthSummary {
     let sleepData: SleepData?
     let remoteMetrics: [HealthMetricDTO]
     let lastUpdated: Date
-    
+
     var hasCompleteData: Bool {
-        return stepCount > 0 || restingHeartRate != nil || sleepData != nil
+        stepCount > 0 || restingHeartRate != nil || sleepData != nil
     }
-    
+
     var sleepEfficiency: Double? {
-        return sleepData?.sleepEfficiency
+        sleepData?.sleepEfficiency
     }
-    
+
     var totalSleepHours: Double? {
-        guard let sleepData = sleepData else { return nil }
+        guard let sleepData else { return nil }
         return sleepData.totalTimeAsleep / 3600.0 // Convert from seconds to hours
     }
 }

@@ -4,12 +4,12 @@ import SwiftUI
 struct PATAnalysisView: View {
     @State private var viewModel: PATAnalysisViewModel
     let analysisId: String?
-    
+
     init(analysisId: String? = nil, viewModel: PATAnalysisViewModel) {
         self.analysisId = analysisId
         self.viewModel = viewModel
     }
-    
+
     var body: some View {
         NavigationStack {
             Group {
@@ -18,9 +18,9 @@ struct PATAnalysisView: View {
                     IdleAnalysisView()
                 case .loading:
                     LoadingAnalysisView()
-                case .loaded(let result):
+                case let .loaded(result):
                     CompletedAnalysisView(result: result)
-                case .error(let message):
+                case let .error(message):
                     ErrorAnalysisView(message: message, onRetry: {
                         Task {
                             await viewModel.retryAnalysis()
@@ -34,7 +34,7 @@ struct PATAnalysisView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .task {
-            if let analysisId = analysisId {
+            if let analysisId {
                 await viewModel.startCustomAnalysis(for: analysisId)
             } else {
                 await viewModel.startStepAnalysis()
@@ -51,15 +51,17 @@ private struct IdleAnalysisView: View {
             Image(systemName: "brain.head.profile")
                 .font(.system(size: 60))
                 .foregroundColor(.blue)
-            
+
             Text("Ready to Analyze")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
-            Text("We'll analyze your movement patterns using advanced AI to provide insights into your sleep and activity.")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding(.horizontal)
+
+            Text(
+                "We'll analyze your movement patterns using advanced AI to provide insights into your sleep and activity."
+            )
+            .multilineTextAlignment(.center)
+            .foregroundColor(.secondary)
+            .padding(.horizontal)
         }
         .padding()
     }
@@ -71,18 +73,18 @@ private struct LoadingAnalysisView: View {
             ProgressView()
                 .scaleEffect(1.5)
                 .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-            
+
             VStack(spacing: 8) {
                 Text("Analyzing Your Data")
                     .font(.title2)
                     .fontWeight(.semibold)
-                
+
                 Text("Our AI is processing your movement patterns. This may take a few minutes.")
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .padding(.horizontal)
             }
-            
+
             // Progress steps indicator
             VStack(alignment: .leading, spacing: 12) {
                 ProgressStepView(title: "Processing movement data", isActive: true)
@@ -98,7 +100,7 @@ private struct LoadingAnalysisView: View {
 private struct ProgressStepView: View {
     let title: String
     let isActive: Bool
-    
+
     var body: some View {
         HStack {
             Image(systemName: isActive ? "circle.fill" : "circle")
@@ -112,7 +114,7 @@ private struct ProgressStepView: View {
 
 private struct CompletedAnalysisView: View {
     let result: PATAnalysisResult
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -127,7 +129,7 @@ private struct CompletedAnalysisView: View {
                             .fontWeight(.semibold)
                         Spacer()
                     }
-                    
+
                     if let completedAt = result.completedAt {
                         Text("Completed \(completedAt.formatted(date: .abbreviated, time: .shortened))")
                             .font(.caption)
@@ -135,19 +137,19 @@ private struct CompletedAnalysisView: View {
                     }
                 }
                 .padding(.horizontal)
-                
+
                 // Confidence Score
                 if let confidence = result.confidence {
                     ConfidenceScoreView(confidence: confidence)
                         .padding(.horizontal)
                 }
-                
+
                 // PAT Features
                 if let features = result.patFeatures {
                     PATFeaturesView(features: features)
                         .padding(.horizontal)
                 }
-                
+
                 // Sleep Stage Visualization (if available)
                 if let sleepStages = extractSleepStages(from: result.patFeatures) {
                     SleepStageHypnogramView(sleepStages: sleepStages)
@@ -157,20 +159,22 @@ private struct CompletedAnalysisView: View {
             .padding(.vertical)
         }
     }
-    
+
     private func extractSleepStages(from features: [String: AnyCodable]?) -> [SleepStageData]? {
-        guard let features = features,
+        guard let features,
               let sleepStagesValue = features["sleep_stages"],
-              let sleepStagesArray = sleepStagesValue.value as? [[String: Any]] else {
+              let sleepStagesArray = sleepStagesValue.value as? [[String: Any]]
+        else {
             return nil
         }
-        
+
         return sleepStagesArray.compactMap { stageDict in
             guard let timestamp = stageDict["timestamp"] as? TimeInterval,
-                  let stage = stageDict["stage"] as? String else {
+                  let stage = stageDict["stage"] as? String
+            else {
                 return nil
             }
-            
+
             return SleepStageData(
                 timestamp: Date(timeIntervalSince1970: timestamp),
                 stage: SleepStage(rawValue: stage) ?? .awake,
@@ -182,14 +186,14 @@ private struct CompletedAnalysisView: View {
 
 private struct ConfidenceScoreView: View {
     let confidence: Double
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Analysis Confidence")
                 .font(.headline)
-            
+
             HStack {
-                Gauge(value: confidence, in: 0...1) {
+                Gauge(value: confidence, in: 0 ... 1) {
                     Text("Confidence")
                 } currentValueLabel: {
                     Text("\(Int(confidence * 100))%")
@@ -199,18 +203,18 @@ private struct ConfidenceScoreView: View {
                 .gaugeStyle(.accessoryCircular)
                 .tint(confidenceColor(for: confidence))
                 .frame(width: 80, height: 80)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Quality: \(confidenceDescription(for: confidence))")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                    
+
                     Text("Based on data quality and pattern recognition accuracy")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 .padding(.leading)
-                
+
                 Spacer()
             }
         }
@@ -218,32 +222,32 @@ private struct ConfidenceScoreView: View {
         .background(Color(.systemGray6))
         .cornerRadius(12)
     }
-    
+
     private func confidenceColor(for confidence: Double) -> Color {
         switch confidence {
-        case 0.8...1.0: return .green
-        case 0.6..<0.8: return .orange
-        default: return .red
+        case 0.8 ... 1.0: .green
+        case 0.6 ..< 0.8: .orange
+        default: .red
         }
     }
-    
+
     private func confidenceDescription(for confidence: Double) -> String {
         switch confidence {
-        case 0.8...1.0: return "High"
-        case 0.6..<0.8: return "Medium"
-        default: return "Low"
+        case 0.8 ... 1.0: "High"
+        case 0.6 ..< 0.8: "Medium"
+        default: "Low"
         }
     }
 }
 
 private struct PATFeaturesView: View {
     let features: [String: AnyCodable]
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sleep Metrics")
                 .font(.headline)
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible()),
@@ -261,7 +265,7 @@ private struct PATFeaturesView: View {
             }
         }
     }
-    
+
     private var relevantFeatures: [(key: String, title: String, unit: String, icon: String)] {
         [
             ("sleep_efficiency", "Sleep Efficiency", "%", "bed.double.fill"),
@@ -272,7 +276,7 @@ private struct PATFeaturesView: View {
             ("deep_sleep_percentage", "Deep Sleep", "%", "zzz"),
         ]
     }
-    
+
     private func formatFeatureValue(_ value: AnyCodable, unit: String) -> String {
         if let doubleValue = value.value as? Double {
             switch unit {
@@ -295,7 +299,7 @@ private struct MetricCardView: View {
     let value: String
     let unit: String
     let icon: String
-    
+
     var body: some View {
         VStack(spacing: 8) {
             HStack {
@@ -303,12 +307,12 @@ private struct MetricCardView: View {
                     .foregroundColor(.blue)
                 Spacer()
             }
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(value)
                         .font(.title2)
@@ -331,12 +335,12 @@ private struct MetricCardView: View {
 
 private struct SleepStageHypnogramView: View {
     let sleepStages: [SleepStageData]
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Sleep Stages")
                 .font(.headline)
-            
+
             Chart(sleepStages) { stage in
                 RectangleMark(
                     x: .value("Time", stage.timestamp),
@@ -347,7 +351,7 @@ private struct SleepStageHypnogramView: View {
                 .foregroundStyle(stage.stage.color)
             }
             .frame(height: 200)
-            .chartYScale(domain: 0...4)
+            .chartYScale(domain: 0 ... 4)
             .chartYAxis {
                 AxisMarks(values: [0, 1, 2, 3, 4]) { value in
                     AxisValueLabel {
@@ -356,7 +360,7 @@ private struct SleepStageHypnogramView: View {
                     }
                 }
             }
-            
+
             // Legend
             HStack(spacing: 16) {
                 ForEach(SleepStage.allCases, id: \.self) { stage in
@@ -379,22 +383,22 @@ private struct SleepStageHypnogramView: View {
 private struct ErrorAnalysisView: View {
     let message: String
     let onRetry: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 60))
                 .foregroundColor(.orange)
-            
+
             Text("Analysis Failed")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
+
             Text(message)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
                 .padding(.horizontal)
-            
+
             Button("Retry Analysis", action: onRetry)
                 .buttonStyle(.borderedProminent)
         }
@@ -408,15 +412,17 @@ private struct EmptyAnalysisView: View {
             Image(systemName: "chart.line.downtrend.xyaxis")
                 .font(.system(size: 60))
                 .foregroundColor(.gray)
-            
+
             Text("No Data Available")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
-            Text("There isn't enough movement data to perform a PAT analysis. Try again after collecting more health data.")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding(.horizontal)
+
+            Text(
+                "There isn't enough movement data to perform a PAT analysis. Try again after collecting more health data."
+            )
+            .multilineTextAlignment(.center)
+            .foregroundColor(.secondary)
+            .padding(.horizontal)
         }
         .padding()
     }
@@ -432,35 +438,35 @@ struct SleepStageData: Identifiable {
 }
 
 enum SleepStage: String, CaseIterable {
-    case awake = "awake"
-    case light = "light"
-    case deep = "deep"
-    case rem = "rem"
-    
+    case awake
+    case light
+    case deep
+    case rem
+
     var displayName: String {
         switch self {
-        case .awake: return "Awake"
-        case .light: return "Light"
-        case .deep: return "Deep"
-        case .rem: return "REM"
+        case .awake: "Awake"
+        case .light: "Light"
+        case .deep: "Deep"
+        case .rem: "REM"
         }
     }
-    
+
     var color: Color {
         switch self {
-        case .awake: return .red
-        case .light: return .blue
-        case .deep: return .purple
-        case .rem: return .green
+        case .awake: .red
+        case .light: .blue
+        case .deep: .purple
+        case .rem: .green
         }
     }
-    
+
     var numericValue: Int {
         switch self {
-        case .awake: return 4
-        case .rem: return 3
-        case .light: return 2
-        case .deep: return 1
+        case .awake: 4
+        case .rem: 3
+        case .light: 2
+        case .deep: 1
         }
     }
 }
@@ -474,9 +480,9 @@ enum SleepStage: String, CaseIterable {
     ) else {
         return Text("Failed to create preview client")
     }
-    
+
     let previewAuthService = AuthService(apiClient: previewAPIClient)
-    
+
     return PATAnalysisView(
         analysisId: nil,
         viewModel: PATAnalysisViewModel(

@@ -1,22 +1,21 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 /// Tests for memory leaks and performance issues that cause layout/graphics problems
 /// CRITICAL: These tests will catch memory issues causing NaN values and constraint conflicts
 final class MemoryLeakTests: XCTestCase {
-    
     // MARK: - Test Setup
-    
+
     override func setUpWithError() throws {
         // TODO: Set up memory testing environment
     }
-    
+
     override func tearDownWithError() throws {
         // TODO: Clean up memory test environment
     }
-    
+
     // MARK: - ViewState Memory Tests
-    
+
     func testViewStateMemoryManagement() throws {
         // TODO: Test ViewState objects are properly deallocated
         // - No retain cycles in @Observable ViewModels
@@ -24,7 +23,7 @@ final class MemoryLeakTests: XCTestCase {
         // - Memory usage during state transitions
         // CATCHES: Memory pressure causing NaN values
     }
-    
+
     func testObservableViewModelLeaks() throws {
         // TODO: Test @Observable ViewModels don't leak
         // - AuthViewModel deallocation
@@ -32,9 +31,9 @@ final class MemoryLeakTests: XCTestCase {
         // - RegistrationViewModel deallocation
         // CATCHES: Memory leaks causing layout calculation errors
     }
-    
+
     // MARK: - UI Component Memory Tests
-    
+
     func testSecureFieldMemoryHandling() throws {
         // TODO: Test SecureField memory management
         // - No memory leaks during text input
@@ -42,7 +41,7 @@ final class MemoryLeakTests: XCTestCase {
         // - AutoFill memory management
         // CATCHES: Memory corruption causing CoreGraphics NaN errors
     }
-    
+
     func testConstraintMemoryManagement() throws {
         // TODO: Test Auto Layout constraint memory handling
         // - Constraints properly released
@@ -50,9 +49,9 @@ final class MemoryLeakTests: XCTestCase {
         // - Layout engine memory stability
         // CATCHES: Memory issues causing constraint conflicts
     }
-    
+
     // MARK: - Network Memory Tests
-    
+
     func testAPIClientMemoryManagement() throws {
         // TODO: Test API client memory handling
         // - Request/response memory cleanup
@@ -60,9 +59,9 @@ final class MemoryLeakTests: XCTestCase {
         // - Proper cancellation handling
         // CATCHES: Memory pressure affecting UI calculations
     }
-    
+
     // MARK: - Performance Impact Tests
-    
+
     func testMemoryPressureHandling() throws {
         // TODO: Test app behavior under memory pressure
         // - Graceful handling of low memory
@@ -70,7 +69,7 @@ final class MemoryLeakTests: XCTestCase {
         // - UI remains responsive
         // CATCHES: Memory pressure causing calculation errors
     }
-    
+
     func testConcurrentMemoryAccess() throws {
         // TODO: Test memory safety in concurrent operations
         // - Thread-safe memory access
@@ -78,4 +77,4 @@ final class MemoryLeakTests: XCTestCase {
         // - Proper synchronization
         // CATCHES: Concurrent access causing corrupt values
     }
-} 
+}

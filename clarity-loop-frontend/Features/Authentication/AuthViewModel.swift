@@ -11,42 +11,41 @@ import SwiftUI
 @MainActor
 @Observable
 final class AuthViewModel {
-    
     // MARK: - Properties
-    
+
     /// A boolean flag indicating if a user is currently authenticated.
     private(set) var isLoggedIn: Bool = false
-    
+
     // MARK: - Private Properties
-    
+
     private let authService: AuthServiceProtocol
     private var cancellables = Set<AnyCancellable>()
-    
+
     // MARK: - Initializer
-    
+
     init(authService: AuthServiceProtocol) {
         self.authService = authService
         setupSubscribers()
-        
+
         // Initial check - do async in a task since currentUser is async
         Task {
             self.isLoggedIn = await authService.currentUser != nil
         }
     }
-    
+
     // MARK: - Private Methods
-    
+
     /// Sets up a subscriber to the `authState` stream from the `AuthService`.
     /// This ensures the `isLoggedIn` property is always in sync with the actual auth state.
     private func setupSubscribers() {
         Task { [weak self] in
-            guard let self = self else { return }
-            for await user in self.authService.authState {
-                self.isLoggedIn = user != nil
+            guard let self else { return }
+            for await user in authService.authState {
+                isLoggedIn = user != nil
             }
         }
     }
-    
+
     /// A convenience method to sign out the user.
     func signOut() async {
         do {
@@ -56,4 +55,4 @@ final class AuthViewModel {
             print("Error signing out: \(error.localizedDescription)")
         }
     }
-} 
+}

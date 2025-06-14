@@ -1,14 +1,13 @@
-import Foundation
 @testable import clarity_loop_frontend
+import Foundation
 
 // Correct mock that matches the real APIClientProtocol
 class MockAPIClient: APIClientProtocol {
-    
     // MARK: - Control Properties
-    
+
     var shouldSucceed = true
     var mockError: Error = APIError.unauthorized
-    
+
     // Mock responses
     var mockInsightHistory = InsightHistoryResponseDTO(
         success: true,
@@ -23,9 +22,9 @@ class MockAPIClient: APIClientProtocol {
         ),
         metadata: nil
     )
-    
+
     // MARK: - Authentication
-    
+
     func register(requestDTO: UserRegistrationRequestDTO) async throws -> RegistrationResponseDTO {
         guard shouldSucceed else { throw mockError }
         return RegistrationResponseDTO(
@@ -36,7 +35,7 @@ class MockAPIClient: APIClientProtocol {
             createdAt: Date()
         )
     }
-    
+
     func login(requestDTO: UserLoginRequestDTO) async throws -> LoginResponseDTO {
         guard shouldSucceed else { throw mockError }
         return LoginResponseDTO(
@@ -61,7 +60,7 @@ class MockAPIClient: APIClientProtocol {
             )
         )
     }
-    
+
     func refreshToken(requestDTO: RefreshTokenRequestDTO) async throws -> TokenResponseDTO {
         guard shouldSucceed else { throw mockError }
         return TokenResponseDTO(
@@ -71,12 +70,12 @@ class MockAPIClient: APIClientProtocol {
             expiresIn: 3600
         )
     }
-    
+
     func logout() async throws -> MessageResponseDTO {
         guard shouldSucceed else { throw mockError }
         return MessageResponseDTO(message: "Successfully logged out")
     }
-    
+
     func getCurrentUser() async throws -> UserSessionResponseDTO {
         guard shouldSucceed else { throw mockError }
         return UserSessionResponseDTO(
@@ -93,71 +92,71 @@ class MockAPIClient: APIClientProtocol {
             lastLogin: Date()
         )
     }
-    
+
     func verifyEmail(code: String) async throws -> MessageResponseDTO {
         guard shouldSucceed else { throw mockError }
         return MessageResponseDTO(message: "Email verified successfully")
     }
-    
+
     // MARK: - Health Data
-    
+
     func getHealthData(page: Int, limit: Int) async throws -> PaginatedMetricsResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func uploadHealthKitData(requestDTO: HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func syncHealthKitData(requestDTO: HealthKitSyncRequestDTO) async throws -> HealthKitSyncResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getHealthKitSyncStatus(syncId: String) async throws -> HealthKitSyncStatusDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getHealthKitUploadStatus(uploadId: String) async throws -> HealthKitUploadStatusDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getProcessingStatus(id: UUID) async throws -> HealthDataProcessingStatusDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     // MARK: - Insights
-    
+
     func getInsightHistory(userId: String, limit: Int, offset: Int) async throws -> InsightHistoryResponseDTO {
         guard shouldSucceed else { throw mockError }
         return mockInsightHistory
     }
-    
+
     func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> InsightGenerationResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getInsight(id: String) async throws -> InsightGenerationResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getInsightsServiceStatus() async throws -> ServiceStatusResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     // MARK: - PAT Analysis
-    
+
     func analyzeStepData(requestDTO: StepDataRequestDTO) async throws -> StepAnalysisResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func analyzeActigraphy(requestDTO: DirectActigraphyRequestDTO) async throws -> ActigraphyAnalysisResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getPATAnalysis(id: String) async throws -> PATAnalysisResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
-    
+
     func getPATServiceHealth() async throws -> ServiceStatusResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }

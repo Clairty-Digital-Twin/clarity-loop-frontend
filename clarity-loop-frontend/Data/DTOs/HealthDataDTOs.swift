@@ -1,10 +1,3 @@
-//
-//  HealthDataDTOs.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import Foundation
 
 // Note: The `AnyCodable` type from the `AnyCodable.swift` file is used here
@@ -14,7 +7,7 @@ import Foundation
 
 struct HealthMetricDTO: Codable, Identifiable {
     var id: UUID { metricId }
-    
+
     let metricId: UUID
     let metricType: String // Consider creating a specific enum for this
     let biometricData: BiometricDataDTO?
@@ -113,4 +106,4 @@ struct HealthDataProcessingStatusDTO: Codable {
     let completedAt: Date?
     let errors: [String]? // Simplified for now
     let message: String?
-} 
+}

@@ -1,6 +1,7 @@
 import Foundation
 
 // MARK: - Backend Contract DTOs
+
 // These DTOs exactly match the backend API contract
 
 /// Backend registration request model - matches Python UserRegister
@@ -8,7 +9,7 @@ struct BackendUserRegister: Codable {
     let email: String
     let password: String
     let displayName: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case email
         case password
@@ -22,7 +23,7 @@ struct BackendUserLogin: Codable {
     let password: String
     let rememberMe: Bool
     let deviceInfo: [String: AnyCodable]?
-    
+
     enum CodingKeys: String, CodingKey {
         case email
         case password
@@ -38,7 +39,7 @@ struct BackendTokenResponse: Codable {
     let tokenType: String
     let expiresIn: Int
     let scope: String
-    
+
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case refreshToken = "refresh_token"
@@ -55,7 +56,7 @@ struct BackendUserInfoResponse: Codable {
     let emailVerified: Bool
     let displayName: String?
     let authProvider: String
-    
+
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case email
@@ -69,7 +70,7 @@ struct BackendUserInfoResponse: Codable {
 struct BackendUserUpdate: Codable {
     let displayName: String?
     let email: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case displayName = "display_name"
         case email
@@ -82,7 +83,7 @@ struct BackendUserUpdateResponse: Codable {
     let email: String?
     let displayName: String?
     let updated: Bool
-    
+
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case email
@@ -106,7 +107,7 @@ struct BackendHealthResponse: Codable {
 /// Backend refresh token request
 struct BackendRefreshTokenRequest: Codable {
     let refreshToken: String
-    
+
     enum CodingKeys: String, CodingKey {
         case refreshToken = "refresh_token"
     }

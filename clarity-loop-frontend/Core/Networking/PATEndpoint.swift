@@ -11,33 +11,33 @@ extension PATEndpoint: Endpoint {
     var path: String {
         switch self {
         case .analyzeStepData:
-            return "/api/v1/pat/analyze-step-data"
+            "/api/v1/pat/analyze-step-data"
         case .analyzeActigraphy:
-            return "/api/v1/pat/analyze"
-        case .getAnalysis(let id):
-            return "/api/v1/pat/analysis/\(id)"
+            "/api/v1/pat/analyze"
+        case let .getAnalysis(id):
+            "/api/v1/pat/analysis/\(id)"
         case .getServiceHealth:
-            return "/api/v1/pat/health"
+            "/api/v1/pat/health"
         }
     }
 
     var method: HTTPMethod {
         switch self {
         case .analyzeStepData, .analyzeActigraphy:
-            return .post
+            .post
         case .getAnalysis, .getServiceHealth:
-            return .get
+            .get
         }
     }
 
     func body(encoder: JSONEncoder) throws -> Data? {
         switch self {
-        case .analyzeStepData(let dto):
-            return try encoder.encode(dto)
-        case .analyzeActigraphy(let dto):
-            return try encoder.encode(dto)
+        case let .analyzeStepData(dto):
+            try encoder.encode(dto)
+        case let .analyzeActigraphy(dto):
+            try encoder.encode(dto)
         case .getAnalysis, .getServiceHealth:
-            return nil
+            nil
         }
     }
 }

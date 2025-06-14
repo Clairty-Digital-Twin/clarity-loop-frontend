@@ -158,4 +158,4 @@ struct StepHealthMetricsDTO: Codable {
 // MARK: - Type Aliases for API Client
 
 typealias StepAnalysisResponseDTO = AnalysisResponseDTO<StepAnalysisDTO>
-typealias ActigraphyAnalysisResponseDTO = AnalysisResponseDTO<ActigraphyAnalysisDTO> 
+typealias ActigraphyAnalysisResponseDTO = AnalysisResponseDTO<ActigraphyAnalysisDTO>

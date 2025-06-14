@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class InsightAIServiceTests: XCTestCase {
-
     var insightAIService: InsightAIService!
     // TODO: Add mock for the networking client used by the service
 
@@ -28,7 +27,7 @@ final class InsightAIServiceTests: XCTestCase {
         // TODO: Mock API response for a user with no health data
         XCTFail("Test not implemented")
     }
-    
+
     func testGenerateInsights_InvalidData() {
         // TODO: Mock API response with invalid or corrupted data
         XCTFail("Test not implemented")
@@ -38,7 +37,7 @@ final class InsightAIServiceTests: XCTestCase {
         // TODO: Mock API client to throw an error and verify it's handled
         XCTFail("Test not implemented")
     }
-    
+
     func testGenerateInsights_RateLimit() {
         // TODO: Mock API response indicating rate limiting
         XCTFail("Test not implemented")

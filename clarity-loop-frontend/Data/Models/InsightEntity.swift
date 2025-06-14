@@ -30,7 +30,7 @@ final class InsightEntity {
 
     /// A local-only timestamp to track when the user last viewed this insight.
     var lastViewedAt: Date?
-    
+
     init(
         id: String,
         userId: String,
@@ -50,7 +50,7 @@ final class InsightEntity {
         self.generatedAt = generatedAt
         self.lastViewedAt = lastViewedAt
     }
-    
+
     /// A convenience initializer to create an `InsightEntity` from a `HealthInsightDTO`.
     convenience init(from dto: HealthInsightDTO) {
         self.init(
@@ -63,4 +63,4 @@ final class InsightEntity {
             generatedAt: dto.generatedAt
         )
     }
-} 
+}

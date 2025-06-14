@@ -1,15 +1,8 @@
-//
-//  MainTabView.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab = 0
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
@@ -22,7 +15,7 @@ struct MainTabView: View {
                 Text("Dashboard")
             }
             .tag(0)
-            
+
             NavigationStack {
                 LazyTabContent(tab: 1, selectedTab: selectedTab) {
                     ChatView()
@@ -33,7 +26,7 @@ struct MainTabView: View {
                 Text("AI Chat")
             }
             .tag(1)
-            
+
             NavigationStack {
                 LazyTabContent(tab: 2, selectedTab: selectedTab) {
                     SettingsView()
@@ -44,12 +37,12 @@ struct MainTabView: View {
                 Text("Settings")
             }
             .tag(2)
-            
+
             NavigationStack {
                 LazyTabContent(tab: 3, selectedTab: selectedTab) {
                     VStack {
                         DebugAPIView()
-                        
+
                         NavigationLink("Token Debug Info", destination: TokenDebugView())
                             .buttonStyle(.borderedProminent)
                             .padding()
@@ -70,7 +63,7 @@ struct LazyTabContent<Content: View>: View {
     let tab: Int
     let selectedTab: Int
     let content: () -> Content
-    
+
     var body: some View {
         if tab == selectedTab {
             content()
@@ -87,7 +80,7 @@ struct LazyTabContent<Content: View>: View {
     ) else {
         return MainTabView()
     }
-    
+
     return MainTabView()
         .environment(\.authService, AuthService(apiClient: previewAPIClient))
         .environment(\.healthKitService, HealthKitService(apiClient: previewAPIClient))

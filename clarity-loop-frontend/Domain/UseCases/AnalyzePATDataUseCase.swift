@@ -2,11 +2,10 @@ import Foundation
 import UIKit
 
 final class AnalyzePATDataUseCase {
-    
     private let apiClient: APIClientProtocol
     private let healthKitService: HealthKitServiceProtocol
     private let authService: AuthServiceProtocol
-    
+
     init(
         apiClient: APIClientProtocol,
         healthKitService: HealthKitServiceProtocol,
@@ -16,14 +15,14 @@ final class AnalyzePATDataUseCase {
         self.healthKitService = healthKitService
         self.authService = authService
     }
-    
+
     func executeStepAnalysis(
         startDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date(),
         endDate: Date = Date()
     ) async throws -> PATAnalysisResult {
         // Fetch step data from HealthKit
         let stepData = try await collectStepData(from: startDate, to: endDate)
-        
+
         // Create request DTO
         let userId = await authService.currentUser?.id ?? "unknown"
         let request = StepDataRequestDTO(
@@ -32,10 +31,10 @@ final class AnalyzePATDataUseCase {
             analysisType: "comprehensive",
             timeRange: TimeRangeDTO(startDate: startDate, endDate: endDate)
         )
-        
+
         // Submit for analysis
         let analysisResponse = try await apiClient.analyzeStepData(requestDTO: request)
-        
+
         // Poll for completion if needed
         if analysisResponse.status == "processing" {
             return try await pollForCompletion(analysisId: analysisResponse.analysisId)
@@ -50,7 +49,7 @@ final class AnalyzePATDataUseCase {
                     "estimatedCaloriesBurned": AnyCodable(stepData.healthMetrics.estimatedCaloriesBurned),
                 ]
             }
-            
+
             return PATAnalysisResult(
                 analysisId: analysisResponse.analysisId,
                 status: analysisResponse.status,
@@ -61,7 +60,7 @@ final class AnalyzePATDataUseCase {
             )
         }
     }
-    
+
     func executeActigraphyAnalysis(actigraphyData: [ActigraphyDataPointDTO]) async throws -> PATAnalysisResult {
         let userId = await authService.currentUser?.id ?? "unknown"
         let startDate = actigraphyData.first?.timestamp ?? Date()
@@ -72,9 +71,9 @@ final class AnalyzePATDataUseCase {
             analysisType: "comprehensive",
             timeRange: TimeRangeDTO(startDate: startDate, endDate: endDate)
         )
-        
+
         let analysisResponse = try await apiClient.analyzeActigraphy(requestDTO: request)
-        
+
         if analysisResponse.status == "processing" {
             return try await pollForCompletion(analysisId: analysisResponse.analysisId)
         } else {
@@ -89,7 +88,7 @@ final class AnalyzePATDataUseCase {
                     "circadianAmplitude": AnyCodable(actigraphyData.circadianRhythm.amplitude),
                 ]
             }
-            
+
             return PATAnalysisResult(
                 analysisId: analysisResponse.analysisId,
                 status: analysisResponse.status,
@@ -100,62 +99,64 @@ final class AnalyzePATDataUseCase {
             )
         }
     }
-    
+
     func getAnalysisResult(analysisId: String) async throws -> PATAnalysisResponseDTO {
-        return try await apiClient.getPATAnalysis(id: analysisId)
+        try await apiClient.getPATAnalysis(id: analysisId)
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func collectStepData(from startDate: Date, to endDate: Date) async throws -> [StepDataPointDTO] {
         var stepData: [StepDataPointDTO] = []
         let calendar = Calendar.current
         var currentDate = startDate
-        
+
         while currentDate <= endDate {
             do {
                 let steps = try await healthKitService.fetchDailySteps(for: currentDate)
                 let timestamp = calendar.startOfDay(for: currentDate)
-                
+
                 stepData.append(StepDataPointDTO(
                     timestamp: timestamp,
                     stepCount: Int(steps),
                     source: "HealthKit"
                 ))
-                
+
                 currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
             } catch {
                 // Skip days with no data
                 currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? currentDate
             }
         }
-        
+
         return stepData
     }
-    
+
     private func categorizeActivityLevel(steps: Double) -> String {
         switch steps {
-        case 0..<1000:
-            return "sedentary"
-        case 1000..<5000:
-            return "low"
-        case 5000..<10000:
-            return "moderate"
-        case 10000..<15000:
-            return "high"
+        case 0 ..< 1000:
+            "sedentary"
+        case 1000 ..< 5000:
+            "low"
+        case 5000 ..< 10000:
+            "moderate"
+        case 10000 ..< 15000:
+            "high"
         default:
-            return "very_high"
+            "very_high"
         }
     }
-    
-    private func pollForCompletion(analysisId: String, maxAttempts: Int = 30, delaySeconds: UInt64 = 10) async throws -> PATAnalysisResult {
-        for attempt in 1...maxAttempts {
+
+    private func pollForCompletion(analysisId: String, maxAttempts: Int = 30,
+                                   delaySeconds: UInt64 = 10) async throws -> PATAnalysisResult
+    {
+        for attempt in 1 ... maxAttempts {
             let response = try await apiClient.getPATAnalysis(id: analysisId)
-            
+
             if response.status == "completed" || response.status == "failed" {
                 // Convert [String: Double] to [String: AnyCodable]
                 let patFeatures: [String: AnyCodable]? = response.patFeatures?.mapValues { AnyCodable($0) }
-                
+
                 return PATAnalysisResult(
                     analysisId: response.id,
                     status: response.status,
@@ -165,12 +166,12 @@ final class AnalyzePATDataUseCase {
                     error: response.errorMessage
                 )
             }
-            
+
             if attempt < maxAttempts {
                 try await Task.sleep(nanoseconds: delaySeconds * 1_000_000_000)
             }
         }
-        
+
         throw PATAnalysisError.analysisTimeout
     }
 }
@@ -182,17 +183,17 @@ struct PATAnalysisResult: Equatable {
     let confidence: Double?
     let completedAt: Date?
     let error: String?
-    
+
     var isCompleted: Bool {
-        return status == "completed"
+        status == "completed"
     }
-    
+
     var isFailed: Bool {
-        return status == "failed"
+        status == "failed"
     }
-    
+
     var isProcessing: Bool {
-        return status == "processing"
+        status == "processing"
     }
 }
 
@@ -200,15 +201,15 @@ enum PATAnalysisError: LocalizedError {
     case analysisTimeout
     case invalidData
     case serviceUnavailable
-    
+
     var errorDescription: String? {
         switch self {
         case .analysisTimeout:
-            return "PAT analysis timed out. Please try again later."
+            "PAT analysis timed out. Please try again later."
         case .invalidData:
-            return "The provided data is invalid for PAT analysis."
+            "The provided data is invalid for PAT analysis."
         case .serviceUnavailable:
-            return "PAT analysis service is currently unavailable."
+            "PAT analysis service is currently unavailable."
         }
     }
 }

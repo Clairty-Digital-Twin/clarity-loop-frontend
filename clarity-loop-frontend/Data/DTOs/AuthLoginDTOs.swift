@@ -8,7 +8,7 @@ struct UserLoginRequestDTO: Codable {
     let password: String
     let rememberMe: Bool
     let deviceInfo: [String: AnyCodable]?
-    
+
     enum CodingKeys: String, CodingKey {
         case email
         case password
@@ -45,4 +45,4 @@ struct TokenResponseDTO: Codable {
     let refreshToken: String
     let tokenType: String
     let expiresIn: Int
-} 
+}

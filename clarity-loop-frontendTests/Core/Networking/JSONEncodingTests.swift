@@ -1,31 +1,23 @@
-//
-//  JSONEncodingTests.swift
-//  clarity-loop-frontendTests
-//
-//  Tests to verify JSON encoding/decoding with snake_case conversion
-//
-
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class JSONEncodingTests: XCTestCase {
-    
     var encoder: JSONEncoder!
     var decoder: JSONDecoder!
-    
+
     override func setUp() {
         super.setUp()
-        
+
         // Match the configuration in APIClient
         encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        
+
         decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .convertFromSnakeCase
     }
-    
+
     func testInsightGenerationRequestEncoding() throws {
         // Given
         let request = InsightGenerationRequestDTO(
@@ -35,11 +27,11 @@ final class JSONEncodingTests: XCTestCase {
             includeRecommendations: true,
             language: "en"
         )
-        
+
         // When
         let jsonData = try encoder.encode(request)
         let jsonString = String(data: jsonData, encoding: .utf8)!
-        
+
         // Then
         XCTAssertTrue(jsonString.contains("\"analysis_results\""))
         XCTAssertTrue(jsonString.contains("\"insight_type\""))
@@ -48,7 +40,7 @@ final class JSONEncodingTests: XCTestCase {
         XCTAssertFalse(jsonString.contains("\"insightType\""))
         XCTAssertFalse(jsonString.contains("\"includeRecommendations\""))
     }
-    
+
     func testHealthKitUploadRequestEncoding() throws {
         // Given
         let sourceRevision = SourceRevisionDTO(
@@ -57,7 +49,7 @@ final class JSONEncodingTests: XCTestCase {
             productType: "Watch6,1",
             operatingSystemVersion: "8.0"
         )
-        
+
         let sample = HealthKitSampleDTO(
             sampleType: "heartRate",
             value: 72.5,
@@ -68,7 +60,7 @@ final class JSONEncodingTests: XCTestCase {
             metadata: ["HKMetadataKeyHeartRateMotionContext": AnyCodable(1)],
             sourceRevision: sourceRevision
         )
-        
+
         let deviceInfo = DeviceInfoDTO(
             deviceModel: "iPhone13,1",
             systemName: "iOS",
@@ -76,18 +68,18 @@ final class JSONEncodingTests: XCTestCase {
             appVersion: "1.0.0",
             timeZone: "America/New_York"
         )
-        
+
         let request = HealthKitUploadRequestDTO(
             userId: "user-123",
             samples: [sample],
             deviceInfo: deviceInfo,
             timestamp: Date()
         )
-        
+
         // When
         let jsonData = try encoder.encode(request)
         let jsonString = String(data: jsonData, encoding: .utf8)!
-        
+
         // Then
         XCTAssertTrue(jsonString.contains("\"user_id\""))
         XCTAssertTrue(jsonString.contains("\"samples\""))
@@ -98,7 +90,7 @@ final class JSONEncodingTests: XCTestCase {
         XCTAssertTrue(jsonString.contains("\"end_date\""))
         XCTAssertTrue(jsonString.contains("\"source_revision\""))
     }
-    
+
     func testInsightGenerationResponseDecoding() throws {
         // Given
         let jsonString = """
@@ -116,10 +108,10 @@ final class JSONEncodingTests: XCTestCase {
         }
         """
         let jsonData = jsonString.data(using: .utf8)!
-        
+
         // When
         let response = try decoder.decode(InsightGenerationResponseDTO.self, from: jsonData)
-        
+
         // Then
         XCTAssertTrue(response.success)
         XCTAssertEqual(response.data.userId, "test-user")

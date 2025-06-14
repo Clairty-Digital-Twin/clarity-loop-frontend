@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class RemoteHealthDataRepositoryTests: XCTestCase {
-
     var healthDataRepository: RemoteHealthDataRepository!
     var mockAPIClient: MockAPIClient!
 
@@ -34,9 +33,9 @@ final class RemoteHealthDataRepositoryTests: XCTestCase {
         // TODO: Configure mockAPIClient for a successful health data upload
         XCTFail("Test not implemented.")
     }
-    
+
     func testUploadHealthData_Failure() async throws {
         // TODO: Configure mockAPIClient to return an error on upload
         XCTFail("Test not implemented.")
     }
-} 
+}

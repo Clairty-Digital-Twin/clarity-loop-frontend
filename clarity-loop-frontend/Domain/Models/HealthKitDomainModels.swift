@@ -1,10 +1,3 @@
-//
-//  HealthKitDomainModels.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import Foundation
 
 /// A custom domain model to represent processed sleep analysis data.
@@ -12,7 +5,7 @@ struct SleepData: Equatable {
     let totalTimeInBed: TimeInterval
     let totalTimeAsleep: TimeInterval
     let sleepEfficiency: Double
-    
+
     // We can add more detailed stage analysis here later.
     // let timeInDeepSleep: TimeInterval
     // let timeInCoreSleep: TimeInterval
@@ -25,6 +18,6 @@ struct DailyHealthMetrics: Equatable {
     let stepCount: Int
     let restingHeartRate: Double?
     let sleepData: SleepData?
-    
+
     // Add other metrics as they are implemented
-} 
+}

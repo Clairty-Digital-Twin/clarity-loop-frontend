@@ -35,14 +35,14 @@ struct Tokens: Codable {
 func testLogin() async {
     print("🧪 Testing Authentication Flow...")
     print("=" * 50)
-    
+
     // Backend API URL from Info.plist
     let apiBaseURL = "https://clarity.novamindnyc.com"
     let loginEndpoint = "\(apiBaseURL)/api/v1/auth/login"
-    
+
     print("📍 Backend URL: \(apiBaseURL)")
     print("🔐 Login Endpoint: \(loginEndpoint)")
-    
+
     // Test credentials
     let loginRequest = LoginRequest(
         email: "test@example.com",
@@ -54,74 +54,75 @@ func testLogin() async {
             "os_version": "18.0",
             "app_version": "1.0.0",
             "model": "iPhone",
-            "name": "Test Device"
+            "name": "Test Device",
         ]
     )
-    
+
     guard let url = URL(string: loginEndpoint) else {
         print("❌ Invalid URL")
         return
     }
-    
+
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    
+
     do {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         request.httpBody = try encoder.encode(loginRequest)
-        
+
         print("\n📤 Request:")
         print("   Method: POST")
         print("   URL: \(loginEndpoint)")
         print("   Headers: \(request.allHTTPHeaderFields ?? [:])")
         if let body = request.httpBody,
-           let bodyString = String(data: body, encoding: .utf8) {
+           let bodyString = String(data: body, encoding: .utf8)
+        {
             print("   Body: \(bodyString)")
         }
-        
+
         print("\n⏳ Sending request...")
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             print("❌ Invalid response type")
             return
         }
-        
+
         print("\n📥 Response:")
         print("   Status Code: \(httpResponse.statusCode)")
         print("   Headers: \(httpResponse.allHeaderFields)")
-        
+
         if let responseString = String(data: data, encoding: .utf8) {
             print("   Body: \(responseString)")
         }
-        
+
         if httpResponse.statusCode == 200 {
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             let loginResponse = try decoder.decode(LoginResponse.self, from: data)
-            
+
             print("\n✅ Authentication Successful!")
             print("   User ID: \(loginResponse.user.user_id)")
             print("   Email: \(loginResponse.user.email)")
             print("   Access Token: \(String(loginResponse.tokens.access_token.prefix(50)))...")
             print("   Token Type: \(loginResponse.tokens.token_type)")
             print("   Expires In: \(loginResponse.tokens.expires_in) seconds")
-            
+
             print("\n🎉 Frontend is correctly using backend-centric authentication!")
         } else {
             print("\n❌ Authentication Failed")
             print("   This is expected if test credentials don't exist")
             print("   The important thing is that we're calling the backend, not Cognito directly")
         }
-        
+
     } catch {
         print("\n❌ Error: \(error)")
         print("   This may be normal if the backend is not accessible from this environment")
     }
-    
+
     print("\n" + "=" * 50)
     print("📋 Summary:")
     print("   ✅ Frontend is configured to use backend API")

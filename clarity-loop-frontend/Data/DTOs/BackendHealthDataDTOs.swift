@@ -1,10 +1,3 @@
-//
-//  BackendHealthDataDTOs.swift
-//  clarity-loop-frontend
-//
-//  Backend-compatible health data DTOs that match the Python/FastAPI models exactly
-//
-
 import Foundation
 
 // MARK: - Health Metric Types (matching backend HealthMetricType enum)
@@ -20,7 +13,7 @@ enum BackendHealthMetricType: String, Codable {
     case stressIndicators = "stress_indicators"
     case moodAssessment = "mood_assessment"
     case cognitiveMetrics = "cognitive_metrics"
-    case environmental = "environmental"
+    case environmental
     case bodyTemperature = "body_temperature"
     case bloodGlucose = "blood_glucose"
 }
@@ -38,7 +31,7 @@ struct BackendHealthMetric: Codable {
     let rawData: [String: AnyCodable]?
     let metadata: [String: AnyCodable]?
     let createdAt: Date
-    
+
     init(
         metricId: UUID = UUID(),
         metricType: BackendHealthMetricType,
@@ -72,7 +65,7 @@ struct BackendHealthDataUpload: Codable {
     let uploadSource: String
     let clientTimestamp: Date
     let syncToken: String?
-    
+
     init(
         userId: UUID,
         metrics: [BackendHealthMetric],
@@ -97,7 +90,7 @@ extension HealthKitSampleDTO {
         var biometricData: BiometricDataDTO?
         var sleepData: SleepDataDTO?
         var activityData: ActivityDataDTO?
-        
+
         switch sampleType {
         case "stepCount":
             metricType = .activityLevel
@@ -111,7 +104,7 @@ extension HealthKitSampleDTO {
                 activeMinutes: nil,
                 restingHeartRate: nil
             )
-            
+
         case "restingHeartRate":
             metricType = .heartRate
             biometricData = BiometricDataDTO(
@@ -124,7 +117,7 @@ extension HealthKitSampleDTO {
                 bodyTemperature: nil,
                 bloodGlucose: nil
             )
-            
+
         case "heartRate":
             metricType = .heartRate
             biometricData = BiometricDataDTO(
@@ -137,12 +130,12 @@ extension HealthKitSampleDTO {
                 bodyTemperature: nil,
                 bloodGlucose: nil
             )
-            
+
         case "sleepAnalysis":
             metricType = .sleepAnalysis
             let totalMinutes = Int(value ?? 0)
             let efficiency = metadata?["sleep_efficiency"]?.value as? Double ?? 0.85
-            
+
             sleepData = SleepDataDTO(
                 totalSleepMinutes: totalMinutes,
                 sleepEfficiency: efficiency,
@@ -152,11 +145,11 @@ extension HealthKitSampleDTO {
                 sleepStart: startDate,
                 sleepEnd: endDate
             )
-            
+
         default:
             return nil
         }
-        
+
         return BackendHealthMetric(
             metricType: metricType,
             biometricData: biometricData,
@@ -176,10 +169,10 @@ extension HealthKitUploadRequestDTO {
         guard let userUUID = UUID(uuidString: userId) else {
             return nil
         }
-        
+
         // Convert samples to metrics
         let metrics = samples.compactMap { $0.toBackendHealthMetric() }
-        
+
         return BackendHealthDataUpload(
             userId: userUUID,
             metrics: metrics,

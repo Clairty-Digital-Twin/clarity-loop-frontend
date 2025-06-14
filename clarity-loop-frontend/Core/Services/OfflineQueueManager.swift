@@ -1,10 +1,3 @@
-//
-//  OfflineQueueManager.swift
-//  clarity-loop-frontend
-//
-//  Created by Assistant on 6/8/25.
-//
-
 import Foundation
 import Network
 import OSLog
@@ -20,18 +13,18 @@ final class QueuedUpload {
     var createdAt: Date
     var lastAttemptAt: Date?
     var error: String?
-    
+
     var type: UploadType {
         get { UploadType(rawValue: typeString) ?? .healthKitData }
         set { typeString = newValue.rawValue }
     }
-    
+
     enum UploadType: String, Codable {
         case healthKitData = "healthKit"
         case insightGeneration = "insight"
         case patAnalysis = "pat"
     }
-    
+
     init(type: UploadType, payload: Data) {
         self.id = UUID()
         self.typeString = type.rawValue
@@ -53,30 +46,29 @@ protocol OfflineQueueManagerProtocol: AnyObject {
 
 /// Manages offline queue for pending uploads when network is unavailable
 final class OfflineQueueManager: OfflineQueueManagerProtocol {
-    
     // MARK: - Constants
-    
+
     private enum Constants {
         static let maxRetries = 3
         static let retryDelay: TimeInterval = 30 // seconds
         static let queueProcessingInterval: TimeInterval = 60 // seconds
     }
-    
+
     // MARK: - Properties
-    
+
     private let modelContext: ModelContext
     private let healthDataRepository: HealthDataRepositoryProtocol
     private let insightsRepository: InsightsRepositoryProtocol
     private let networkMonitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "com.novamindnyc.clarity-loop-frontend.networkMonitor")
     private let logger = Logger(subsystem: "com.novamindnyc.clarity-loop-frontend", category: "OfflineQueueManager")
-    
+
     private var isProcessing = false
     private var processingTask: Task<Void, Never>?
     private var isNetworkAvailable = true
-    
+
     // MARK: - Initializer
-    
+
     init(
         modelContext: ModelContext,
         healthDataRepository: HealthDataRepositoryProtocol,
@@ -85,25 +77,24 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
         self.modelContext = modelContext
         self.healthDataRepository = healthDataRepository
         self.insightsRepository = insightsRepository
-        
+
         setupNetworkMonitoring()
     }
-    
-    
+
     // MARK: - Public Methods
-    
+
     /// Adds an upload to the offline queue
     func enqueue(_ upload: QueuedUpload) async throws {
         modelContext.insert(upload)
         try modelContext.save()
         logger.info("Enqueued upload of type \(upload.type.rawValue)")
-        
+
         // Try to process immediately if network is available
-        if isNetworkAvailable && !isProcessing {
+        if isNetworkAvailable, !isProcessing {
             await processQueue()
         }
     }
-    
+
     /// Processes all queued uploads
     func processQueue() async {
         guard !isProcessing else { return }
@@ -111,12 +102,12 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
             logger.info("Network unavailable, skipping queue processing")
             return
         }
-        
+
         isProcessing = true
         defer { isProcessing = false }
-        
+
         logger.info("Starting queue processing")
-        
+
         do {
             let maxRetries = Constants.maxRetries
             let descriptor = FetchDescriptor<QueuedUpload>(
@@ -125,27 +116,27 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
                 },
                 sortBy: [SortDescriptor(\.createdAt)]
             )
-            
+
             let queuedUploads = try modelContext.fetch(descriptor)
-            
+
             for upload in queuedUploads {
                 await processUpload(upload)
             }
-            
+
             logger.info("Queue processing completed")
-            
+
         } catch {
             logger.error("Failed to fetch queued uploads: \(error.localizedDescription)")
         }
     }
-    
+
     /// Clears all items from the queue
     func clearQueue() async throws {
         try modelContext.delete(model: QueuedUpload.self)
         try modelContext.save()
         logger.info("Queue cleared")
     }
-    
+
     /// Gets the count of queued items
     func getQueuedItemsCount() async -> Int {
         do {
@@ -157,11 +148,11 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
             return 0
         }
     }
-    
+
     /// Starts monitoring network status and processing queue
     func startMonitoring() {
         networkMonitor.start(queue: monitorQueue)
-        
+
         // Start periodic queue processing
         processingTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -169,10 +160,10 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
                 try? await Task.sleep(nanoseconds: UInt64(Constants.queueProcessingInterval * 1_000_000_000))
             }
         }
-        
+
         logger.info("Started offline queue monitoring")
     }
-    
+
     /// Stops monitoring
     func stopMonitoring() {
         networkMonitor.cancel()
@@ -180,27 +171,27 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
         processingTask = nil
         logger.info("Stopped offline queue monitoring")
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func setupNetworkMonitoring() {
         networkMonitor.pathUpdateHandler = { [weak self] path in
             Task { [weak self] in
                 let wasOffline = self?.isNetworkAvailable == false
                 self?.isNetworkAvailable = path.status == .satisfied
-                
-                if wasOffline && self?.isNetworkAvailable == true {
+
+                if wasOffline, self?.isNetworkAvailable == true {
                     self?.logger.info("Network became available, processing queue")
                     await self?.processQueue()
                 }
             }
         }
     }
-    
+
     private func processUpload(_ upload: QueuedUpload) async {
         upload.lastAttemptAt = Date()
         upload.retryCount += 1
-        
+
         do {
             switch upload.type {
             case .healthKitData:
@@ -210,44 +201,47 @@ final class OfflineQueueManager: OfflineQueueManagerProtocol {
             case .patAnalysis:
                 try await processPATAnalysis(upload)
             }
-            
+
             // Success - remove from queue
             modelContext.delete(upload)
             try modelContext.save()
             logger.info("Successfully processed upload \(upload.id)")
-            
+
         } catch {
             upload.error = error.localizedDescription
-            
+
             if upload.retryCount >= Constants.maxRetries {
-                logger.error("Upload \(upload.id) failed after \(Constants.maxRetries) retries: \(error.localizedDescription)")
+                logger
+                    .error(
+                        "Upload \(upload.id) failed after \(Constants.maxRetries) retries: \(error.localizedDescription)"
+                    )
                 // Keep in queue but won't be retried automatically
             } else {
                 logger.warning("Upload \(upload.id) failed, will retry: \(error.localizedDescription)")
             }
-            
+
             try? modelContext.save()
         }
     }
-    
+
     private func processHealthKitUpload(_ upload: QueuedUpload) async throws {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        
+
         let request = try decoder.decode(HealthKitUploadRequestDTO.self, from: upload.payload)
         _ = try await healthDataRepository.uploadHealthKitData(requestDTO: request)
     }
-    
+
     private func processInsightGeneration(_ upload: QueuedUpload) async throws {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        
+
         let request = try decoder.decode(InsightGenerationRequestDTO.self, from: upload.payload)
         _ = try await insightsRepository.generateInsight(requestDTO: request)
     }
-    
+
     private func processPATAnalysis(_ upload: QueuedUpload) async throws {
         // PAT analysis processing would be implemented here
         // For now, this is a placeholder

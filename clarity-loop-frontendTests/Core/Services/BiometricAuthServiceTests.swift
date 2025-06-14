@@ -1,31 +1,30 @@
-import XCTest
-import LocalAuthentication
 @testable import clarity_loop_frontend
+import LocalAuthentication
+import XCTest
 
 /// Tests for BiometricAuthService to verify Sendable conformance and biometric functionality
 /// CRITICAL: Tests the @unchecked Sendable fix and async biometric operations
 final class BiometricAuthServiceTests: XCTestCase {
-    
     var biometricAuthService: BiometricAuthService!
     var mockContext: MockLAContext!
-    
+
     // MARK: - Test Setup
-    
+
     override func setUpWithError() throws {
         try super.setUpWithError()
         biometricAuthService = BiometricAuthService()
         mockContext = MockLAContext()
         biometricAuthService.context = mockContext
     }
-    
+
     override func tearDownWithError() throws {
         biometricAuthService = nil
         mockContext = nil
         try super.tearDownWithError()
     }
-    
+
     // MARK: - Sendable Conformance Tests
-    
+
     func testSendableConformanceCompilation() throws {
         // TODO: Test that @unchecked Sendable conformance works
         // - Service can be used in async contexts
@@ -33,7 +32,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Proper thread safety measures
         // - Memory safety in concurrent access
     }
-    
+
     func testConcurrentAccess() throws {
         // TODO: Test concurrent access to BiometricAuthService
         // - Multiple simultaneous biometric requests
@@ -41,9 +40,9 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - No race conditions
         // - Proper queue management
     }
-    
+
     // MARK: - Biometric Availability Tests
-    
+
     func testBiometricAvailabilityCheck() throws {
         // TODO: Test biometric availability detection
         // - Face ID available
@@ -51,7 +50,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - No biometrics available
         // - Proper error handling for unavailable biometrics
     }
-    
+
     func testBiometricTypeDetection() throws {
         // TODO: Test biometric type detection
         // - Detect Face ID vs Touch ID
@@ -59,7 +58,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Handle device-specific capabilities
         // - Proper user messaging
     }
-    
+
     func testBiometricPolicyEvaluation() throws {
         // TODO: Test biometric policy evaluation
         // - Device owner authentication policy
@@ -67,9 +66,9 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Fallback policy handling
         // - Policy change detection
     }
-    
+
     // MARK: - Authentication Flow Tests
-    
+
     func testSuccessfulBiometricAuthentication() throws {
         // TODO: Test successful biometric authentication
         // - Valid biometric presentation
@@ -77,7 +76,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Authentication result handling
         // - User session establishment
     }
-    
+
     func testFailedBiometricAuthentication() throws {
         // TODO: Test failed biometric authentication
         // - Invalid biometric (failed match)
@@ -85,7 +84,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - System cancellation
         // - Proper error handling and user feedback
     }
-    
+
     func testBiometricAuthenticationTimeout() throws {
         // TODO: Test biometric authentication timeout
         // - System timeout handling
@@ -93,7 +92,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Proper cleanup after timeout
         // - Fallback mechanism activation
     }
-    
+
     func testFallbackToPasscode() throws {
         // TODO: Test fallback to device passcode
         // - Biometric failure triggers passcode
@@ -101,9 +100,9 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Proper passcode authentication flow
         // - Success/failure handling
     }
-    
+
     // MARK: - Error Handling Tests
-    
+
     func testBiometricNotAvailableError() throws {
         // TODO: Test handling when biometrics not available
         // - No biometric hardware
@@ -111,7 +110,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Biometrics disabled
         // - Appropriate user messaging
     }
-    
+
     func testBiometricLockoutHandling() throws {
         // TODO: Test biometric lockout scenarios
         // - Too many failed attempts
@@ -119,7 +118,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Permanent lockout scenarios
         // - Recovery mechanisms
     }
-    
+
     func testSystemErrorHandling() throws {
         // TODO: Test system-level error handling
         // - System busy errors
@@ -127,9 +126,9 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Hardware failure scenarios
         // - Graceful degradation
     }
-    
+
     // MARK: - Security Tests
-    
+
     func testSecureContextHandling() throws {
         // TODO: Test secure context management
         // - Proper LAContext lifecycle
@@ -137,7 +136,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Memory cleanup
         // - No sensitive data leakage
     }
-    
+
     func testAuthenticationResultSecurity() throws {
         // TODO: Test authentication result security
         // - No result caching
@@ -145,9 +144,9 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - No persistent authentication state
         // - Proper result validation
     }
-    
+
     // MARK: - UI Integration Tests
-    
+
     func testBiometricPromptCustomization() throws {
         // TODO: Test biometric prompt customization
         // - Custom prompt messages
@@ -155,7 +154,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Localization support
         // - Accessibility features
     }
-    
+
     func testBiometricUIStateMangement() throws {
         // TODO: Test UI state during biometric operations
         // - Loading states
@@ -163,9 +162,9 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Success state handling
         // - Proper UI transitions
     }
-    
+
     // MARK: - Integration with Auth Flow Tests
-    
+
     func testBiometricLoginIntegration() throws {
         // TODO: Test biometric integration with login flow
         // - Biometric triggers after successful login
@@ -173,7 +172,7 @@ final class BiometricAuthServiceTests: XCTestCase {
         // - Proper token management
         // - Session restoration
     }
-    
+
     func testBiometricAppLaunchAuthentication() throws {
         // TODO: Test biometric authentication on app launch
         // - App backgrounding triggers biometric
@@ -215,10 +214,10 @@ final class BiometricAuthServiceTests: XCTestCase {
     func testEvaluatePolicyDomainState() {
         // Given
         mockContext.mockCanEvaluatePolicy = true
-        
+
         // When
         biometricAuthService.checkBiometricAvailability()
-        
+
         // Then
         XCTAssertTrue(biometricAuthService.isAvailable)
     }
@@ -226,10 +225,10 @@ final class BiometricAuthServiceTests: XCTestCase {
     func testBiometryType_FaceID() {
         // Given
         mockContext.mockBiometryType = .faceID
-        
+
         // When
         biometricAuthService.checkBiometricAvailability()
-        
+
         // Then
         XCTAssertEqual(biometricAuthService.biometricType, .faceID)
     }
@@ -237,10 +236,10 @@ final class BiometricAuthServiceTests: XCTestCase {
     func testBiometryType_TouchID() {
         // Given
         mockContext.mockBiometryType = .touchID
-        
+
         // When
         biometricAuthService.checkBiometricAvailability()
-        
+
         // Then
         XCTAssertEqual(biometricAuthService.biometricType, .touchID)
     }
@@ -248,10 +247,10 @@ final class BiometricAuthServiceTests: XCTestCase {
     func testBiometryType_None() {
         // Given
         mockContext.mockBiometryType = .none
-        
+
         // When
         biometricAuthService.checkBiometricAvailability()
-        
+
         // Then
         XCTAssertEqual(biometricAuthService.biometricType, .none)
     }
@@ -263,21 +262,21 @@ class MockLAContext: LAContext {
     var mockCanEvaluatePolicy = true
 
     override var biometryType: LABiometryType {
-        return mockBiometryType
+        mockBiometryType
     }
 
     override func canEvaluatePolicy(_ policy: LAPolicy, error: NSErrorPointer) -> Bool {
-        if let mockError = mockError {
+        if let mockError {
             error?.pointee = mockError as NSError
         }
         return mockCanEvaluatePolicy
     }
 
     override func evaluatePolicy(_ policy: LAPolicy, localizedReason: String, reply: @escaping (Bool, Error?) -> Void) {
-        if let mockError = mockError {
+        if let mockError {
             reply(false, mockError)
         } else {
             reply(mockCanEvaluatePolicy, nil)
         }
     }
-} 
+}

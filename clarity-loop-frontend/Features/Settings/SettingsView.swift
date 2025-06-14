@@ -1,26 +1,18 @@
-//
-//  SettingsView.swift
-//  clarity-loop-frontend
-//
-//  Created by Raymond Jung on 6/7/25.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
-    
     @Environment(\.authService) private var authService
     @Environment(\.healthKitService) private var healthKitService
     @State private var viewModel: SettingsViewModel?
-    
+
     var body: some View {
         NavigationStack {
-            if let viewModel = viewModel {
+            if let viewModel {
                 SettingsContentView(viewModel: viewModel)
             } else {
                 ProgressView("Loading...")
                     .onAppear {
-                        self.viewModel = SettingsViewModel(
+                        viewModel = SettingsViewModel(
                             authService: authService,
                             healthKitService: healthKitService
                         )
@@ -32,7 +24,7 @@ struct SettingsView: View {
 
 struct SettingsContentView: View {
     @Bindable var viewModel: SettingsViewModel
-    
+
     var body: some View {
         List {
             // Profile Section
@@ -41,18 +33,18 @@ struct SettingsContentView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         TextField("First Name", text: $viewModel.firstName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                        
+
                         TextField("Last Name", text: $viewModel.lastName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                        
+
                         HStack {
                             Button("Cancel") {
                                 viewModel.cancelEditingProfile()
                             }
                             .foregroundColor(.secondary)
-                            
+
                             Spacer()
-                            
+
                             Button("Save") {
                                 Task {
                                     await viewModel.saveProfile()
@@ -76,7 +68,7 @@ struct SettingsContentView: View {
                     }
                 }
             }
-            
+
             // Health Data Section
             Section("Health Data") {
                 VStack(alignment: .leading, spacing: 8) {
@@ -86,7 +78,7 @@ struct SettingsContentView: View {
                         Text(viewModel.healthKitAuthorizationStatus)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     if let lastSync = viewModel.lastSyncDate {
                         HStack {
                             Text("Last Sync:")
@@ -96,45 +88,45 @@ struct SettingsContentView: View {
                         }
                     }
                 }
-                
+
                 Button("Request HealthKit Authorization") {
                     Task {
                         await viewModel.requestHealthKitAuthorization()
                     }
                 }
                 .disabled(viewModel.isLoading)
-                
+
                 Button("Sync Health Data") {
                     Task {
                         await viewModel.syncHealthData()
                     }
                 }
                 .disabled(viewModel.isLoading)
-                
+
                 Toggle("Auto Sync", isOn: Binding(
                     get: { viewModel.autoSyncEnabled },
                     set: { _ in viewModel.toggleAutoSync() }
                 ))
             }
-            
+
             // App Preferences Section
             Section("Preferences") {
                 Toggle("Notifications", isOn: Binding(
                     get: { viewModel.notificationsEnabled },
                     set: { _ in viewModel.toggleNotifications() }
                 ))
-                
+
                 Toggle("Biometric Authentication", isOn: Binding(
                     get: { viewModel.biometricAuthEnabled },
                     set: { _ in viewModel.toggleBiometricAuth() }
                 ))
-                
+
                 Toggle("Analytics", isOn: Binding(
                     get: { viewModel.analyticsEnabled },
                     set: { _ in viewModel.toggleAnalytics() }
                 ))
             }
-            
+
             // Data Management Section
             Section("Data Management") {
                 Button("Export My Data") {
@@ -143,7 +135,7 @@ struct SettingsContentView: View {
                     }
                 }
                 .disabled(viewModel.isLoading)
-                
+
                 Button("Delete All My Data") {
                     Task {
                         await viewModel.deleteAllUserData()
@@ -152,14 +144,14 @@ struct SettingsContentView: View {
                 .foregroundColor(.red)
                 .disabled(viewModel.isLoading)
             }
-            
+
             // Account Section
             Section("Account") {
                 Button("Sign Out") {
                     viewModel.showingSignOutAlert = true
                 }
                 .foregroundColor(.red)
-                
+
                 Button("Delete Account") {
                     viewModel.showingDeleteAccountAlert = true
                 }
@@ -195,7 +187,7 @@ struct SettingsContentView: View {
             }
         }
         .alert("Sign Out", isPresented: $viewModel.showingSignOutAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {}
             Button("Sign Out", role: .destructive) {
                 Task {
                     await viewModel.signOut()
@@ -205,7 +197,7 @@ struct SettingsContentView: View {
             Text("Are you sure you want to sign out?")
         }
         .alert("Delete Account", isPresented: $viewModel.showingDeleteAccountAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 Task {
                     await viewModel.deleteAccount()
@@ -218,16 +210,16 @@ struct SettingsContentView: View {
 }
 
 #if DEBUG
-#Preview {
-    guard let previewAPIClient = APIClient(
-        baseURLString: AppConfig.previewAPIBaseURL,
-        tokenProvider: { nil }
-    ) else {
-        return Text("Failed to create preview client")
+    #Preview {
+        guard let previewAPIClient = APIClient(
+            baseURLString: AppConfig.previewAPIBaseURL,
+            tokenProvider: { nil }
+        ) else {
+            return Text("Failed to create preview client")
+        }
+
+        return SettingsView()
+            .environment(\.authService, AuthService(apiClient: previewAPIClient))
+            .environment(\.healthKitService, HealthKitService(apiClient: previewAPIClient))
     }
-    
-    return SettingsView()
-        .environment(\.authService, AuthService(apiClient: previewAPIClient))
-        .environment(\.healthKitService, HealthKitService(apiClient: previewAPIClient))
-}
 #endif

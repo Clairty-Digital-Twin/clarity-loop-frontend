@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class HealthKitServiceTests: XCTestCase {
-
     var healthKitService: HealthKitService!
     var mockAPIClient: MockAPIClient!
     // TODO: Add mock for HKHealthStore
@@ -36,7 +35,7 @@ final class HealthKitServiceTests: XCTestCase {
         // TODO: Implement test for fetching health data successfully
         XCTFail("Test not implemented")
     }
-    
+
     func testFetchHealthData_NoData() {
         // TODO: Implement test for fetching health data when none is available
         XCTFail("Test not implemented")
@@ -46,14 +45,14 @@ final class HealthKitServiceTests: XCTestCase {
         // TODO: Implement test for handling errors during health data fetch
         XCTFail("Test not implemented")
     }
-    
+
     func testSaveHealthData_Success() {
         // TODO: Implement test for saving health data successfully
         XCTFail("Test not implemented")
     }
-    
+
     func testSaveHealthData_Error() {
         // TODO: Implement test for handling errors during health data save
         XCTFail("Test not implemented")
     }
-} 
+}

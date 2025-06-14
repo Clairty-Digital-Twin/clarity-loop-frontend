@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class SyncHealthDataUseCaseTests: XCTestCase {
-
     var syncHealthDataUseCase: SyncHealthDataUseCase!
     // TODO: Add mocks for HealthKitService and repository dependencies
 
@@ -32,9 +31,9 @@ final class SyncHealthDataUseCaseTests: XCTestCase {
         // TODO: Mock repository to throw an error on upload
         XCTFail("Test not implemented.")
     }
-    
+
     func testExecute_NoNewDataToSync() async throws {
         // TODO: Mock HealthKit to return no new data
         XCTFail("Test not implemented.")
     }
-} 
+}

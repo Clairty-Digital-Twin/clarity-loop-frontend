@@ -12,39 +12,39 @@ enum AuthEndpoint: Endpoint {
     var path: String {
         switch self {
         case .register:
-            return "/api/v1/auth/register"
+            "/api/v1/auth/register"
         case .login:
-            return "/api/v1/auth/login"
+            "/api/v1/auth/login"
         case .refreshToken:
-            return "/api/v1/auth/refresh"
+            "/api/v1/auth/refresh"
         case .logout:
-            return "/api/v1/auth/logout"
+            "/api/v1/auth/logout"
         case .getCurrentUser:
-            return "/api/v1/auth/me"
+            "/api/v1/auth/me"
         case .verifyEmail:
-            return "/api/v1/auth/verify-email"
+            "/api/v1/auth/verify-email"
         }
     }
 
     var method: HTTPMethod {
         switch self {
         case .register, .login, .refreshToken, .logout:
-            return .post
+            .post
         case .getCurrentUser, .verifyEmail:
-            return .get
+            .get
         }
     }
 
     func body(encoder: JSONEncoder) throws -> Data? {
         switch self {
-        case .register(let dto):
-            return try encoder.encode(dto)
-        case .login(let dto):
-            return try encoder.encode(dto)
-        case .refreshToken(let dto):
-            return try encoder.encode(dto)
+        case let .register(dto):
+            try encoder.encode(dto)
+        case let .login(dto):
+            try encoder.encode(dto)
+        case let .refreshToken(dto):
+            try encoder.encode(dto)
         default:
-            return nil
+            nil
         }
     }
 }

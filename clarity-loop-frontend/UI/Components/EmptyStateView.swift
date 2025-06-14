@@ -6,7 +6,7 @@ struct EmptyStateView: View {
     let systemImage: String
     let actionTitle: String?
     let action: (() -> Void)?
-    
+
     init(
         title: String,
         message: String,
@@ -20,20 +20,20 @@ struct EmptyStateView: View {
         self.actionTitle = actionTitle
         self.action = action
     }
-    
+
     var body: some View {
         VStack(spacing: 24) {
             VStack(spacing: 16) {
                 Image(systemName: systemImage)
                     .font(.system(size: 60))
                     .foregroundColor(.secondary)
-                
+
                 VStack(spacing: 8) {
                     Text(title)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.center)
-                    
+
                     Text(message)
                         .font(.body)
                         .foregroundColor(.secondary)
@@ -41,8 +41,8 @@ struct EmptyStateView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            
-            if let actionTitle = actionTitle, let action = action {
+
+            if let actionTitle, let action {
                 Button(actionTitle, action: action)
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
@@ -59,7 +59,7 @@ struct EmptyStateView: View {
 
 struct NoHealthDataView: View {
     let onSetupHealthKit: () -> Void
-    
+
     var body: some View {
         EmptyStateView(
             title: "No Health Data",
@@ -73,11 +73,11 @@ struct NoHealthDataView: View {
 
 struct NoInsightsView: View {
     let onGenerateInsight: (() -> Void)?
-    
+
     init(onGenerateInsight: (() -> Void)? = nil) {
         self.onGenerateInsight = onGenerateInsight
     }
-    
+
     var body: some View {
         EmptyStateView(
             title: "No Insights Yet",
@@ -92,7 +92,7 @@ struct NoInsightsView: View {
 struct NoSearchResultsView: View {
     let searchTerm: String
     let onClearSearch: () -> Void
-    
+
     var body: some View {
         EmptyStateView(
             title: "No Results Found",
@@ -106,7 +106,7 @@ struct NoSearchResultsView: View {
 
 struct NoConversationView: View {
     let onStartChat: () -> Void
-    
+
     var body: some View {
         EmptyStateView(
             title: "Start a Conversation",
@@ -120,7 +120,7 @@ struct NoConversationView: View {
 
 struct NoAnalysisHistoryView: View {
     let onRunAnalysis: () -> Void
-    
+
     var body: some View {
         EmptyStateView(
             title: "No Analysis History",
@@ -134,7 +134,7 @@ struct NoAnalysisHistoryView: View {
 
 struct MaintenanceModeView: View {
     let estimatedDowntime: String?
-    
+
     var body: some View {
         EmptyStateView(
             title: "Under Maintenance",
@@ -148,7 +148,7 @@ struct MaintenanceModeView: View {
 struct FeatureUnavailableView: View {
     let featureName: String
     let reason: String
-    
+
     var body: some View {
         EmptyStateView(
             title: "\(featureName) Unavailable",
@@ -162,17 +162,17 @@ struct FeatureUnavailableView: View {
 
 struct LoadingStateView: View {
     let message: String
-    
+
     init(message: String = "Loading...") {
         self.message = message
     }
-    
+
     var body: some View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.2)
                 .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-            
+
             Text(message)
                 .font(.body)
                 .foregroundColor(.secondary)
@@ -188,14 +188,14 @@ struct LoadingStateView: View {
 struct SkeletonLoadingView: View {
     @State private var animateGradient = false
     let numberOfRows: Int
-    
+
     init(numberOfRows: Int = 3) {
         self.numberOfRows = numberOfRows
     }
-    
+
     var body: some View {
         VStack(spacing: 16) {
-            ForEach(0..<numberOfRows, id: \.self) { _ in
+            ForEach(0 ..< numberOfRows, id: \.self) { _ in
                 SkeletonRow()
             }
         }
@@ -205,28 +205,28 @@ struct SkeletonLoadingView: View {
 
 private struct SkeletonRow: View {
     @State private var animateGradient = false
-    
+
     var body: some View {
         HStack {
             // Icon placeholder
             Circle()
                 .fill(skeletonGradient)
                 .frame(width: 40, height: 40)
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 // Title placeholder
                 Rectangle()
                     .fill(skeletonGradient)
                     .frame(height: 16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 // Subtitle placeholder
                 Rectangle()
                     .fill(skeletonGradient)
                     .frame(height: 12)
                     .frame(maxWidth: 200, alignment: .leading)
             }
-            
+
             Spacer()
         }
         .onAppear {
@@ -235,7 +235,7 @@ private struct SkeletonRow: View {
             }
         }
     }
-    
+
     private var skeletonGradient: LinearGradient {
         LinearGradient(
             colors: [

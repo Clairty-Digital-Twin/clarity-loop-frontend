@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class RemoteUserRepositoryTests: XCTestCase {
-
     var userRepository: RemoteUserRepository!
     var mockAPIClient: MockAPIClient!
 
@@ -39,4 +38,4 @@ final class RemoteUserRepositoryTests: XCTestCase {
         // TODO: Configure mockAPIClient to return an error on update
         XCTFail("Test not implemented.")
     }
-} 
+}

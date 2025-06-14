@@ -5,10 +5,10 @@ import SwiftUI
 struct CustomSecureField: View {
     @Binding var text: String
     let placeholder: String
-    
+
     var body: some View {
         SecureField(placeholder, text: $text)
-            .textContentType(.newPassword)  // Disable AutoFill
+            .textContentType(.newPassword) // Disable AutoFill
             .autocorrectionDisabled(true)
     }
 }
@@ -18,13 +18,13 @@ struct AutoFillCompatibleSecureField: View {
     @Binding var text: String
     let placeholder: String
     @State private var isSecured = true
-    
+
     var body: some View {
         HStack {
             Group {
                 if isSecured {
                     SecureField(placeholder, text: $text)
-                        .textContentType(.newPassword)  // Force new password mode
+                        .textContentType(.newPassword) // Force new password mode
                         .autocorrectionDisabled()
                 } else {
                     TextField(placeholder, text: $text)
@@ -32,7 +32,7 @@ struct AutoFillCompatibleSecureField: View {
                 }
             }
             .textInputAutocapitalization(.never)
-            
+
             Button(action: {
                 isSecured.toggle()
             }) {
@@ -46,17 +46,17 @@ struct AutoFillCompatibleSecureField: View {
 #Preview {
     @Previewable @State var password1 = ""
     @Previewable @State var password2 = ""
-    
+
     VStack {
         CustomSecureField(text: $password1, placeholder: "Basic SecureField")
             .padding()
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
-        
+
         AutoFillCompatibleSecureField(text: $password2, placeholder: "Enhanced SecureField")
             .padding()
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
     }
     .padding()
-} 
+}

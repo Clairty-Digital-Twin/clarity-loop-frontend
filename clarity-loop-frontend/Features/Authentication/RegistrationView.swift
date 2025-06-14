@@ -1,21 +1,20 @@
 import SwiftUI
 
 struct RegistrationView: View {
-    
     // MARK: - Environment
-    
+
     @Environment(\.dismiss) private var dismiss
-    
+
     // MARK: - State
-    
+
     @State private var viewModel: RegistrationViewModel
-    
+
     // MARK: - Initializer
-    
+
     init(authService: AuthServiceProtocol) {
         _viewModel = State(initialValue: RegistrationViewModel(authService: authService))
     }
-    
+
     // MARK: - Body
 
     var body: some View {
@@ -23,7 +22,7 @@ struct RegistrationView: View {
             Text("Create Account")
                 .font(.largeTitle)
                 .fontWeight(.bold)
-            
+
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
@@ -34,7 +33,7 @@ struct RegistrationView: View {
                 .padding()
                 .background(Color(.systemGray6))
                 .cornerRadius(8)
-            
+
             TextField("Last Name", text: $viewModel.lastName)
                 .padding()
                 .background(Color(.systemGray6))
@@ -56,7 +55,7 @@ struct RegistrationView: View {
                 .padding()
                 .background(Color(.systemGray6))
                 .cornerRadius(8)
-            
+
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Button(action: { viewModel.termsAccepted.toggle() }) {
@@ -67,7 +66,7 @@ struct RegistrationView: View {
                         .font(.footnote)
                     Spacer()
                 }
-                
+
                 HStack {
                     Button(action: { viewModel.privacyPolicyAccepted.toggle() }) {
                         Image(systemName: viewModel.privacyPolicyAccepted ? "checkmark.square.fill" : "square")
@@ -78,7 +77,7 @@ struct RegistrationView: View {
                     Spacer()
                 }
             }
-            
+
             if viewModel.isLoading {
                 ProgressView()
             } else {
@@ -95,9 +94,9 @@ struct RegistrationView: View {
                         .cornerRadius(8)
                 }
             }
-            
+
             Spacer()
-            
+
             Button("Already have an account? Login") {
                 dismiss()
             }
@@ -114,6 +113,6 @@ struct RegistrationView: View {
     ) else {
         return Text("Failed to create preview client")
     }
-    
+
     return RegistrationView(authService: AuthService(apiClient: previewAPIClient))
-} 
+}

@@ -6,7 +6,7 @@ struct ErrorView: View {
     let systemImage: String
     let retryAction: (() -> Void)?
     let dismissAction: (() -> Void)?
-    
+
     init(
         title: String = "Something went wrong",
         message: String,
@@ -20,20 +20,20 @@ struct ErrorView: View {
         self.retryAction = retryAction
         self.dismissAction = dismissAction
     }
-    
+
     var body: some View {
         VStack(spacing: 24) {
             VStack(spacing: 16) {
                 Image(systemName: systemImage)
                     .font(.system(size: 60))
                     .foregroundColor(errorColor)
-                
+
                 VStack(spacing: 8) {
                     Text(title)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.center)
-                    
+
                     Text(message)
                         .font(.body)
                         .foregroundColor(.secondary)
@@ -41,15 +41,15 @@ struct ErrorView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            
+
             VStack(spacing: 12) {
-                if let retryAction = retryAction {
+                if let retryAction {
                     Button("Try Again", action: retryAction)
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                 }
-                
-                if let dismissAction = dismissAction {
+
+                if let dismissAction {
                     Button("Dismiss", action: dismissAction)
                         .buttonStyle(.bordered)
                         .controlSize(.large)
@@ -61,19 +61,19 @@ struct ErrorView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
     }
-    
+
     private var errorColor: Color {
         switch systemImage {
         case let image where image.contains("wifi") || image.contains("network"):
-            return .orange
+            .orange
         case let image where image.contains("lock") || image.contains("key"):
-            return .red
+            .red
         case let image where image.contains("exclamationmark"):
-            return .orange
+            .orange
         case let image where image.contains("xmark"):
-            return .red
+            .red
         default:
-            return .orange
+            .orange
         }
     }
 }
@@ -82,7 +82,7 @@ struct ErrorView: View {
 
 struct NetworkErrorView: View {
     let onRetry: () -> Void
-    
+
     var body: some View {
         ErrorView(
             title: "Connection Problem",
@@ -95,7 +95,7 @@ struct NetworkErrorView: View {
 
 struct AuthenticationErrorView: View {
     let onSignIn: () -> Void
-    
+
     var body: some View {
         ErrorView(
             title: "Authentication Required",
@@ -108,7 +108,7 @@ struct AuthenticationErrorView: View {
 
 struct ServerErrorView: View {
     let onRetry: () -> Void
-    
+
     var body: some View {
         ErrorView(
             title: "Server Error",
@@ -122,7 +122,7 @@ struct ServerErrorView: View {
 struct PermissionErrorView: View {
     let permissionType: String
     let onOpenSettings: () -> Void
-    
+
     var body: some View {
         ErrorView(
             title: "\(permissionType) Permission Required",
@@ -136,12 +136,12 @@ struct PermissionErrorView: View {
 struct DataUnavailableErrorView: View {
     let dataType: String
     let onRefresh: (() -> Void)?
-    
+
     init(dataType: String, onRefresh: (() -> Void)? = nil) {
         self.dataType = dataType
         self.onRefresh = onRefresh
     }
-    
+
     var body: some View {
         ErrorView(
             title: "No \(dataType) Available",
@@ -171,7 +171,7 @@ extension ErrorView {
                 systemImage: "key.fill",
                 retryAction: onRetry
             )
-        case .serverError(let statusCode, let message):
+        case let .serverError(statusCode, message):
             let serverMessage = message ?? "The server encountered an error."
             self.init(
                 title: "Server Error (\(statusCode))",
@@ -193,7 +193,7 @@ extension ErrorView {
                 systemImage: "gear.badge.xmark",
                 retryAction: onRetry
             )
-        case .unknown(let error):
+        case let .unknown(error):
             self.init(
                 title: "Unexpected Error",
                 message: error.localizedDescription,
@@ -207,14 +207,14 @@ extension ErrorView {
                 systemImage: "wrench.and.screwdriver",
                 retryAction: nil
             )
-        case .validationError(let message):
+        case let .validationError(message):
             self.init(
                 title: "Invalid Data",
                 message: message,
                 systemImage: "exclamationmark.triangle.fill",
                 retryAction: onRetry
             )
-        case .httpError(let statusCode, _):
+        case let .httpError(statusCode, _):
             self.init(
                 title: "HTTP Error \(statusCode)",
                 message: "An error occurred while communicating with the server.",

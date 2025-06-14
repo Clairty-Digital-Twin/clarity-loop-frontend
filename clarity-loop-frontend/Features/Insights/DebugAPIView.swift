@@ -1,50 +1,43 @@
-//
-//  DebugAPIView.swift
-//  clarity-loop-frontend
-//
-//  Debug view to test API connectivity
-//
-
 import SwiftUI
 #if canImport(UIKit) && DEBUG
-import UIKit
+    import UIKit
 #endif
 
 struct DebugAPIView: View {
     @Environment(\.authService) private var authService
     @State private var statusMessage = "Tap buttons to test API"
     @State private var isLoading = false
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Text("API Debug Test")
                 .font(.title)
-            
+
             Text(statusMessage)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding()
-            
+
             if isLoading {
                 ProgressView()
             }
-            
+
             Button("Test Health Endpoint (No Auth)") {
                 testHealthEndpoint()
             }
             .buttonStyle(.bordered)
-            
+
             Button("Test Insights Status (No Auth)") {
                 testInsightsStatus()
             }
             .buttonStyle(.bordered)
-            
+
             Button("Test Generate Insight (Auth Required)") {
                 testGenerateInsight()
             }
             .buttonStyle(.borderedProminent)
-            
+
             Button("Show Current Token") {
                 showCurrentToken()
             }
@@ -52,11 +45,11 @@ struct DebugAPIView: View {
         }
         .padding()
     }
-    
+
     func testHealthEndpoint() {
         isLoading = true
         statusMessage = "Testing health endpoint..."
-        
+
         Task {
             do {
                 guard let url = URL(string: "\(AppConfig.apiBaseURL)/api/v1/health-data/health") else {
@@ -65,7 +58,7 @@ struct DebugAPIView: View {
                     return
                 }
                 let (data, response) = try await URLSession.shared.data(from: url)
-                
+
                 if let httpResponse = response as? HTTPURLResponse {
                     let json = try? JSONSerialization.jsonObject(with: data)
                     statusMessage = "Health endpoint: \(httpResponse.statusCode)\n\(String(describing: json))"
@@ -76,11 +69,11 @@ struct DebugAPIView: View {
             isLoading = false
         }
     }
-    
+
     func testInsightsStatus() {
         isLoading = true
         statusMessage = "Testing insights status..."
-        
+
         Task {
             do {
                 guard let url = URL(string: "\(AppConfig.apiBaseURL)/api/v1/insights/status") else {
@@ -89,7 +82,7 @@ struct DebugAPIView: View {
                     return
                 }
                 let (data, response) = try await URLSession.shared.data(from: url)
-                
+
                 if let httpResponse = response as? HTTPURLResponse {
                     let json = try? JSONSerialization.jsonObject(with: data)
                     statusMessage = "Insights status: \(httpResponse.statusCode)\n\(String(describing: json))"
@@ -100,11 +93,11 @@ struct DebugAPIView: View {
             isLoading = false
         }
     }
-    
+
     func testGenerateInsight() {
         isLoading = true
         statusMessage = "Testing generate insight with auth..."
-        
+
         Task {
             do {
                 // Get auth token
@@ -113,19 +106,19 @@ struct DebugAPIView: View {
                     isLoading = false
                     return
                 }
-                
+
                 #if DEBUG
-                // 1️⃣  Print the full JWT so we can copy from the console
-                print("FULL_ID_TOKEN → \(token)")
+                    // 1️⃣  Print the full JWT so we can copy from the console
+                    print("FULL_ID_TOKEN → \(token)")
 
-                // 2️⃣  Copy to clipboard for CLI use
-                #if canImport(UIKit)
-                UIPasteboard.general.string = token
+                    // 2️⃣  Copy to clipboard for CLI use
+                    #if canImport(UIKit)
+                        UIPasteboard.general.string = token
+                    #endif
+
+                    print("✅ ID-token copied to clipboard (length: \(token.count))")
                 #endif
 
-                print("✅ ID-token copied to clipboard (length: \(token.count))")
-                #endif
-                
                 guard let url = URL(string: "\(AppConfig.apiBaseURL)/api/v1/insights/generate") else {
                     statusMessage = "Invalid URL configuration"
                     isLoading = false
@@ -135,7 +128,7 @@ struct DebugAPIView: View {
                 request.httpMethod = "POST"
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
+
                 // Test payload
                 let payload: [String: Any] = [
                     "analysis_results": ["test": "data"],
@@ -144,11 +137,11 @@ struct DebugAPIView: View {
                     "include_recommendations": false,
                     "language": "en",
                 ]
-                
+
                 request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-                
+
                 let (data, response) = try await URLSession.shared.data(for: request)
-                
+
                 if let httpResponse = response as? HTTPURLResponse {
                     let responseStr = String(data: data, encoding: .utf8) ?? "No response body"
                     statusMessage = "Generate insight: \(httpResponse.statusCode)\n\(responseStr)"
@@ -159,28 +152,28 @@ struct DebugAPIView: View {
             isLoading = false
         }
     }
-    
+
     private func showCurrentToken() {
         isLoading = true
         statusMessage = "Getting current token..."
-        
+
         Task {
             if let token = try? await authService.getCurrentUserToken() {
                 // Show first and last 10 chars for security
                 let start = token.prefix(10)
                 let end = token.suffix(10)
                 statusMessage = "Token: \(start)...\(end)\nLength: \(token.count)"
-                
+
                 #if DEBUG
-                // 1️⃣  Print the full JWT so we can copy from the console
-                print("FULL_ID_TOKEN → \(token)")
+                    // 1️⃣  Print the full JWT so we can copy from the console
+                    print("FULL_ID_TOKEN → \(token)")
 
-                // 2️⃣  Copy to clipboard for CLI use
-                #if canImport(UIKit)
-                UIPasteboard.general.string = token
-                #endif
+                    // 2️⃣  Copy to clipboard for CLI use
+                    #if canImport(UIKit)
+                        UIPasteboard.general.string = token
+                    #endif
 
-                print("✅ ID-token copied to clipboard (length: \(token.count))")
+                    print("✅ ID-token copied to clipboard (length: \(token.count))")
                 #endif
             } else {
                 statusMessage = "No token available - user not logged in?"
@@ -197,7 +190,7 @@ struct DebugAPIView: View {
     ) else {
         return Text("Failed to create preview client")
     }
-    
+
     return DebugAPIView()
         .environment(\.authService, AuthService(apiClient: previewAPIClient))
 }

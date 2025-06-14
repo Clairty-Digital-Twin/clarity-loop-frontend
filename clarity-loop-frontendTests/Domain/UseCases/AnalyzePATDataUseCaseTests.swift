@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class AnalyzePATDataUseCaseTests: XCTestCase {
-
     var analyzePATDataUseCase: AnalyzePATDataUseCase!
     // TODO: Add mocks for repository dependencies
 
@@ -32,4 +31,4 @@ final class AnalyzePATDataUseCaseTests: XCTestCase {
         // TODO: Mock repositories to return empty data
         XCTFail("Test not implemented.")
     }
-} 
+}

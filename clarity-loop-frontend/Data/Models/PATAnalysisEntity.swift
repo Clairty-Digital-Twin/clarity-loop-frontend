@@ -38,5 +38,4 @@ final class PATAnalysisEntity {
         self.activityEmbedding = activityEmbedding
         self.lastSyncedAt = lastSyncedAt
     }
-} 
- 
+}

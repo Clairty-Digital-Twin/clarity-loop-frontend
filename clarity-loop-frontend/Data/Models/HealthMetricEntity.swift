@@ -15,6 +15,7 @@ final class HealthMetricEntity {
     var date: Date
 
     // MARK: - Biometric Fields
+
     var heartRate: Double?
     var systolicBP: Int?
     var diastolicBP: Int?
@@ -25,12 +26,14 @@ final class HealthMetricEntity {
     var bloodGlucose: Double?
 
     // MARK: - Sleep Fields
+
     var totalSleepMinutes: Int?
     var sleepEfficiency: Double?
     var sleepStart: Date?
     var sleepEnd: Date?
 
     // MARK: - Activity Fields
+
     var steps: Int?
     var distance: Double?
     var activeEnergy: Double?
@@ -41,6 +44,7 @@ final class HealthMetricEntity {
     var restingHeartRate: Double?
 
     // MARK: - Mental Health Fields
+
     var moodScore: String?
     var stressLevel: Double?
     var anxietyLevel: Double?
@@ -50,6 +54,7 @@ final class HealthMetricEntity {
     var meditationMinutes: Int?
 
     // MARK: - Metadata
+
     /// The identifier for the source device.
     var deviceId: String?
 
@@ -58,7 +63,7 @@ final class HealthMetricEntity {
 
     /// A local-only timestamp indicating when this record was last synced.
     var lastSyncedAt: Date
-    
+
     init(
         id: UUID,
         type: String,
@@ -70,5 +75,4 @@ final class HealthMetricEntity {
         self.date = date
         self.lastSyncedAt = lastSyncedAt
     }
-} 
- 
+}

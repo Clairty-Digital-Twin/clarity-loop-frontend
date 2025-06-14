@@ -13,10 +13,10 @@ let project = Project(
                 "NSHealthShareUsageDescription": "CLARITY Pulse reads your health data to provide personalized health insights.",
                 "NSHealthUpdateUsageDescription": "CLARITY Pulse updates your health records to sync wellness data.",
                 "UIBackgroundModes": ["fetch", "processing"],
-                "NSFaceIDUsageDescription": "CLARITY Pulse uses Face ID to securely access your health data."
+                "NSFaceIDUsageDescription": "CLARITY Pulse uses Face ID to securely access your health data.",
             ]),
             sources: ["clarity-loop-frontend/**"],
             resources: ["clarity-loop-frontend/Resources/**"]
-        )
+        ),
     ]
 )

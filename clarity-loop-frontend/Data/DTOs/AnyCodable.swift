@@ -7,7 +7,7 @@ import Foundation
 struct AnyCodable: Codable, Equatable {
     let value: Any
 
-    init<T>(_ value: T?) {
+    init(_ value: (some Any)?) {
         self.value = value ?? ()
     }
 
@@ -25,11 +25,14 @@ struct AnyCodable: Codable, Equatable {
         } else if let string = try? container.decode(String.self) {
             self.value = string
         } else if let array = try? container.decode([AnyCodable].self) {
-            self.value = array.map { $0.value }
+            self.value = array.map(\.value)
         } else if let dictionary = try? container.decode([String: AnyCodable].self) {
             self.value = dictionary.mapValues { $0.value }
         } else {
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "AnyCodable value cannot be decoded")
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "AnyCodable value cannot be decoded"
+            )
         }
     }
 
@@ -52,32 +55,37 @@ struct AnyCodable: Codable, Equatable {
         case let dictionary as [String: Any]:
             try container.encode(dictionary.mapValues { AnyCodable($0) })
         default:
-            throw EncodingError.invalidValue(value, EncodingError.Context(codingPath: container.codingPath, debugDescription: "AnyCodable value cannot be encoded"))
+            throw EncodingError.invalidValue(
+                value,
+                EncodingError.Context(
+                    codingPath: container.codingPath,
+                    debugDescription: "AnyCodable value cannot be encoded"
+                )
+            )
         }
     }
-    
+
     static func == (lhs: AnyCodable, rhs: AnyCodable) -> Bool {
         switch (lhs.value, rhs.value) {
         case (is Void, is Void):
-            return true
-        case (let lhs as Bool, let rhs as Bool):
-            return lhs == rhs
-        case (let lhs as Int, let rhs as Int):
-            return lhs == rhs
-        case (let lhs as Double, let rhs as Double):
-            return lhs == rhs
-        case (let lhs as String, let rhs as String):
-            return lhs == rhs
-        case (let lhs as [Any], let rhs as [Any]):
-            return lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { AnyCodable($0) == AnyCodable($1) }
-        case (let lhs as [String: Any], let rhs as [String: Any]):
-            return lhs.count == rhs.count && lhs.keys.allSatisfy { key in
+            true
+        case let (lhs as Bool, rhs as Bool):
+            lhs == rhs
+        case let (lhs as Int, rhs as Int):
+            lhs == rhs
+        case let (lhs as Double, rhs as Double):
+            lhs == rhs
+        case let (lhs as String, rhs as String):
+            lhs == rhs
+        case let (lhs as [Any], rhs as [Any]):
+            lhs.count == rhs.count && zip(lhs, rhs).allSatisfy { AnyCodable($0) == AnyCodable($1) }
+        case let (lhs as [String: Any], rhs as [String: Any]):
+            lhs.count == rhs.count && lhs.keys.allSatisfy { key in
                 guard let rhsValue = rhs[key] else { return false }
                 return AnyCodable(lhs[key]) == AnyCodable(rhsValue)
             }
         default:
-            return false
+            false
         }
     }
-} 
- 
+}

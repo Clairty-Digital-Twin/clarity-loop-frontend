@@ -1,14 +1,6 @@
-//
-//  clarity_loop_frontendUITestsLaunchTests.swift
-//  clarity-loop-frontendUITests
-//
-//  Created by Raymond Jung on 6/6/25.
-//
-
 import XCTest
 
 final class clarity_loop_frontendUITestsLaunchTests: XCTestCase {
-
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }

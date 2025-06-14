@@ -1,8 +1,7 @@
-import XCTest
 @testable import clarity_loop_frontend
+import XCTest
 
 final class RemoteInsightsRepositoryTests: XCTestCase {
-
     var insightsRepository: RemoteInsightsRepository!
     var mockAPIClient: MockAPIClient!
 
@@ -49,13 +48,13 @@ final class RemoteInsightsRepositoryTests: XCTestCase {
         // Given
         mockAPIClient.shouldSucceed = true
         // You might need to configure your mock to return an empty array specifically
-        
+
         // When
         let insights = try await insightsRepository.getInsightHistory(userId: "test", limit: 10, offset: 0)
-        
+
         // Then
         XCTAssertNotNil(insights)
         XCTAssertTrue(insights.success)
         XCTAssertTrue(insights.data.insights.isEmpty)
     }
-} 
+}
