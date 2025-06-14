@@ -34,7 +34,9 @@ struct ClarityPulseApp: App {
     
     init() {
         // Initialize the BackendAPIClient with proper token provider
-        guard let client = BackendAPIClient(tokenProvider: {
+        // Use safe fallback for background launch compatibility
+        let client: APIClientProtocol
+        if let backendClient = BackendAPIClient(tokenProvider: {
             print("🔍 APP: Token provider called")
             
             // Use TokenManager directly for backend-centric auth
@@ -59,8 +61,12 @@ struct ClarityPulseApp: App {
             }
             
             return token
-        }) else {
-            fatalError("Failed to initialize BackendAPIClient with a valid URL.")
+        }) {
+            client = backendClient
+        } else {
+            print("⚠️ APP: Failed to initialize BackendAPIClient, using fallback DummyAPIClient")
+            // Fallback to dummy client instead of crashing
+            client = DummyAPIClient()
         }
         
         self.apiClient = client
@@ -114,31 +120,52 @@ struct ClarityPulseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(authViewModel)
-                .environment(\.authService, authService)
-                .environment(\.healthKitService, healthKitService)
-                .environment(\.apiClient, apiClient)
-                .environment(\.insightsRepository, insightsRepository)
-                .environment(\.healthDataRepository, healthDataRepository)
-                .modelContainer(PersistenceController.shared.container)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-                    // Schedule background tasks when app enters background
-                    backgroundTaskManager.scheduleHealthDataSync()
-                    backgroundTaskManager.scheduleAppRefresh()
-                }
-                .onChange(of: authViewModel.isLoggedIn) { _, newValue in
-                    // Update service locator with current user ID
-                    if newValue {
-                        Task {
-                            if let currentUser = await authService.currentUser {
-                                ServiceLocator.shared.currentUserId = currentUser.id
-                            }
-                        }
-                    } else {
-                        ServiceLocator.shared.currentUserId = nil
-                    }
-                }
+            AppRootView(
+                authService: authService,
+                backgroundTaskManager: backgroundTaskManager
+            )
+            .onAppear {
+                print("🔥 APP ROOT APPEARED")
+                print("🔥 ENVIRONMENT AVAILABLE: AuthService type = \(type(of: authService))")
+            }
+            .modelContainer(PersistenceController.shared.container)
+            .environment(authViewModel)
+            .environment(\.authService, authService)
+            .environment(\.healthKitService, healthKitService)
+            .environment(\.apiClient, apiClient)
+            .environment(\.insightsRepository, insightsRepository)
+            .environment(\.healthDataRepository, healthDataRepository)
         }
     }
 }
+
+// MARK: - App Root View with Lifecycle Management
+
+private struct AppRootView: View {
+    let authService: AuthServiceProtocol
+    let backgroundTaskManager: BackgroundTaskManagerProtocol
+    
+    @Environment(AuthViewModel.self) private var authViewModel
+    
+    var body: some View {
+        ContentView()
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+                // Schedule background tasks when app enters background
+                backgroundTaskManager.scheduleHealthDataSync()
+                backgroundTaskManager.scheduleAppRefresh()
+            }
+            .onChange(of: authViewModel.isLoggedIn) { _, newValue in
+                // Update service locator with current user ID
+                if newValue {
+                    Task {
+                        if let currentUser = await authService.currentUser {
+                            ServiceLocator.shared.currentUserId = currentUser.id
+                        }
+                    }
+                } else {
+                    ServiceLocator.shared.currentUserId = nil
+                }
+            }
+    }
+}
+

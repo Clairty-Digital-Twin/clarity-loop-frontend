@@ -24,9 +24,21 @@ final class PersistenceController {
 
         do {
             container = try ModelContainer(for: schema, configurations: [config])
+            print("✅ PersistenceController: SwiftData container initialized successfully")
         } catch {
-            // If the container fails to initialize, it's a critical, non-recoverable error.
-            fatalError("Could not configure the model container: \(error)")
+            // During background launch, SwiftData may fail to initialize
+            // Create an in-memory fallback to prevent app crash
+            print("⚠️ PersistenceController: SwiftData container failed, using in-memory fallback: \(error)")
+            
+            let fallbackConfig = ModelConfiguration("ClarityPulseFallbackDB", schema: schema, isStoredInMemoryOnly: true)
+            do {
+                container = try ModelContainer(for: schema, configurations: [fallbackConfig])
+                print("✅ PersistenceController: In-memory fallback container created")
+            } catch {
+                // If even in-memory fails, create minimal container without persistent storage
+                print("🚨 PersistenceController: Even in-memory failed, creating minimal container")
+                container = try! ModelContainer(for: schema, configurations: [])
+            }
         }
     }
 } 
