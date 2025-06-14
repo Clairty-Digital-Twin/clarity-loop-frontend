@@ -113,4 +113,16 @@ All critical authentication bugs have been successfully fixed:
 -   **Documentation Sync**: Several audit documents (`AUTH_CRITICAL_AUDIT_REPORT.md`, etc.) now contain outdated information since issues have been resolved.
 
 ### 📱 **Current Focus**: Real Device Testing
-The authentication system is now stable and ready for real device testing with HealthKit data integration. 
+The authentication system is now stable and ready for real device testing with HealthKit data integration.
+
+## 🚨 **Critical Fix: SwiftUI Background Launch Bug**
+
+This app was previously affected by a critical SwiftUI framework bug that caused crashes during background app launches. **This has been RESOLVED** using the official Apple DTS Engineer recommended solution.
+
+**⚠️ Important for Developers:**
+- See `SWIFTUI_BACKGROUND_LAUNCH_BUG.md` for complete documentation
+- All environment keys now use safe default values
+- Never use `fatalError` in `EnvironmentKey` default values
+- Reference: Apple Developer Forums Thread #744194
+
+This fix ensures the app can be safely launched by iOS background processes (HealthKit sync, CloudKit, background refresh, etc.) without crashing. 

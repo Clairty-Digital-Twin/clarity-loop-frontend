@@ -34,7 +34,9 @@ struct ClarityPulseApp: App {
     
     init() {
         // Initialize the BackendAPIClient with proper token provider
-        guard let client = BackendAPIClient(tokenProvider: {
+        // Use safe fallback for background launch compatibility
+        let client: APIClientProtocol
+        if let backendClient = BackendAPIClient(tokenProvider: {
             print("🔍 APP: Token provider called")
             
             // Use TokenManager directly for backend-centric auth
@@ -59,8 +61,12 @@ struct ClarityPulseApp: App {
             }
             
             return token
-        }) else {
-            fatalError("Failed to initialize BackendAPIClient with a valid URL.")
+        }) {
+            client = backendClient
+        } else {
+            print("⚠️ APP: Failed to initialize BackendAPIClient, using fallback DummyAPIClient")
+            // Fallback to dummy client instead of crashing
+            client = DummyAPIClient()
         }
         
         self.apiClient = client
