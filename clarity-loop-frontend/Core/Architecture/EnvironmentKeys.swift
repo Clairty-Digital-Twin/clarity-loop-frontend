@@ -11,16 +11,10 @@ import SwiftUI
 // MARK: - Shared Token Provider
 
 /// Shared token provider for default environment values
-/// This ensures that even default/fallback environment values can authenticate
+/// Returns nil to avoid early TokenManager access during environment setup
 private let defaultTokenProvider: () async -> String? = {
-    // Use TokenManager directly instead of TokenManagementService to avoid circular dependency
-    let token = await TokenManager.shared.getAccessToken()
-    if token != nil {
-        print("✅ Default environment: Token obtained from TokenManager")
-    } else {
-        print("⚠️ Default environment: No token available")
-    }
-    return token
+    print("⚠️ Default environment: Using fallback tokenProvider (no authentication)")
+    return nil // Don't access TokenManager.shared during environment setup!
 }
 
 // MARK: - AuthService
@@ -28,7 +22,7 @@ private let defaultTokenProvider: () async -> String? = {
 /// The key for accessing the `AuthServiceProtocol` in the SwiftUI Environment.
 private struct AuthServiceKey: EnvironmentKey {
     typealias Value = AuthServiceProtocol?
-    static let defaultValue: AuthServiceProtocol? = nil // Make it optional!
+    static let defaultValue: AuthServiceProtocol? = nil
 }
 
 /// The key for accessing the `AuthViewModel` in the SwiftUI Environment.
