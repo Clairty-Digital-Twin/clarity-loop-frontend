@@ -31,10 +31,7 @@ import SwiftUI
 
 /// Safe fallback AuthService for background app launches  
 /// Implements all AuthServiceProtocol methods with safe no-op behavior
-/// Note: Uses nonisolated(unsafe) to bypass MainActor for environment key creation
 private final class DummyAuthService: AuthServiceProtocol {
-    
-    nonisolated(unsafe) init() {}
     
     /// Safe fallback auth state that emits nil user
     lazy var authState: AsyncStream<AuthUser?> = {
@@ -502,7 +499,23 @@ private let defaultTokenProvider: () async -> String? = {
 /// Uses safe default implementation to prevent background launch crashes.
 private struct AuthServiceKey: EnvironmentKey {
     typealias Value = AuthServiceProtocol
-    static let defaultValue: AuthServiceProtocol = DummyAuthService()
+    static var defaultValue: AuthServiceProtocol {
+        // Use lazy initialization to bypass MainActor restrictions during static initialization
+        class Container {
+            @MainActor
+            static let instance = DummyAuthService()
+        }
+        // Return the instance wrapped in an unsafe sendable wrapper
+        return UnsafeWrapper(Container.instance).value
+    }
+}
+
+/// Wrapper to safely pass MainActor instances across isolation boundaries
+private struct UnsafeWrapper<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) {
+        self.value = value
+    }
 }
 
 /// The key for accessing the `AuthViewModel` in the SwiftUI Environment.

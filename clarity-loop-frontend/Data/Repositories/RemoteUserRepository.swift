@@ -21,7 +21,19 @@ class RemoteUserRepository: UserRepositoryProtocol {
         // TODO: Add API endpoint for getting user profile
         print("⚠️ RemoteUserRepository: getCurrentUserProfile not implemented, returning dummy profile")
         // Return dummy profile to prevent crash during development
-        return UserProfile(id: "dummy-user", email: "dummy@example.com", firstName: "Dummy", lastName: "User")
+        return UserProfile(
+            id: UUID(),
+            email: "dummy@example.com",
+            firstName: "Dummy",
+            lastName: "User",
+            role: "user",
+            permissions: [],
+            status: "active",
+            emailVerified: false,
+            mfaEnabled: false,
+            createdAt: Date(),
+            lastLogin: nil
+        )
     }
     
     func updateUserProfile(_ profile: UserProfile) async throws -> UserProfile {
