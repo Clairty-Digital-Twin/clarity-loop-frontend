@@ -500,21 +500,9 @@ private let defaultTokenProvider: () async -> String? = {
 private struct AuthServiceKey: EnvironmentKey {
     typealias Value = AuthServiceProtocol
     static var defaultValue: AuthServiceProtocol {
-        // Use lazy initialization to bypass MainActor restrictions during static initialization
-        class Container {
-            @MainActor
-            static let instance = DummyAuthService()
-        }
-        // Return the instance wrapped in an unsafe sendable wrapper
-        return UnsafeWrapper(Container.instance).value
-    }
-}
-
-/// Wrapper to safely pass MainActor instances across isolation boundaries
-private struct UnsafeWrapper<T>: @unchecked Sendable {
-    let value: T
-    init(_ value: T) {
-        self.value = value
+        // Use a non-MainActor dummy service for background launches
+        // This avoids Swift 6 concurrency warnings and background launch crashes
+        return DummyAuthService()
     }
 }
 

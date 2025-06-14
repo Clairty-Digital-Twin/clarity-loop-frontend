@@ -129,13 +129,13 @@ struct ClarityPulseApp: App {
                 print("🔥 ENVIRONMENT AVAILABLE: AuthService type = \(type(of: authService))")
             }
             .modelContainer(PersistenceController.shared.container)
+            .environment(authViewModel)
+            .environment(\.authService, authService)
+            .environment(\.healthKitService, healthKitService)
+            .environment(\.apiClient, apiClient)
+            .environment(\.insightsRepository, insightsRepository)
+            .environment(\.healthDataRepository, healthDataRepository)
         }
-        .environment(authViewModel)
-        .environment(\.authService, authService)
-        .environment(\.healthKitService, healthKitService)
-        .environment(\.apiClient, apiClient)
-        .environment(\.insightsRepository, insightsRepository)
-        .environment(\.healthDataRepository, healthDataRepository)
     }
 }
 
