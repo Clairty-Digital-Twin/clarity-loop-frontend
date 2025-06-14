@@ -501,9 +501,11 @@ private let defaultTokenProvider: () async -> String? = {
 private struct AuthServiceKey: EnvironmentKey {
     typealias Value = AuthServiceProtocol
     static var defaultValue: AuthServiceProtocol {
-        // Use a non-MainActor dummy service for background launches
-        // This avoids Swift 6 concurrency warnings and background launch crashes
-        return DummyAuthService()
+        // Use MainActor.assumeIsolated to create dummy service for background launches
+        // This works around Swift 6 concurrency warnings while preventing crashes
+        return MainActor.assumeIsolated {
+            DummyAuthService()
+        }
     }
 }
 
