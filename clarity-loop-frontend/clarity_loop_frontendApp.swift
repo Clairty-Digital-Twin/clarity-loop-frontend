@@ -114,29 +114,15 @@ struct ClarityPulseApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .onAppear {
-                    print("🔥 CONTENTVIEW APPEARED")
-                    print("🔥 ENVIRONMENT AVAILABLE: AuthService type = \(type(of: authService))")
-                }
-                .modelContainer(PersistenceController.shared.container)
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-                    // Schedule background tasks when app enters background
-                    backgroundTaskManager.scheduleHealthDataSync()
-                    backgroundTaskManager.scheduleAppRefresh()
-                }
-                .onChange(of: authViewModel.isLoggedIn) { _, newValue in
-                    // Update service locator with current user ID
-                    if newValue {
-                        Task {
-                            if let currentUser = await authService.currentUser {
-                                ServiceLocator.shared.currentUserId = currentUser.id
-                            }
-                        }
-                    } else {
-                        ServiceLocator.shared.currentUserId = nil
-                    }
-                }
+            AppRootView(
+                authService: authService,
+                backgroundTaskManager: backgroundTaskManager
+            )
+            .onAppear {
+                print("🔥 APP ROOT APPEARED")
+                print("🔥 ENVIRONMENT AVAILABLE: AuthService type = \(type(of: authService))")
+            }
+            .modelContainer(PersistenceController.shared.container)
         }
         .environment(authViewModel)
         .environment(\.authService, authService)
@@ -144,5 +130,35 @@ struct ClarityPulseApp: App {
         .environment(\.apiClient, apiClient)
         .environment(\.insightsRepository, insightsRepository)
         .environment(\.healthDataRepository, healthDataRepository)
+    }
+}
+
+// MARK: - App Root View with Lifecycle Management
+
+private struct AppRootView: View {
+    let authService: AuthServiceProtocol
+    let backgroundTaskManager: BackgroundTaskManagerProtocol
+    
+    @Environment(AuthViewModel.self) private var authViewModel
+    
+    var body: some View {
+        ContentView()
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+                // Schedule background tasks when app enters background
+                backgroundTaskManager.scheduleHealthDataSync()
+                backgroundTaskManager.scheduleAppRefresh()
+            }
+            .onChange(of: authViewModel.isLoggedIn) { _, newValue in
+                // Update service locator with current user ID
+                if newValue {
+                    Task {
+                        if let currentUser = await authService.currentUser {
+                            ServiceLocator.shared.currentUserId = currentUser.id
+                        }
+                    }
+                } else {
+                    ServiceLocator.shared.currentUserId = nil
+                }
+            }
     }
 }
