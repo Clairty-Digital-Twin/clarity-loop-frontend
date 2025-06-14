@@ -183,4 +183,4 @@ tasks/
 # PRODUCTION: Test and debug files that might contain sensitive data
 test-auth.sh
 debug-*.json
-staging-config.json 
+staging-config.json .cursor/mcp.json
