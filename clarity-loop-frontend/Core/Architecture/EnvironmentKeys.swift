@@ -33,75 +33,30 @@ struct AuthViewModelKey: EnvironmentKey {
 }
 
 private struct APIClientKey: EnvironmentKey {
-    typealias Value = APIClientProtocol
-    static let defaultValue: APIClientProtocol = {
-        guard let client = BackendAPIClient(
-            baseURLString: AppConfig.apiBaseURL,
-            tokenProvider: defaultTokenProvider
-        ) else {
-            fatalError("Failed to create default APIClient")
-        }
-        return client
-    }()
+    typealias Value = APIClientProtocol?
+    static let defaultValue: APIClientProtocol? = nil
 }
 
 // MARK: - Repository Protocols
 
 private struct HealthDataRepositoryKey: EnvironmentKey {
-    typealias Value = HealthDataRepositoryProtocol
-    // Use real implementation since mocks are maintained in test target only
-    static let defaultValue: HealthDataRepositoryProtocol = {
-        guard let client = BackendAPIClient(
-            baseURLString: AppConfig.apiBaseURL,
-            tokenProvider: defaultTokenProvider
-        ) else {
-            fatalError("Failed to create default APIClient for HealthDataRepository")
-        }
-        return RemoteHealthDataRepository(apiClient: client)
-    }()
+    typealias Value = HealthDataRepositoryProtocol?
+    static let defaultValue: HealthDataRepositoryProtocol? = nil
 }
 
 private struct InsightsRepositoryKey: EnvironmentKey {
-    typealias Value = InsightsRepositoryProtocol
-    static let defaultValue: InsightsRepositoryProtocol = {
-        guard let client = BackendAPIClient(
-            baseURLString: AppConfig.apiBaseURL,
-            tokenProvider: defaultTokenProvider
-        ) else {
-            fatalError("Failed to create default APIClient for InsightsRepository")
-        }
-        return RemoteInsightsRepository(apiClient: client)
-    }()
+    typealias Value = InsightsRepositoryProtocol?
+    static let defaultValue: InsightsRepositoryProtocol? = nil
 }
 
 private struct UserRepositoryKey: EnvironmentKey {
-    typealias Value = UserRepositoryProtocol
-    static let defaultValue: UserRepositoryProtocol = {
-        guard let client = BackendAPIClient(
-            baseURLString: AppConfig.apiBaseURL,
-            tokenProvider: defaultTokenProvider
-        ) else {
-            fatalError("Failed to create default APIClient for UserRepository")
-        }
-        return RemoteUserRepository(apiClient: client)
-    }()
+    typealias Value = UserRepositoryProtocol?
+    static let defaultValue: UserRepositoryProtocol? = nil
 }
 
 private struct HealthKitServiceKey: EnvironmentKey {
-    typealias Value = HealthKitServiceProtocol
-    static let defaultValue: HealthKitServiceProtocol = {
-        let defaultAPIClient: APIClientProtocol = {
-            guard let client = BackendAPIClient(
-                baseURLString: AppConfig.apiBaseURL,
-                tokenProvider: defaultTokenProvider
-            ) else {
-                fatalError("Failed to create default APIClient for HealthKitService")
-            }
-            return client
-        }()
-        
-        return HealthKitService(apiClient: defaultAPIClient)
-    }()
+    typealias Value = HealthKitServiceProtocol?
+    static let defaultValue: HealthKitServiceProtocol? = nil
 }
 
 // Security services will be added later when protocols are defined
@@ -115,8 +70,9 @@ extension EnvironmentValues {
             } else {
                 print("🚨 AuthService accessed before injection!")
                 print("🔍 Call stack:")
-                Thread.callStackSymbols.prefix(5).forEach { print("   \($0)") }
-                fatalError("AuthService must be explicitly injected into the environment. Inject it in your App struct using .environment(\\.authService, authServiceInstance)")
+                Thread.callStackSymbols.prefix(10).forEach { print("   \($0)") }
+                
+                fatalError("AuthService accessed before injection - see call stack above for culprit")
             }
         }
         set { self[AuthServiceKey.self] = newValue }
@@ -129,27 +85,52 @@ extension EnvironmentValues {
     }
     
     var healthDataRepository: HealthDataRepositoryProtocol {
-        get { self[HealthDataRepositoryKey.self] }
+        get { 
+            guard let repo = self[HealthDataRepositoryKey.self] else {
+                fatalError("HealthDataRepository must be injected")
+            }
+            return repo
+        }
         set { self[HealthDataRepositoryKey.self] = newValue }
     }
     
     var insightsRepository: InsightsRepositoryProtocol {
-        get { self[InsightsRepositoryKey.self] }
+        get { 
+            guard let repo = self[InsightsRepositoryKey.self] else {
+                fatalError("InsightsRepository must be injected")
+            }
+            return repo
+        }
         set { self[InsightsRepositoryKey.self] = newValue }
     }
     
     var userRepository: UserRepositoryProtocol {
-        get { self[UserRepositoryKey.self] }
+        get { 
+            guard let repo = self[UserRepositoryKey.self] else {
+                fatalError("UserRepository must be injected")
+            }
+            return repo
+        }
         set { self[UserRepositoryKey.self] = newValue }
     }
     
     var healthKitService: HealthKitServiceProtocol {
-        get { self[HealthKitServiceKey.self] }
+        get { 
+            guard let service = self[HealthKitServiceKey.self] else {
+                fatalError("HealthKitService must be injected")
+            }
+            return service
+        }
         set { self[HealthKitServiceKey.self] = newValue }
     }
     
     var apiClient: APIClientProtocol {
-        get { self[APIClientKey.self] }
+        get { 
+            guard let client = self[APIClientKey.self] else {
+                fatalError("APIClient must be injected")
+            }
+            return client
+        }
         set { self[APIClientKey.self] = newValue }
     }
 }
