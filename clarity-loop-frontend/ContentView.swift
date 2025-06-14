@@ -9,21 +9,15 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AuthViewModel.self) private var authViewModel
+    @Environment(\.authService) private var authService
 
     var body: some View {
-        VStack {
-            Text("🎉 CLARITY PULSE")
-                .font(.largeTitle)
-                .padding()
-            
-            if authViewModel.isLoggedIn {
-                Text("✅ User is logged in!")
-                    .foregroundColor(.green)
-                // MainTabView() // Commented out to avoid healthDataRepository access
-            } else {
-                Text("❌ User not logged in")
-                    .foregroundColor(.orange)
-                // LoginView would go here but commenting out to test auth only
+        if authViewModel.isLoggedIn {
+            MainTabView()
+        } else {
+            // The LoginView should be wrapped in a NavigationStack for proper UI flow.
+            NavigationStack {
+                LoginView(viewModel: LoginViewModel(authService: authService))
             }
         }
     }
