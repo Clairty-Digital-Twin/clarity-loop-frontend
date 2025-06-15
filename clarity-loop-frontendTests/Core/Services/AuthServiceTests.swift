@@ -150,6 +150,7 @@ final class AuthServiceTests: XCTestCase {
 
     func testLogin_Failure() async throws {
         // Given
+        authService = MockAuthService()
         authService.shouldSucceed = false
 
         // When/Then
