@@ -72,6 +72,18 @@ private final class DummyAuthService: AuthServiceProtocol {
         print("⚠️ DummyAuthService: getCurrentUserToken called during background launch")
         throw AuthenticationError.configurationError
     }
+
+    /// Safe no-op email verification for background launch
+    func verifyEmail(code: String) async throws {
+        print("⚠️ DummyAuthService: verifyEmail called during background launch")
+        throw AuthenticationError.configurationError
+    }
+
+    /// Safe no-op resend verification for background launch
+    func resendVerificationEmail(to email: String) async throws {
+        print("⚠️ DummyAuthService: resendVerificationEmail called during background launch")
+        throw AuthenticationError.configurationError
+    }
 }
 
 /// Safe fallback implementation for background app launches
