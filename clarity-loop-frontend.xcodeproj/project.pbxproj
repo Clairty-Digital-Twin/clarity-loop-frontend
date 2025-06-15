@@ -95,6 +95,8 @@
 				Features/Analysis/PATAnalysisView.swift = (ios, );
 				Features/Analysis/PATAnalysisViewModel.swift = (ios, );
 				Features/Authentication/AuthViewModel.swift = (ios, );
+				Features/Authentication/EmailVerificationView.swift = (ios, );
+				Features/Authentication/EmailVerificationViewModel.swift = (ios, );
 				Features/Authentication/LoginView.swift = (ios, );
 				Features/Authentication/LoginViewModel.swift = (ios, );
 				Features/Authentication/OnboardingView.swift = (ios, );
