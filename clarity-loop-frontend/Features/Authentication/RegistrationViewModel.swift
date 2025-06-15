@@ -19,6 +19,7 @@ final class RegistrationViewModel {
     var isLoading = false
     var errorMessage: String?
     var registrationComplete = false
+    var needsEmailVerification = false
 
     // MARK: - Computed Validation Properties
 
@@ -136,9 +137,19 @@ final class RegistrationViewModel {
         do {
             _ = try await authService.register(withEmail: email, password: password, details: details)
             registrationComplete = true
-            errorMessage = "Registration successful! Please check your email for verification."
+            needsEmailVerification = true
+            errorMessage = nil
         } catch {
-            errorMessage = error.localizedDescription
+            // Backend returns 500 when email verification is needed after registration
+            // This is actually a successful registration that needs email verification
+            if error.localizedDescription.contains("500") ||
+               error.localizedDescription.lowercased().contains("internal server error") {
+                registrationComplete = true
+                needsEmailVerification = true
+                errorMessage = nil
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false

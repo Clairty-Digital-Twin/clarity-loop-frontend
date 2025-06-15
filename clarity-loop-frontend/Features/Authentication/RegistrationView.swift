@@ -8,6 +8,7 @@ struct RegistrationView: View {
     // MARK: - State
 
     @State private var viewModel: RegistrationViewModel
+    @State private var showEmailVerification = false
 
     // MARK: - Initializer
 
@@ -103,6 +104,17 @@ struct RegistrationView: View {
         }
         .padding()
         .navigationTitle("Register")
+        .navigationDestination(isPresented: $showEmailVerification) {
+            EmailVerificationView(
+                email: viewModel.email,
+                password: viewModel.password
+            )
+        }
+        .onChange(of: viewModel.needsEmailVerification) { _, needsVerification in
+            if needsVerification {
+                showEmailVerification = true
+            }
+        }
     }
 }
 

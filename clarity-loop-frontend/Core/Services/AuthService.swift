@@ -32,6 +32,12 @@ protocol AuthServiceProtocol {
 
     /// Retrieves a fresh JWT for the current user.
     func getCurrentUserToken() async throws -> String
+
+    /// Verifies email with the provided code
+    func verifyEmail(code: String) async throws
+
+    /// Resends verification email
+    func resendVerificationEmail(to email: String) async throws
 }
 
 /// Specific errors for authentication operations
@@ -139,8 +145,7 @@ final class AuthService: AuthServiceProtocol {
     }
 
     func register(withEmail email: String, password: String,
-                  details: UserRegistrationRequestDTO) async throws -> RegistrationResponseDTO
-    {
+                  details: UserRegistrationRequestDTO) async throws -> RegistrationResponseDTO {
         do {
             // FIXED: Register only through backend
             // let fullName = "\(details.firstName) \(details.lastName)"
@@ -196,6 +201,26 @@ final class AuthService: AuthServiceProtocol {
         #endif
 
         return token
+    }
+
+    func verifyEmail(code: String) async throws {
+        // Call backend verify-email endpoint
+        let verifyDTO = EmailVerificationRequestDTO(
+            verificationCode: code,
+            email: nil // Email is optional, backend tracks it via session
+        )
+
+        do {
+            _ = try await apiClient.verifyEmail(code: code)
+            // Email verified successfully
+        } catch {
+            throw mapCognitoError(error)
+        }
+    }
+
+    func resendVerificationEmail(to email: String) async throws {
+        // Backend doesn't have a resend endpoint yet, throw appropriate error
+        throw AuthenticationError.unknown("Resend verification not yet implemented")
     }
 
     // MARK: - Private Error Mapping
