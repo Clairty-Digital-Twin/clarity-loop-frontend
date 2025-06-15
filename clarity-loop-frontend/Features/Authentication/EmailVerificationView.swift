@@ -5,11 +5,11 @@ struct EmailVerificationView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedIndex: Int?
     
-    init(email: String, password: String) {
+    init(email: String, password: String, authService: AuthServiceProtocol) {
         _viewModel = StateObject(wrappedValue: EmailVerificationViewModel(
             email: email,
             password: password,
-            authService: ServiceContainer.shared.authService
+            authService: authService
         ))
     }
     
@@ -193,5 +193,16 @@ struct ShakeEffect: GeometryEffect {
 }
 
 #Preview {
-    EmailVerificationView(email: "test@example.com", password: "TestPass123!")
+    guard let previewAPIClient = APIClient(
+        baseURLString: AppConfig.previewAPIBaseURL,
+        tokenProvider: { nil }
+    ) else {
+        return Text("Failed to create preview client")
+    }
+    
+    return EmailVerificationView(
+        email: "test@example.com", 
+        password: "TestPass123!",
+        authService: AuthService(apiClient: previewAPIClient)
+    )
 }

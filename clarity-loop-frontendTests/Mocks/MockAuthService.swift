@@ -90,4 +90,18 @@ class MockAuthService: AuthServiceProtocol {
             throw APIError.unauthorized
         }
     }
+    
+    func verifyEmail(code: String) async throws {
+        if !shouldSucceed {
+            throw APIError.validationError("Invalid verification code")
+        }
+        // Success - no-op
+    }
+    
+    func resendVerificationEmail(to email: String) async throws {
+        if !shouldSucceed {
+            throw APIError.serverError(statusCode: 429, message: "Too many requests")
+        }
+        // Success - no-op
+    }
 }

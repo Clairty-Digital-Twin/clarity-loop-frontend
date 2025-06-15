@@ -9,10 +9,12 @@ struct RegistrationView: View {
 
     @State private var viewModel: RegistrationViewModel
     @State private var showEmailVerification = false
+    private let authService: AuthServiceProtocol
 
     // MARK: - Initializer
 
     init(authService: AuthServiceProtocol) {
+        self.authService = authService
         _viewModel = State(initialValue: RegistrationViewModel(authService: authService))
     }
 
@@ -107,7 +109,8 @@ struct RegistrationView: View {
         .navigationDestination(isPresented: $showEmailVerification) {
             EmailVerificationView(
                 email: viewModel.email,
-                password: viewModel.password
+                password: viewModel.password,
+                authService: authService
             )
         }
         .onChange(of: viewModel.needsEmailVerification) { _, needsVerification in

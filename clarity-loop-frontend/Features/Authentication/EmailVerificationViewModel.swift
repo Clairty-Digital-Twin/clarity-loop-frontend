@@ -3,19 +3,18 @@ import SwiftUI
 import Combine
 
 @MainActor
-@Observable
-final class EmailVerificationViewModel {
+final class EmailVerificationViewModel: ObservableObject {
     // MARK: - Properties
 
     let email: String
     private let password: String // Store password for auto-login after verification
-    var otpDigits: [String] = Array(repeating: "", count: 6)
+    @Published var otpDigits: [String] = Array(repeating: "", count: 6)
 
-    var isLoading = false
-    var errorMessage: String?
-    var hasError = false
-    var isVerified = false
-    var resendCooldown = 0
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    @Published var hasError = false
+    @Published var isVerified = false
+    @Published var resendCooldown = 0
 
     private let authService: AuthServiceProtocol
     private var resendTimer: Timer?
