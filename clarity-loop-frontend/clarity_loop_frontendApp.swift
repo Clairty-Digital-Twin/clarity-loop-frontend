@@ -11,6 +11,14 @@ import SwiftUI
 @main
 struct ClarityPulseApp: App {
     // MARK: - Properties
+    
+    /// Detects if running in test environment using runtime checks
+    private static var isRunningInTestEnvironment: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+        NSClassFromString("XCTestCase") != nil ||
+        Bundle.main.bundlePath.hasSuffix(".xctest") ||
+        ProcessInfo.processInfo.processName.contains("Test")
+    }
 
     // By using the @State property wrapper, we ensure that the AuthViewModel
     // is instantiated only once for the entire lifecycle of the app.
@@ -28,8 +36,10 @@ struct ClarityPulseApp: App {
     // MARK: - Initializer
 
     init() {
-        // Configure Amplify first, before any other initialization
-        AmplifyConfigurator.configure()
+        // Configure Amplify, but skip during test execution to prevent crashes
+        if !Self.isRunningInTestEnvironment {
+            AmplifyConfigurator.configure()
+        }
         
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
@@ -37,6 +47,12 @@ struct ClarityPulseApp: App {
         if
             let backendClient = BackendAPIClient(tokenProvider: {
                 print("🔍 APP: Token provider called")
+
+                // Skip Amplify Auth during tests to prevent crashes
+                if Self.isRunningInTestEnvironment {
+                    print("🧪 APP: Running in test mode - returning mock token")
+                    return "mock-test-token"
+                }
 
                 // Use Amplify Auth to get token
                 do {
