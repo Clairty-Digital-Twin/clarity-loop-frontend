@@ -73,17 +73,25 @@ final class BackendContractAdapter: BackendContractAdapterProtocol {
         // Decode JWT to get user info (in production)
         // For now, create placeholder user session
         let userSession = UserSessionResponseDTO(
-            userId: UUID(), // Would come from decoded JWT
-            firstName: "",
-            lastName: "",
+            id: UUID().uuidString, // Would come from decoded JWT
             email: "",
+            displayName: "",
+            avatarUrl: nil,
+            provider: "email",
             role: "user",
-            permissions: ["read", "write"],
-            status: "active",
-            mfaEnabled: false,
-            emailVerified: true,
-            createdAt: Date(),
-            lastLogin: Date()
+            isActive: true,
+            isEmailVerified: true,
+            preferences: UserPreferencesResponseDTO(
+                theme: "light",
+                notifications: true,
+                language: "en"
+            ),
+            metadata: UserMetadataResponseDTO(
+                lastLogin: Date(),
+                loginCount: 1,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
         )
 
         let tokens = adaptTokenResponse(backendResponse)
@@ -97,26 +105,26 @@ final class BackendContractAdapter: BackendContractAdapterProtocol {
     // MARK: - User Info Adaptation
 
     func adaptUserInfoResponse(_ backendResponse: BackendUserInfoResponse) -> UserSessionResponseDTO {
-        // Parse display name to extract first and last names
-        let nameParts = (backendResponse.displayName ?? "").split(separator: " ", maxSplits: 1)
-        let firstName = nameParts.first.map(String.init) ?? ""
-        let lastName = nameParts.count > 1 ? String(nameParts[1]) : ""
-
-        // Convert user ID string to UUID
-        let userId = UUID(uuidString: backendResponse.userId) ?? UUID()
-
         return UserSessionResponseDTO(
-            userId: userId,
-            firstName: firstName,
-            lastName: lastName,
+            id: backendResponse.userId,
             email: backendResponse.email ?? "",
+            displayName: backendResponse.displayName ?? "",
+            avatarUrl: nil,
+            provider: "email",
             role: "user", // Backend doesn't provide role
-            permissions: ["read", "write"], // Default permissions
-            status: "active",
-            mfaEnabled: false, // Backend doesn't provide MFA status
-            emailVerified: backendResponse.emailVerified,
-            createdAt: Date(), // Backend doesn't provide creation date
-            lastLogin: Date()
+            isActive: true,
+            isEmailVerified: backendResponse.emailVerified,
+            preferences: UserPreferencesResponseDTO(
+                theme: "light",
+                notifications: true,
+                language: "en"
+            ),
+            metadata: UserMetadataResponseDTO(
+                lastLogin: Date(),
+                loginCount: 1,
+                createdAt: Date(), // Backend doesn't provide creation date
+                updatedAt: Date()
+            )
         )
     }
 

@@ -6,10 +6,10 @@ extension UserSessionResponseDTO {
     /// Converts this DTO to an AuthUser domain model
     var authUser: AuthUser {
         AuthUser(
-            id: userId.uuidString,
+            id: id,
             email: email,
-            fullName: "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces),
-            isEmailVerified: emailVerified
+            fullName: displayName,
+            isEmailVerified: isEmailVerified
         )
     }
 }
