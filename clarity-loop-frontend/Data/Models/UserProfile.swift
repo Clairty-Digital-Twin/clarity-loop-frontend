@@ -72,11 +72,16 @@ final class UserProfile {
 
     /// A convenience initializer to create a `UserProfile` from a `UserSessionResponseDTO`.
     convenience init(from dto: UserSessionResponseDTO) {
+        // Parse display name to extract first and last names
+        let nameParts = dto.displayName.split(separator: " ", maxSplits: 1)
+        let firstName = nameParts.first.map(String.init) ?? ""
+        let lastName = nameParts.count > 1 ? String(nameParts[1]) : ""
+        
         self.init(
-            id: dto.userId,
+            id: dto.userId ?? UUID(), // Use computed property that converts from string
             email: dto.email,
-            firstName: dto.firstName,
-            lastName: dto.lastName,
+            firstName: firstName,
+            lastName: lastName,
             role: dto.role,
             permissions: dto.permissions,
             status: dto.status,
