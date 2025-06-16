@@ -124,6 +124,7 @@
 				Features/Settings/DataManagementViewModel.swift = (ios, );
 				Features/Settings/SettingsView.swift = (ios, );
 				Features/Settings/SettingsViewModel.swift = (ios, );
+				Resources/amplifyconfiguration.json = (ios, );
 				UI/Components/CustomSecureField.swift = (ios, );
 				UI/Components/EmptyStateView.swift = (ios, );
 				UI/Components/ErrorView.swift = (ios, );

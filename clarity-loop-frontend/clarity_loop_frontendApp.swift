@@ -43,7 +43,7 @@ struct ClarityPulseApp: App {
                     let authSession = try await Amplify.Auth.fetchAuthSession()
                     
                     if let cognitoTokenProvider = authSession as? AuthCognitoTokensProvider {
-                        let tokens = try await cognitoTokenProvider.getCognitoTokens().get()
+                        let tokens = try cognitoTokenProvider.getCognitoTokens().get()
                         let token = tokens.accessToken
                         
                         print("✅ APP: Token obtained from Amplify Auth")

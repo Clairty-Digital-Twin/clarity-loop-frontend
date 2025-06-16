@@ -114,7 +114,7 @@ struct EmailVerificationView: View {
                 focusedIndex = 0
                 viewModel.startResendTimer()
             }
-            .onChange(of: viewModel.isVerified) { isVerified in
+            .onChange(of: viewModel.isVerified) { _, isVerified in
                 if isVerified {
                     // Navigate to home or dismiss based on your app flow
                     dismiss()

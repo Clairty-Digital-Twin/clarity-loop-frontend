@@ -6,17 +6,25 @@ import Foundation
 class MockAuthService: AuthServiceProtocol {
     var shouldSucceed = true
     var mockUserSession = UserSessionResponseDTO(
-        userId: UUID(),
-        firstName: "Test",
-        lastName: "User",
+        id: UUID().uuidString,
         email: "test@example.com",
+        displayName: "Test User",
+        avatarUrl: nil,
+        provider: "email",
         role: "user",
-        permissions: [],
-        status: "active",
-        mfaEnabled: false,
-        emailVerified: true,
-        createdAt: Date(),
-        lastLogin: Date()
+        isActive: true,
+        isEmailVerified: true,
+        preferences: UserPreferencesResponseDTO(
+            theme: "light",
+            notifications: true,
+            language: "en"
+        ),
+        metadata: UserMetadataResponseDTO(
+            lastLogin: Date(),
+            loginCount: 1,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
     )
 
     // Mock user state
