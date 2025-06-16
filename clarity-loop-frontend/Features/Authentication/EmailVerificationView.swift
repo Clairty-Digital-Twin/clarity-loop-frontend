@@ -4,7 +4,7 @@ struct EmailVerificationView: View {
     @StateObject private var viewModel: EmailVerificationViewModel
     @Environment(\.dismiss) private var dismiss
     @FocusState private var focusedIndex: Int?
-    
+
     init(email: String, password: String, authService: AuthServiceProtocol) {
         _viewModel = StateObject(wrappedValue: EmailVerificationViewModel(
             email: email,
@@ -12,7 +12,7 @@ struct EmailVerificationView: View {
             authService: authService
         ))
     }
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 32) {
@@ -21,22 +21,22 @@ struct EmailVerificationView: View {
                     Image(systemName: "envelope.badge.shield.half.filled")
                         .font(.system(size: 60))
                         .foregroundStyle(.blue.gradient)
-                    
+
                     Text("Verify Your Email")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    
+
                     Text("We've sent a verification code to:")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    
+
                     Text(viewModel.email)
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                 }
                 .padding(.top, 40)
-                
+
                 // OTP Input
                 VStack(spacing: 24) {
                     HStack(spacing: 12) {
@@ -50,7 +50,7 @@ struct EmailVerificationView: View {
                         }
                     }
                     .animation(.easeInOut(duration: 0.2), value: viewModel.hasError)
-                    
+
                     // Error message
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
@@ -59,7 +59,7 @@ struct EmailVerificationView: View {
                             .transition(.opacity)
                     }
                 }
-                
+
                 // Actions
                 VStack(spacing: 16) {
                     Button(action: { Task { await viewModel.verifyCode() } }) {
@@ -79,7 +79,7 @@ struct EmailVerificationView: View {
                         .cornerRadius(12)
                     }
                     .disabled(!viewModel.isVerifyButtonEnabled || viewModel.isLoading)
-                    
+
                     Button(action: { Task { await viewModel.resendCode() } }) {
                         HStack {
                             Image(systemName: "arrow.clockwise")
@@ -90,7 +90,7 @@ struct EmailVerificationView: View {
                     }
                     .disabled(viewModel.isLoading || viewModel.resendCooldown > 0)
                     .opacity(viewModel.resendCooldown > 0 ? 0.5 : 1.0)
-                    
+
                     if viewModel.resendCooldown > 0 {
                         Text("Resend available in \(viewModel.resendCooldown)s")
                             .font(.caption)
@@ -98,7 +98,7 @@ struct EmailVerificationView: View {
                     }
                 }
                 .padding(.horizontal, 40)
-                
+
                 Spacer()
             }
             .padding()
@@ -129,17 +129,17 @@ struct OTPDigitField: View {
     let index: Int
     @FocusState.Binding var focusedIndex: Int?
     let isError: Bool
-    
+
     var body: some View {
         TextField("", text: Binding(
             get: { digit },
             set: { newValue in
                 // Only allow single digit
-                if newValue.count <= 1 && newValue.allSatisfy({ $0.isNumber }) {
+                if newValue.count <= 1, newValue.allSatisfy(\.isNumber) {
                     digit = newValue
-                    
+
                     // Auto-advance focus
-                    if !newValue.isEmpty && index < 5 {
+                    if !newValue.isEmpty, index < 5 {
                         focusedIndex = index + 1
                     }
                 } else if newValue.isEmpty {
@@ -170,38 +170,39 @@ struct OTPDigitField: View {
         }
         .modifier(ShakeEffect(animatableData: isError ? 1 : 0))
     }
-    
+
     private var strokeColor: Color {
         if isError {
-            return .red
+            .red
         } else if focusedIndex == index {
-            return .blue
+            .blue
         } else if !digit.isEmpty {
-            return .blue.opacity(0.3)
+            .blue.opacity(0.3)
         } else {
-            return .clear
+            .clear
         }
     }
 }
 
 struct ShakeEffect: GeometryEffect {
     var animatableData: CGFloat
-    
+
     func effectValue(size: CGSize) -> ProjectionTransform {
         ProjectionTransform(CGAffineTransform(translationX: sin(animatableData * .pi * 2) * 5, y: 0))
     }
 }
 
 #Preview {
-    guard let previewAPIClient = APIClient(
-        baseURLString: AppConfig.previewAPIBaseURL,
-        tokenProvider: { nil }
-    ) else {
+    guard
+        let previewAPIClient = APIClient(
+            baseURLString: AppConfig.previewAPIBaseURL,
+            tokenProvider: { nil }
+        ) else {
         return Text("Failed to create preview client")
     }
-    
+
     return EmailVerificationView(
-        email: "test@example.com", 
+        email: "test@example.com",
         password: "TestPass123!",
         authService: AuthService(apiClient: previewAPIClient)
     )

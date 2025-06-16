@@ -166,7 +166,7 @@ struct ChatMessage: Identifiable, Equatable {
     let sender: Sender
     var text: String
     var timestamp: Date = .init()
-    var isError: Bool = false
+    var isError = false
 
     enum Sender: String, CaseIterable {
         case user

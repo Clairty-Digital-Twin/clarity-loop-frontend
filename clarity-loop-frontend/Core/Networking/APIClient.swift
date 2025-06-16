@@ -12,7 +12,8 @@ protocol APIClientProtocol {
     func refreshToken(requestDTO: RefreshTokenRequestDTO) async throws -> TokenResponseDTO
     func logout() async throws -> MessageResponseDTO
     func getCurrentUser() async throws -> UserSessionResponseDTO
-    func verifyEmail(code: String) async throws -> MessageResponseDTO
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO
+    func resendVerificationEmail(email: String) async throws -> MessageResponseDTO
 
     // Endpoints for Health Data
     func getHealthData(page: Int, limit: Int) async throws -> PaginatedMetricsResponseDTO
@@ -149,9 +150,14 @@ final class APIClient: APIClientProtocol {
         return try await performRequest(for: endpoint)
     }
 
-    func verifyEmail(code: String) async throws -> MessageResponseDTO {
-        let endpoint = AuthEndpoint.verifyEmail(code: code)
-        return try await performRequest(for: endpoint)
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
+        let endpoint = AuthEndpoint.verifyEmail(email: email, code: code)
+        return try await performRequest(for: endpoint, requiresAuth: false)
+    }
+
+    func resendVerificationEmail(email: String) async throws -> MessageResponseDTO {
+        let endpoint = AuthEndpoint.resendVerificationEmail(email: email)
+        return try await performRequest(for: endpoint, requiresAuth: false)
     }
 
     // MARK: - Additional Health Data Methods
@@ -268,7 +274,21 @@ final class APIClient: APIClientProtocol {
             print("📥 APIClient: Response status code: \(httpResponse.statusCode)")
 
             switch httpResponse.statusCode {
-            case 200 ... 299:
+            case 202:
+                // Special handling for 202 Accepted (email verification required)
+                print("📥 APIClient: 202 Accepted - Email verification required")
+
+                // Check if we can decode the email verification required response
+                if
+                    let verificationRequired = try? decoder.decode(EmailVerificationRequiredDTO.self, from: data),
+                    verificationRequired.requiresEmailVerification {
+                    throw APIError.emailVerificationRequired
+                }
+
+                // If we can't decode the expected response, fall through to normal handling
+                throw APIError.serverError(statusCode: 202, message: "Email verification required")
+
+            case 200...299:
                 do {
                     // Handle empty response body for 204 No Content
                     if data.isEmpty, let empty = EmptyResponse() as? T {
@@ -336,10 +356,10 @@ final class APIClient: APIClientProtocol {
         authorizedRequest.setValue("Bearer \(refreshedToken)", forHTTPHeaderField: "Authorization")
 
         // Retry the request once with fresh token
-        guard let retryData = try? await session.data(for: authorizedRequest),
-              let retryResponse = retryData.1 as? HTTPURLResponse,
-              retryResponse.statusCode >= 200, retryResponse.statusCode < 300
-        else {
+        guard
+            let retryData = try? await session.data(for: authorizedRequest),
+            let retryResponse = retryData.1 as? HTTPURLResponse,
+            retryResponse.statusCode >= 200, retryResponse.statusCode < 300 else {
             return nil
         }
 

@@ -195,7 +195,7 @@ struct SkeletonLoadingView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            ForEach(0 ..< numberOfRows, id: \.self) { _ in
+            ForEach(0..<numberOfRows, id: \.self) { _ in
                 SkeletonRow()
             }
         }

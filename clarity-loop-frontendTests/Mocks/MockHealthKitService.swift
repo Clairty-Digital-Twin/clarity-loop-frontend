@@ -5,7 +5,7 @@ import HealthKit
 class MockHealthKitService: HealthKitServiceProtocol {
     var shouldSucceed = true
     var mockDailyMetrics: DailyHealthMetrics?
-    var mockStepCount: Double = 5000.0
+    var mockStepCount = 5000.0
     var mockRestingHeartRate: Double? = 72.0
     var mockSleepData: SleepData? = SleepData(
         totalTimeInBed: 28800, // 8 hours

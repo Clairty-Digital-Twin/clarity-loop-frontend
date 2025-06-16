@@ -14,7 +14,7 @@ final class AuthViewModel {
     // MARK: - Properties
 
     /// A boolean flag indicating if a user is currently authenticated.
-    private(set) var isLoggedIn: Bool = false
+    private(set) var isLoggedIn = false
 
     // MARK: - Private Properties
 

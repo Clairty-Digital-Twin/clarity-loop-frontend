@@ -303,7 +303,7 @@ final class SecureFieldRenderingTests: XCTestCase {
         // Test SecureField memory usage and cleanup
 
         // Test creating and destroying multiple SecureFields
-        for i in 0 ..< 100 {
+        for i in 0..<100 {
             let field = SecureField("Password \(i)", text: .constant(""))
                 .textContentType(.password)
 

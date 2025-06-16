@@ -106,15 +106,15 @@ final class BiometricAuthService: @unchecked Sendable {
     var biometricTypeDescription: String {
         switch biometricType {
         case .faceID:
-            return "Face ID"
+            "Face ID"
         case .touchID:
-            return "Touch ID"
+            "Touch ID"
         case .opticID:
-            return "Optic ID"
+            "Optic ID"
         case .none:
-            return "Biometric Authentication"
+            "Biometric Authentication"
         @unknown default:
-            return "Biometric Authentication"
+            "Biometric Authentication"
         }
     }
 

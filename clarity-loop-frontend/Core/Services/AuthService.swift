@@ -34,7 +34,7 @@ protocol AuthServiceProtocol {
     func getCurrentUserToken() async throws -> String
 
     /// Verifies email with the provided code
-    func verifyEmail(code: String) async throws
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO
 
     /// Resends verification email
     func resendVerificationEmail(to email: String) async throws
@@ -144,8 +144,11 @@ final class AuthService: AuthServiceProtocol {
         }
     }
 
-    func register(withEmail email: String, password: String,
-                  details: UserRegistrationRequestDTO) async throws -> RegistrationResponseDTO {
+    func register(
+        withEmail email: String,
+        password: String,
+        details: UserRegistrationRequestDTO
+    ) async throws -> RegistrationResponseDTO {
         do {
             // FIXED: Register only through backend
             // let fullName = "\(details.firstName) \(details.lastName)"
@@ -154,6 +157,13 @@ final class AuthService: AuthServiceProtocol {
             // Register with our backend
             let response = try await apiClient.register(requestDTO: details)
             return response
+        } catch let error as APIError {
+            // Special handling for email verification required
+            if case .emailVerificationRequired = error {
+                // Re-throw the error as-is so the ViewModel can handle it
+                throw error
+            }
+            throw mapCognitoError(error)
         } catch {
             throw mapCognitoError(error)
         }
@@ -203,24 +213,36 @@ final class AuthService: AuthServiceProtocol {
         return token
     }
 
-    func verifyEmail(code: String) async throws {
-        // Call backend verify-email endpoint
-        let verifyDTO = EmailVerificationRequestDTO(
-            verificationCode: code,
-            email: nil // Email is optional, backend tracks it via session
-        )
-
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
         do {
-            _ = try await apiClient.verifyEmail(code: code)
-            // Email verified successfully
+            // Call backend verify-email endpoint and get tokens
+            let response = try await apiClient.verifyEmail(email: email, code: code)
+
+            // Store tokens in TokenManager
+            await TokenManager.shared.store(
+                accessToken: response.tokens.accessToken,
+                refreshToken: response.tokens.refreshToken,
+                expiresIn: response.tokens.expiresIn
+            )
+
+            // Update auth state with the logged in user
+            let user = response.user.authUser
+            _currentUser = user
+            authStateContinuation?.yield(user)
+
+            return response
         } catch {
             throw mapCognitoError(error)
         }
     }
 
     func resendVerificationEmail(to email: String) async throws {
-        // Backend doesn't have a resend endpoint yet, throw appropriate error
-        throw AuthenticationError.unknown("Resend verification not yet implemented")
+        do {
+            _ = try await apiClient.resendVerificationEmail(email: email)
+            // Email sent successfully
+        } catch {
+            throw mapCognitoError(error)
+        }
     }
 
     // MARK: - Private Error Mapping

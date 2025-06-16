@@ -257,8 +257,10 @@ struct DataManagementContentView: View {
                     Text(viewModel.lastSyncStatus)
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(viewModel.lastSyncStatus == "Completed" ? .green :
-                            viewModel.lastSyncStatus == "Failed" ? .red : .secondary)
+                        .foregroundColor(
+                            viewModel.lastSyncStatus == "Completed" ? .green :
+                                viewModel.lastSyncStatus == "Failed" ? .red : .secondary
+                        )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

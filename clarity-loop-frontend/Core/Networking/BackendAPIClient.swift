@@ -281,7 +281,7 @@ final class BackendAPIClient: APIClientProtocol {
                 return nil
             }
 
-            if (200 ... 299).contains(httpResponse.statusCode) {
+            if (200...299).contains(httpResponse.statusCode) {
                 return try decoder.decode(Response.self, from: data)
             }
 
@@ -294,8 +294,14 @@ final class BackendAPIClient: APIClientProtocol {
 
     // MARK: - Other Protocol Methods (Not Implemented Yet)
 
-    func verifyEmail(code: String) async throws -> MessageResponseDTO {
-        throw APIError.notImplemented
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
+        let endpoint = AuthEndpoint.verifyEmail(email: email, code: code)
+        return try await performBackendRequest(for: endpoint, requiresAuth: false)
+    }
+
+    func resendVerificationEmail(email: String) async throws -> MessageResponseDTO {
+        let endpoint = AuthEndpoint.resendVerificationEmail(email: email)
+        return try await performBackendRequest(for: endpoint, requiresAuth: false)
     }
 
     func getHealthData(page: Int, limit: Int) async throws -> PaginatedMetricsResponseDTO {

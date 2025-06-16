@@ -37,6 +37,9 @@ enum APIError: Error, LocalizedError {
     /// Invalid response from server
     case invalidResponse
 
+    /// Email verification required (202 response)
+    case emailVerificationRequired
+
     /// Provides a user-friendly description for each error case.
     public var errorDescription: String? {
         switch self {
@@ -62,6 +65,8 @@ enum APIError: Error, LocalizedError {
             "Authentication token is missing"
         case .invalidResponse:
             "Invalid response from server"
+        case .emailVerificationRequired:
+            "Email verification required"
         }
     }
 }

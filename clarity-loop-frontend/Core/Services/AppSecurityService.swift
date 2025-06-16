@@ -91,10 +91,11 @@ final class AppSecurityService {
     }
 
     private func addBlurOverlay() {
-        guard let window = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .flatMap(\.windows)
-            .first(where: { $0.isKeyWindow }) else { return }
+        guard
+            let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap(\.windows)
+                .first(where: { $0.isKeyWindow }) else { return }
 
         removeBlurOverlay() // Remove any existing overlay
 

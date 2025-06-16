@@ -73,9 +73,10 @@ final class SyncHealthDataUseCase {
         return syncResult
     }
 
-    private func buildUploadRequest(from dailyMetrics: DailyHealthMetrics,
-                                    date: Date) async throws -> HealthKitUploadRequestDTO
-    {
+    private func buildUploadRequest(
+        from dailyMetrics: DailyHealthMetrics,
+        date: Date
+    ) async throws -> HealthKitUploadRequestDTO {
         var samples: [HealthKitSampleDTO] = []
 
         // Add step count sample
@@ -165,11 +166,11 @@ final class SyncHealthDataUseCase {
 }
 
 struct SyncResult {
-    var successfulDays: Int = 0
-    var failedDays: Int = 0
-    var uploadedSamples: Int = 0
+    var successfulDays = 0
+    var failedDays = 0
+    var uploadedSamples = 0
     var errors: [String] = []
-    var isSuccess: Bool = false
+    var isSuccess = false
 
     var totalDays: Int {
         successfulDays + failedDays

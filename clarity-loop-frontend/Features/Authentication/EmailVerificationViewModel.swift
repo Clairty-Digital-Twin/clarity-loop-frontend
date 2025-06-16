@@ -1,6 +1,6 @@
+import Combine
 import Foundation
 import SwiftUI
-import Combine
 
 @MainActor
 final class EmailVerificationViewModel: ObservableObject {
@@ -51,13 +51,10 @@ final class EmailVerificationViewModel: ObservableObject {
         hasError = false
 
         do {
-            // Call verify email endpoint
-            _ = try await authService.verifyEmail(code: otpCode)
+            // Call verify email endpoint - this now returns tokens and logs in automatically
+            _ = try await authService.verifyEmail(email: email, code: otpCode)
 
-            // If verification successful, try to login
-            _ = try await authService.signIn(withEmail: email, password: password)
-
-            // Success!
+            // Success! User is now logged in
             isVerified = true
 
         } catch {
@@ -111,7 +108,7 @@ final class EmailVerificationViewModel: ObservableObject {
         resendTimer?.invalidate()
         resendTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                guard let self = self else { return }
+                guard let self else { return }
 
                 if self.resendCooldown > 0 {
                     self.resendCooldown -= 1

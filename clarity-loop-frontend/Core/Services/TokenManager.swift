@@ -107,10 +107,10 @@ actor TokenManager {
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
 
-        if status == errSecSuccess,
-           let data = result as? Data,
-           let string = String(data: data, encoding: .utf8)
-        {
+        if
+            status == errSecSuccess,
+            let data = result as? Data,
+            let string = String(data: data, encoding: .utf8) {
             return string
         }
 

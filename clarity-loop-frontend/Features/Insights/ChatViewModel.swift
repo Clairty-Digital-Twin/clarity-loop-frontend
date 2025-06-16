@@ -7,8 +7,8 @@ final class ChatViewModel {
     // MARK: - Properties
 
     var messages: [ChatMessage] = []
-    var currentInput: String = ""
-    var isSending: Bool = false
+    var currentInput = ""
+    var isSending = false
 
     // MARK: - Dependencies
 

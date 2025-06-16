@@ -202,10 +202,10 @@ class HealthKitService: HealthKitServiceProtocol {
             return try await apiClient.uploadHealthKitData(requestDTO: uploadRequest)
         } catch {
             // If the upload fails due to network issues, queue it for later
-            if let apiError = error as? APIError,
-               case .networkError = apiError,
-               let queueManager = offlineQueueManager
-            {
+            if
+                let apiError = error as? APIError,
+                case .networkError = apiError,
+                let queueManager = offlineQueueManager {
                 let queuedUpload = try uploadRequest.toQueuedUpload()
                 try await queueManager.enqueue(queuedUpload)
 
@@ -261,9 +261,10 @@ class HealthKitService: HealthKitServiceProtocol {
         for dataType in readTypes {
             // Only create observer queries for sample types (not category types)
             guard let sampleType = dataType as? HKSampleType else { continue }
-            let query = HKObserverQuery(sampleType: sampleType,
-                                        predicate: nil)
-            { [weak self] _, completionHandler, error in
+            let query = HKObserverQuery(
+                sampleType: sampleType,
+                predicate: nil
+            ) { [weak self] _, completionHandler, error in
                 if let error {
                     print("Observer query error: \(error)")
                     return

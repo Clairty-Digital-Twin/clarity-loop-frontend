@@ -235,6 +235,13 @@ extension ErrorView {
                 systemImage: "exclamationmark.arrow.circlepath",
                 retryAction: onRetry
             )
+        case .emailVerificationRequired:
+            self.init(
+                title: "Email Verification Required",
+                message: "Please verify your email address to continue.",
+                systemImage: "envelope.badge.shield.half.filled",
+                retryAction: onRetry
+            )
         }
     }
 }

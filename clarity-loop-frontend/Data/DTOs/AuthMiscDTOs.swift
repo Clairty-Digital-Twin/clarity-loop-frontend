@@ -50,3 +50,12 @@ struct PasswordResetConfirmDTO: Codable {
     let newPassword: String
     let confirmPassword: String
 }
+
+/// DTO for registration response when email verification is required (HTTP 202).
+struct EmailVerificationRequiredDTO: Codable {
+    let requiresEmailVerification: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case requiresEmailVerification = "requires_email_verification"
+    }
+}

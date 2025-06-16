@@ -408,10 +408,11 @@ struct FeatureRow: View {
 
 #Preview {
     // Create preview-safe services
-    guard let previewAPIClient = APIClient(
-        baseURLString: AppConfig.previewAPIBaseURL,
-        tokenProvider: { nil }
-    ) else {
+    guard
+        let previewAPIClient = APIClient(
+            baseURLString: AppConfig.previewAPIBaseURL,
+            tokenProvider: { nil }
+        ) else {
         return Text("Failed to create preview client")
     }
 

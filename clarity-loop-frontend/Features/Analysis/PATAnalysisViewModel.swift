@@ -96,7 +96,7 @@ final class PATAnalysisViewModel {
         let maxAttempts = 30
         let delaySeconds: UInt64 = 10
 
-        for attempt in 1 ... maxAttempts {
+        for attempt in 1...maxAttempts {
             do {
                 let response = try await apiClient.getPATAnalysis(id: analysisId)
                 // Convert [String: Double] to [String: AnyCodable]

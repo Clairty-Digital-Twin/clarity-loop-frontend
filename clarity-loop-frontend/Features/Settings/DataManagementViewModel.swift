@@ -25,7 +25,7 @@ final class DataManagementViewModel {
 
     // Export state
     var isExporting = false
-    var exportProgress: Double = 0.0
+    var exportProgress = 0.0
     var exportStatus = "Ready to export"
 
     // Deletion state
@@ -35,7 +35,7 @@ final class DataManagementViewModel {
 
     // Sync state
     var isSyncing = false
-    var syncProgress: Double = 0.0
+    var syncProgress = 0.0
     var autoSyncEnabled = true
     var lastSyncStatus = "Unknown"
 
@@ -68,10 +68,11 @@ final class DataManagementViewModel {
 
     // MARK: - Initializer
 
-    init(healthDataRepository: any HealthDataRepositoryProtocol,
-         insightsRepository: any InsightsRepositoryProtocol,
-         healthKitService: any HealthKitServiceProtocol)
-    {
+    init(
+        healthDataRepository: any HealthDataRepositoryProtocol,
+        insightsRepository: any InsightsRepositoryProtocol,
+        healthKitService: any HealthKitServiceProtocol
+    ) {
         self.healthDataRepository = healthDataRepository
         self.insightsRepository = insightsRepository
         self.healthKitService = healthKitService
@@ -95,9 +96,9 @@ final class DataManagementViewModel {
             try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
 
             // In a real app, you'd fetch actual data counts and metadata
-            totalHealthMetrics = Int.random(in: 100 ... 1000)
-            totalInsights = Int.random(in: 10 ... 50)
-            dataStorageSize = "\(Int.random(in: 5 ... 50)) MB"
+            totalHealthMetrics = Int.random(in: 100...1000)
+            totalInsights = Int.random(in: 10...50)
+            dataStorageSize = "\(Int.random(in: 5...50)) MB"
 
             // Set some sample dates
             let calendar = Calendar.current
@@ -123,18 +124,18 @@ final class DataManagementViewModel {
 
         do {
             // Simulate export process with progress updates
-            for i in 1 ... 10 {
+            for i in 1...10 {
                 try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
                 exportProgress = Double(i) / 10.0
 
                 switch i {
-                case 1 ... 3:
+                case 1...3:
                     exportStatus = "Collecting health data..."
-                case 4 ... 6:
+                case 4...6:
                     exportStatus = "Collecting insights..."
-                case 7 ... 8:
+                case 7...8:
                     exportStatus = "Generating export file..."
-                case 9 ... 10:
+                case 9...10:
                     exportStatus = "Finalizing export..."
                 default:
                     break
@@ -160,7 +161,7 @@ final class DataManagementViewModel {
 
         do {
             // Simulate health data export
-            for i in 1 ... 5 {
+            for i in 1...5 {
                 try await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
                 exportProgress = Double(i) / 5.0
             }
@@ -184,7 +185,7 @@ final class DataManagementViewModel {
 
         do {
             // Simulate insights export
-            for i in 1 ... 3 {
+            for i in 1...3 {
                 try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
                 exportProgress = Double(i) / 3.0
             }
@@ -243,7 +244,7 @@ final class DataManagementViewModel {
     private func deleteHealthDataOnly() async throws {
         try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
         totalHealthMetrics = 0
-        dataStorageSize = "\(Int.random(in: 1 ... 10)) MB"
+        dataStorageSize = "\(Int.random(in: 1...10)) MB"
     }
 
     private func deleteInsightsOnly() async throws {
@@ -255,8 +256,8 @@ final class DataManagementViewModel {
         try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
 
         // Simulate deleting old data (older than 30 days)
-        totalHealthMetrics = max(0, totalHealthMetrics - Int.random(in: 50 ... 200))
-        totalInsights = max(0, totalInsights - Int.random(in: 5 ... 15))
+        totalHealthMetrics = max(0, totalHealthMetrics - Int.random(in: 50...200))
+        totalInsights = max(0, totalInsights - Int.random(in: 5...15))
 
         // Update oldest date
         oldestDataDate = Calendar.current.date(byAdding: .day, value: -30, to: Date())
@@ -272,7 +273,7 @@ final class DataManagementViewModel {
 
         do {
             // Simulate sync process
-            for i in 1 ... 8 {
+            for i in 1...8 {
                 try await Task.sleep(nanoseconds: 250_000_000) // 0.25 seconds
                 syncProgress = Double(i) / 8.0
             }

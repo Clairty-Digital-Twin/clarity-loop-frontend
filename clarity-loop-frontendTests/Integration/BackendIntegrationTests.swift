@@ -91,10 +91,10 @@ final class BackendIntegrationTests: XCTestCase {
 
         } catch {
             // If registration fails due to existing user, that's OK for integration test
-            if let apiError = error as? APIError,
-               case let .httpError(statusCode, _) = apiError,
-               statusCode == 409
-            {
+            if
+                let apiError = error as? APIError,
+                case let .httpError(statusCode, _) = apiError,
+                statusCode == 409 {
                 print("User already exists - expected in integration tests")
             } else {
                 XCTFail("Unexpected error: \(error)")

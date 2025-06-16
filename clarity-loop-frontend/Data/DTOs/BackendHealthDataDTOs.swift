@@ -90,7 +90,7 @@ extension HealthKitSampleDTO {
         var biometricData: BiometricDataDTO?
         var sleepData: SleepDataDTO?
         var activityData: ActivityDataDTO?
-
+        
         switch sampleType {
         case "stepCount":
             metricType = .activityLevel

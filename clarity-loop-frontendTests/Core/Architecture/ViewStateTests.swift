@@ -95,8 +95,8 @@ final class ViewStateTests: XCTestCase {
 
         // Create a simple test class (Note: @Observable not allowed on local types)
         class TestViewModel {
-            var value: String = ""
-            var numericValue: Double = 0.0
+            var value = ""
+            var numericValue = 0.0
 
             func updateValue(_ newValue: String) {
                 value = newValue

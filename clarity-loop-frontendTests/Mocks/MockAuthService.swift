@@ -44,11 +44,13 @@ class MockAuthService: AuthServiceProtocol {
         }
     }
 
-    func register(withEmail email: String, password: String,
-                  details: UserRegistrationRequestDTO) async throws -> RegistrationResponseDTO
-    {
+    func register(
+        withEmail email: String,
+        password: String,
+        details: UserRegistrationRequestDTO
+    ) async throws -> RegistrationResponseDTO {
         if shouldSucceed {
-            return RegistrationResponseDTO(
+            RegistrationResponseDTO(
                 userId: UUID(),
                 email: email,
                 status: "pending_verification",
@@ -72,7 +74,7 @@ class MockAuthService: AuthServiceProtocol {
 
     func getCurrentUserToken() async throws -> String {
         if shouldSucceed {
-            return "mock-jwt-token"
+            "mock-jwt-token"
         } else {
             throw APIError.unauthorized
         }
@@ -80,7 +82,7 @@ class MockAuthService: AuthServiceProtocol {
 
     func refreshToken(requestDTO: RefreshTokenRequestDTO) async throws -> TokenResponseDTO {
         if shouldSucceed {
-            return TokenResponseDTO(
+            TokenResponseDTO(
                 accessToken: "mock-refreshed-access-token",
                 refreshToken: "mock-refreshed-refresh-token",
                 tokenType: "Bearer",
@@ -90,14 +92,24 @@ class MockAuthService: AuthServiceProtocol {
             throw APIError.unauthorized
         }
     }
-    
-    func verifyEmail(code: String) async throws {
-        if !shouldSucceed {
+
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
+        if shouldSucceed {
+            mockCurrentUser = AuthUser(uid: "verified-uid", email: email, isEmailVerified: true)
+            return LoginResponseDTO(
+                user: mockUserSession,
+                tokens: TokenResponseDTO(
+                    accessToken: "mock-access-token",
+                    refreshToken: "mock-refresh-token",
+                    tokenType: "Bearer",
+                    expiresIn: 3600
+                )
+            )
+        } else {
             throw APIError.validationError("Invalid verification code")
         }
-        // Success - no-op
     }
-    
+
     func resendVerificationEmail(to email: String) async throws {
         if !shouldSucceed {
             throw APIError.serverError(statusCode: 429, message: "Too many requests")

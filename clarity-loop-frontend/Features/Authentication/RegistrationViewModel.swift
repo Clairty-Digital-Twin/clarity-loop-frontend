@@ -136,20 +136,22 @@ final class RegistrationViewModel {
 
         do {
             _ = try await authService.register(withEmail: email, password: password, details: details)
+            // If we get here, registration was successful (200 response)
             registrationComplete = true
-            needsEmailVerification = true
+            needsEmailVerification = false
             errorMessage = nil
-        } catch {
-            // Backend returns 500 when email verification is needed after registration
-            // This is actually a successful registration that needs email verification
-            if error.localizedDescription.contains("500") ||
-               error.localizedDescription.lowercased().contains("internal server error") {
+        } catch let error as APIError {
+            // Handle specific API errors
+            if case .emailVerificationRequired = error {
+                // This is a 202 response - registration successful but email verification required
                 registrationComplete = true
                 needsEmailVerification = true
                 errorMessage = nil
             } else {
                 errorMessage = error.localizedDescription
             }
+        } catch {
+            errorMessage = error.localizedDescription
         }
 
         isLoading = false

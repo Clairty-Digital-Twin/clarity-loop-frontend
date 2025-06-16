@@ -93,9 +93,34 @@ class MockAPIClient: APIClientProtocol {
         )
     }
 
-    func verifyEmail(code: String) async throws -> MessageResponseDTO {
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
         guard shouldSucceed else { throw mockError }
-        return MessageResponseDTO(message: "Email verified successfully")
+        return LoginResponseDTO(
+            user: UserSessionResponseDTO(
+                userId: UUID(),
+                firstName: "Test",
+                lastName: "User",
+                email: email,
+                role: "patient",
+                permissions: ["read_own_data"],
+                status: "active",
+                mfaEnabled: false,
+                emailVerified: true,
+                createdAt: Date(),
+                lastLogin: Date()
+            ),
+            tokens: TokenResponseDTO(
+                accessToken: "mock_access_token",
+                refreshToken: "mock_refresh_token",
+                tokenType: "bearer",
+                expiresIn: 3600
+            )
+        )
+    }
+
+    func resendVerificationEmail(email: String) async throws -> MessageResponseDTO {
+        guard shouldSucceed else { throw mockError }
+        return MessageResponseDTO(message: "Verification email sent")
     }
 
     // MARK: - Health Data

@@ -7,7 +7,8 @@ enum AuthEndpoint: Endpoint {
     case refreshToken(dto: RefreshTokenRequestDTO)
     case logout
     case getCurrentUser
-    case verifyEmail(code: String)
+    case verifyEmail(email: String, code: String)
+    case resendVerificationEmail(email: String)
 
     var path: String {
         switch self {
@@ -23,14 +24,16 @@ enum AuthEndpoint: Endpoint {
             "/api/v1/auth/me"
         case .verifyEmail:
             "/api/v1/auth/verify-email"
+        case .resendVerificationEmail:
+            "/api/v1/auth/resend-verification"
         }
     }
 
     var method: HTTPMethod {
         switch self {
-        case .register, .login, .refreshToken, .logout:
+        case .register, .login, .refreshToken, .logout, .verifyEmail, .resendVerificationEmail:
             .post
-        case .getCurrentUser, .verifyEmail:
+        case .getCurrentUser:
             .get
         }
     }
@@ -38,13 +41,19 @@ enum AuthEndpoint: Endpoint {
     func body(encoder: JSONEncoder) throws -> Data? {
         switch self {
         case let .register(dto):
-            try encoder.encode(dto)
+            return try encoder.encode(dto)
         case let .login(dto):
-            try encoder.encode(dto)
+            return try encoder.encode(dto)
         case let .refreshToken(dto):
-            try encoder.encode(dto)
-        default:
-            nil
+            return try encoder.encode(dto)
+        case let .verifyEmail(email, code):
+            let verificationDTO = EmailVerificationRequestDTO(verificationCode: code, email: email)
+            return try encoder.encode(verificationDTO)
+        case let .resendVerificationEmail(email):
+            let resendDTO = ["email": email]
+            return try encoder.encode(resendDTO)
+        case .logout, .getCurrentUser:
+            return nil
         }
     }
 }

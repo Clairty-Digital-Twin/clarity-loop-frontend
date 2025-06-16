@@ -168,7 +168,7 @@ class MockHealthDataRepository: HealthDataRepositoryProtocol {
 
     func uploadHealthKitData(requestDTO: HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO {
         if shouldSucceed {
-            return HealthKitUploadResponseDTO(
+            HealthKitUploadResponseDTO(
                 success: true,
                 uploadId: "mock-upload-id",
                 processedSamples: 10,
@@ -183,7 +183,7 @@ class MockHealthDataRepository: HealthDataRepositoryProtocol {
 
     func syncHealthKitData(requestDTO: HealthKitSyncRequestDTO) async throws -> HealthKitSyncResponseDTO {
         if shouldSucceed {
-            return HealthKitSyncResponseDTO(
+            HealthKitSyncResponseDTO(
                 success: true,
                 syncId: "mock-sync-id",
                 status: "completed",
@@ -197,7 +197,7 @@ class MockHealthDataRepository: HealthDataRepositoryProtocol {
 
     func getHealthKitSyncStatus(syncId: String) async throws -> HealthKitSyncStatusDTO {
         if shouldSucceed {
-            return HealthKitSyncStatusDTO(
+            HealthKitSyncStatusDTO(
                 syncId: syncId,
                 status: "completed",
                 progress: 1.0,
@@ -213,7 +213,7 @@ class MockHealthDataRepository: HealthDataRepositoryProtocol {
 
     func getHealthKitUploadStatus(uploadId: String) async throws -> HealthKitUploadStatusDTO {
         if shouldSucceed {
-            return HealthKitUploadStatusDTO(
+            HealthKitUploadStatusDTO(
                 uploadId: uploadId,
                 status: "completed",
                 progress: 1.0,
@@ -230,7 +230,7 @@ class MockHealthDataRepository: HealthDataRepositoryProtocol {
 
     func getProcessingStatus(id: UUID) async throws -> HealthDataProcessingStatusDTO {
         if shouldSucceed {
-            return HealthDataProcessingStatusDTO(
+            HealthDataProcessingStatusDTO(
                 processingId: id,
                 status: "completed",
                 progress: 1.0,

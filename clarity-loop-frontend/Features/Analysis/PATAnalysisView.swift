@@ -161,17 +161,17 @@ private struct CompletedAnalysisView: View {
     }
 
     private func extractSleepStages(from features: [String: AnyCodable]?) -> [SleepStageData]? {
-        guard let features,
-              let sleepStagesValue = features["sleep_stages"],
-              let sleepStagesArray = sleepStagesValue.value as? [[String: Any]]
-        else {
+        guard
+            let features,
+            let sleepStagesValue = features["sleep_stages"],
+            let sleepStagesArray = sleepStagesValue.value as? [[String: Any]] else {
             return nil
         }
 
         return sleepStagesArray.compactMap { stageDict in
-            guard let timestamp = stageDict["timestamp"] as? TimeInterval,
-                  let stage = stageDict["stage"] as? String
-            else {
+            guard
+                let timestamp = stageDict["timestamp"] as? TimeInterval,
+                let stage = stageDict["stage"] as? String else {
                 return nil
             }
 
@@ -193,7 +193,7 @@ private struct ConfidenceScoreView: View {
                 .font(.headline)
 
             HStack {
-                Gauge(value: confidence, in: 0 ... 1) {
+                Gauge(value: confidence, in: 0...1) {
                     Text("Confidence")
                 } currentValueLabel: {
                     Text("\(Int(confidence * 100))%")
@@ -225,16 +225,16 @@ private struct ConfidenceScoreView: View {
 
     private func confidenceColor(for confidence: Double) -> Color {
         switch confidence {
-        case 0.8 ... 1.0: .green
-        case 0.6 ..< 0.8: .orange
+        case 0.8...1.0: .green
+        case 0.6..<0.8: .orange
         default: .red
         }
     }
 
     private func confidenceDescription(for confidence: Double) -> String {
         switch confidence {
-        case 0.8 ... 1.0: "High"
-        case 0.6 ..< 0.8: "Medium"
+        case 0.8...1.0: "High"
+        case 0.6..<0.8: "Medium"
         default: "Low"
         }
     }
@@ -351,7 +351,7 @@ private struct SleepStageHypnogramView: View {
                 .foregroundStyle(stage.stage.color)
             }
             .frame(height: 200)
-            .chartYScale(domain: 0 ... 4)
+            .chartYScale(domain: 0...4)
             .chartYAxis {
                 AxisMarks(values: [0, 1, 2, 3, 4]) { value in
                     AxisValueLabel {
@@ -474,10 +474,11 @@ enum SleepStage: String, CaseIterable {
 // MARK: - Preview
 
 #Preview {
-    guard let previewAPIClient = APIClient(
-        baseURLString: AppConfig.previewAPIBaseURL,
-        tokenProvider: { nil }
-    ) else {
+    guard
+        let previewAPIClient = APIClient(
+            baseURLString: AppConfig.previewAPIBaseURL,
+            tokenProvider: { nil }
+        ) else {
         return Text("Failed to create preview client")
     }
 

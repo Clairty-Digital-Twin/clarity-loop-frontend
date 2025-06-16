@@ -247,16 +247,16 @@ struct ConfidenceIndicator: View {
 
     var color: Color {
         switch score {
-        case 0.8 ... 1.0: .green
-        case 0.6 ..< 0.8: .orange
+        case 0.8...1.0: .green
+        case 0.6..<0.8: .orange
         default: .red
         }
     }
 
     var label: String {
         switch score {
-        case 0.8 ... 1.0: "High"
-        case 0.6 ..< 0.8: "Medium"
+        case 0.8...1.0: "High"
+        case 0.6..<0.8: "Medium"
         default: "Low"
         }
     }
@@ -315,10 +315,11 @@ struct InsightDetailView: View {
 }
 
 #Preview {
-    guard let previewAPIClient = APIClient(
-        baseURLString: AppConfig.previewAPIBaseURL,
-        tokenProvider: { nil }
-    ) else {
+    guard
+        let previewAPIClient = APIClient(
+            baseURLString: AppConfig.previewAPIBaseURL,
+            tokenProvider: { nil }
+        ) else {
         return Text("Failed to create preview client")
     }
 

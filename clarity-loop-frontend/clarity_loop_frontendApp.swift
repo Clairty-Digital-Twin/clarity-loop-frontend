@@ -28,32 +28,33 @@ struct ClarityPulseApp: App {
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
         let client: APIClientProtocol
-        if let backendClient = BackendAPIClient(tokenProvider: {
-            print("🔍 APP: Token provider called")
+        if
+            let backendClient = BackendAPIClient(tokenProvider: {
+                print("🔍 APP: Token provider called")
 
-            // Use TokenManager directly for backend-centric auth
-            let token = await TokenManager.shared.getAccessToken()
+                // Use TokenManager directly for backend-centric auth
+                let token = await TokenManager.shared.getAccessToken()
 
-            if let token {
-                print("✅ APP: Token obtained from TokenManager")
-                print("   - Length: \(token.count)")
+                if let token {
+                    print("✅ APP: Token obtained from TokenManager")
+                    print("   - Length: \(token.count)")
 
-                #if DEBUG
-                    // Print the full JWT so we can copy from the console
-                    print("🧪 FULL_ID_TOKEN → \(token)")
+                    #if DEBUG
+                        // Print the full JWT so we can copy from the console
+                        print("🧪 FULL_ID_TOKEN → \(token)")
 
-                    // Copy to clipboard for CLI use
-                    #if canImport(UIKit)
-                        UIPasteboard.general.string = token
-                        print("📋 Token copied to clipboard")
+                        // Copy to clipboard for CLI use
+                        #if canImport(UIKit)
+                            UIPasteboard.general.string = token
+                            print("📋 Token copied to clipboard")
+                        #endif
                     #endif
-                #endif
-            } else {
-                print("⚠️ APP: No token available")
-            }
+                } else {
+                    print("⚠️ APP: No token available")
+                }
 
-            return token
-        }) {
+                return token
+            }) {
             client = backendClient
         } else {
             print("⚠️ APP: Failed to initialize BackendAPIClient, using fallback DummyAPIClient")

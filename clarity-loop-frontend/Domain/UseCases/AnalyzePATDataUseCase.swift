@@ -134,23 +134,25 @@ final class AnalyzePATDataUseCase {
 
     private func categorizeActivityLevel(steps: Double) -> String {
         switch steps {
-        case 0 ..< 1000:
+        case 0..<1000:
             "sedentary"
-        case 1000 ..< 5000:
+        case 1000..<5000:
             "low"
-        case 5000 ..< 10000:
+        case 5000..<10000:
             "moderate"
-        case 10000 ..< 15000:
+        case 10000..<15000:
             "high"
         default:
             "very_high"
         }
     }
 
-    private func pollForCompletion(analysisId: String, maxAttempts: Int = 30,
-                                   delaySeconds: UInt64 = 10) async throws -> PATAnalysisResult
-    {
-        for attempt in 1 ... maxAttempts {
+    private func pollForCompletion(
+        analysisId: String,
+        maxAttempts: Int = 30,
+        delaySeconds: UInt64 = 10
+    ) async throws -> PATAnalysisResult {
+        for attempt in 1...maxAttempts {
             let response = try await apiClient.getPATAnalysis(id: analysisId)
 
             if response.status == "completed" || response.status == "failed" {

@@ -48,9 +48,11 @@ private final class DummyAuthService: AuthServiceProtocol {
     }
 
     /// Safe no-op register for background launch
-    func register(withEmail email: String, password: String,
-                  details: UserRegistrationRequestDTO) async throws -> RegistrationResponseDTO
-    {
+    func register(
+        withEmail email: String,
+        password: String,
+        details: UserRegistrationRequestDTO
+    ) async throws -> RegistrationResponseDTO {
         print("⚠️ DummyAuthService: register called during background launch")
         throw AuthenticationError.configurationError
     }
@@ -74,7 +76,7 @@ private final class DummyAuthService: AuthServiceProtocol {
     }
 
     /// Safe no-op email verification for background launch
-    func verifyEmail(code: String) async throws {
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
         print("⚠️ DummyAuthService: verifyEmail called during background launch")
         throw AuthenticationError.configurationError
     }
@@ -336,8 +338,13 @@ final class DummyAPIClient: APIClientProtocol {
         throw URLError(.notConnectedToInternet)
     }
 
-    func verifyEmail(code: String) async throws -> MessageResponseDTO {
+    func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
         print("⚠️ DummyAPIClient: verifyEmail called during background launch")
+        throw URLError(.notConnectedToInternet)
+    }
+
+    func resendVerificationEmail(email: String) async throws -> MessageResponseDTO {
+        print("⚠️ DummyAPIClient: resendVerificationEmail called during background launch")
         throw URLError(.notConnectedToInternet)
     }
 
@@ -523,10 +530,11 @@ struct AuthViewModelKey: EnvironmentKey {
 private struct APIClientKey: EnvironmentKey {
     typealias Value = APIClientProtocol
     static let defaultValue: APIClientProtocol = {
-        guard let client = BackendAPIClient(
-            baseURLString: AppConfig.apiBaseURL,
-            tokenProvider: defaultTokenProvider
-        ) else {
+        guard
+            let client = BackendAPIClient(
+                baseURLString: AppConfig.apiBaseURL,
+                tokenProvider: defaultTokenProvider
+            ) else {
             // Fallback to dummy client if BackendAPIClient fails
             return DummyAPIClient()
         }
