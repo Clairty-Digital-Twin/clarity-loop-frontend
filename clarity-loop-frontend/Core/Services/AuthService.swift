@@ -114,14 +114,11 @@ final class AuthService: AuthServiceProtocol {
                 let attributes = try await Amplify.Auth.fetchUserAttributes()
                 
                 var email: String?
-                var name: String?
                 
                 for attribute in attributes {
                     switch attribute.key {
                     case .email:
                         email = attribute.value
-                    case .name:
-                        name = attribute.value
                     default:
                         break
                     }
@@ -129,8 +126,7 @@ final class AuthService: AuthServiceProtocol {
                 
                 return AuthUser(
                     id: user.userId,
-                    email: email ?? "",
-                    displayName: name
+                    email: email ?? ""
                 )
             } catch {
                 return nil
@@ -147,18 +143,23 @@ final class AuthService: AuthServiceProtocol {
     // MARK: - Private Methods
     
     private func listenToAuthEvents() async {
-        for await event in Amplify.Hub.asyncEvents(for: .auth) {
-            switch event.eventName {
-            case HubPayload.EventName.Auth.signedIn:
-                if let user = await currentUser {
-                    _currentUser = user
-                    authStateContinuation?.yield(user)
+        // Listen to Amplify Auth Hub events
+        _ = Amplify.Hub.listen(to: .auth) { [weak self] event in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                
+                switch event.eventName {
+                case HubPayload.EventName.Auth.signedIn:
+                    if let user = await self.currentUser {
+                        self._currentUser = user
+                        self.authStateContinuation?.yield(user)
+                    }
+                case HubPayload.EventName.Auth.signedOut:
+                    self._currentUser = nil
+                    self.authStateContinuation?.yield(nil)
+                default:
+                    break
                 }
-            case HubPayload.EventName.Auth.signedOut:
-                _currentUser = nil
-                authStateContinuation?.yield(nil)
-            default:
-                break
             }
         }
     }
@@ -174,7 +175,8 @@ final class AuthService: AuthServiceProtocol {
         )
         
         // This will create/update user in backend and return user data
-        return try await apiClient.login(requestDTO: loginDTO)
+        let response = try await apiClient.login(requestDTO: loginDTO)
+        return response.user
     }
 
     // MARK: - Public Methods
@@ -192,11 +194,11 @@ final class AuthService: AuthServiceProtocol {
                 let response = try await syncUserWithBackend(email: email)
                 
                 // Update auth state
-                let user = response.user.authUser
+                let user = response.authUser
                 _currentUser = user
                 authStateContinuation?.yield(user)
                 
-                return response.user
+                return response
             } else {
                 // Handle additional steps if needed (MFA, etc)
                 throw AuthenticationError.unknown("Additional sign-in steps required")
@@ -231,11 +233,10 @@ final class AuthService: AuthServiceProtocol {
             pendingEmailForVerification = email
             
             // Check if we need email verification
-            switch signUpResult.nextStep {
-            case .confirmUser:
+            if case .confirmUser = signUpResult.nextStep {
                 // Email verification required
                 throw APIError.emailVerificationRequired
-            case .done:
+            } else {
                 // Auto-confirmed (shouldn't happen in production)
                 // Register with backend
                 let response = try await apiClient.register(requestDTO: details)
@@ -255,11 +256,6 @@ final class AuthService: AuthServiceProtocol {
             // Clear user state
             _currentUser = nil
             authStateContinuation?.yield(nil)
-        } catch {
-            // Even if Amplify signOut fails, clear local state
-            _currentUser = nil
-            authStateContinuation?.yield(nil)
-            throw mapAmplifyError(error)
         }
     }
 
@@ -281,7 +277,7 @@ final class AuthService: AuthServiceProtocol {
                 throw AuthenticationError.unknown("Could not get Cognito tokens")
             }
             
-            let tokens = try await cognitoTokenProvider.getCognitoTokens().get()
+            let tokens = try cognitoTokenProvider.getCognitoTokens().get()
             let token = tokens.accessToken
             
             print("✅ AUTH: Token retrieved successfully")
@@ -339,7 +335,7 @@ final class AuthService: AuthServiceProtocol {
                             updatedAt: Date()
                         )
                     ),
-                    tokens: AuthTokensResponseDTO(
+                    tokens: TokenResponseDTO(
                         accessToken: "",
                         refreshToken: "",
                         tokenType: "Bearer",
@@ -397,7 +393,7 @@ final class AuthService: AuthServiceProtocol {
         case .invalidState:
             return AuthenticationError.configurationError
             
-        case .network(let message):
+        case .network:
             return AuthenticationError.networkError
             
         default:
