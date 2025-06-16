@@ -393,9 +393,6 @@ final class AuthService: AuthServiceProtocol {
         case .invalidState:
             return AuthenticationError.configurationError
             
-        case .network:
-            return AuthenticationError.networkError
-            
         default:
             return AuthenticationError.unknown(error.localizedDescription)
         }
