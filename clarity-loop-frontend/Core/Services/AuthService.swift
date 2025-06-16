@@ -126,7 +126,9 @@ final class AuthService: AuthServiceProtocol {
                 
                 return AuthUser(
                     id: user.userId,
-                    email: email ?? ""
+                    email: email ?? "",
+                    fullName: nil,
+                    isEmailVerified: true
                 )
             } catch {
                 return nil
