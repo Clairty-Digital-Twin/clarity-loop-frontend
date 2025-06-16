@@ -152,6 +152,16 @@ final class AuthService: AuthServiceProtocol {
             return true
         }
         
+        // Check 8: UI Test specific - check for test bundle injection
+        if ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"]?.contains("XCTestBundleInject") == true {
+            return true
+        }
+        
+        // Check 9: UI Test specific - check for test session identifier
+        if ProcessInfo.processInfo.environment["XCTestSessionIdentifier"] != nil {
+            return true
+        }
+        
         return false
     }
 
