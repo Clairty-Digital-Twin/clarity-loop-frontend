@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7193BC592E005F8F00B9D1F6 /* AWSAPIPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 7193BC582E005F8F00B9D1F6 /* AWSAPIPlugin */; };
+		7193BC5B2E005F8F00B9D1F6 /* AWSCognitoAuthPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 7193BC5A2E005F8F00B9D1F6 /* AWSCognitoAuthPlugin */; };
+		7193BC5D2E005F8F00B9D1F6 /* AWSPinpointPushNotificationsPlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 7193BC5C2E005F8F00B9D1F6 /* AWSPinpointPushNotificationsPlugin */; };
+		7193BC5F2E005F8F00B9D1F6 /* AWSS3StoragePlugin in Frameworks */ = {isa = PBXBuildFile; productRef = 7193BC5E2E005F8F00B9D1F6 /* AWSS3StoragePlugin */; };
+		7193BC612E005F8F00B9D1F6 /* Amplify in Frameworks */ = {isa = PBXBuildFile; productRef = 7193BC602E005F8F00B9D1F6 /* Amplify */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		71B2A8DB2DF35EBB00F2784F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -51,6 +59,7 @@
 				Core/Networking/InsightEndpoint.swift = (ios, );
 				Core/Networking/PATEndpoint.swift = (ios, );
 				Core/Persistence/PersistenceController.swift = (ios, );
+				Core/Services/AmplifyConfigurator.swift = (ios, );
 				Core/Services/AppSecurityService.swift = (ios, );
 				Core/Services/AuthService.swift = (ios, );
 				Core/Services/BackgroundTaskManager.swift = (ios, );
@@ -216,6 +225,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7193BC592E005F8F00B9D1F6 /* AWSAPIPlugin in Frameworks */,
+				7193BC612E005F8F00B9D1F6 /* Amplify in Frameworks */,
+				7193BC5D2E005F8F00B9D1F6 /* AWSPinpointPushNotificationsPlugin in Frameworks */,
+				7193BC5B2E005F8F00B9D1F6 /* AWSCognitoAuthPlugin in Frameworks */,
+				7193BC5F2E005F8F00B9D1F6 /* AWSS3StoragePlugin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -291,6 +305,11 @@
 			);
 			name = "clarity-loop-frontend";
 			packageProductDependencies = (
+				7193BC582E005F8F00B9D1F6 /* AWSAPIPlugin */,
+				7193BC5A2E005F8F00B9D1F6 /* AWSCognitoAuthPlugin */,
+				7193BC5C2E005F8F00B9D1F6 /* AWSPinpointPushNotificationsPlugin */,
+				7193BC5E2E005F8F00B9D1F6 /* AWSS3StoragePlugin */,
+				7193BC602E005F8F00B9D1F6 /* Amplify */,
 			);
 			productName = "clarity-loop-frontend";
 			productReference = 71B2A8CB2DF35EB800F2784F /* clarity-loop-frontend.app */;
@@ -375,6 +394,7 @@
 			mainGroup = 71B2A8C22DF35EB800F2784F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 71B2A8CC2DF35EB800F2784F /* Products */;
@@ -749,6 +769,45 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/aws-amplify/amplify-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.48.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7193BC582E005F8F00B9D1F6 /* AWSAPIPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */;
+			productName = AWSAPIPlugin;
+		};
+		7193BC5A2E005F8F00B9D1F6 /* AWSCognitoAuthPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */;
+			productName = AWSCognitoAuthPlugin;
+		};
+		7193BC5C2E005F8F00B9D1F6 /* AWSPinpointPushNotificationsPlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */;
+			productName = AWSPinpointPushNotificationsPlugin;
+		};
+		7193BC5E2E005F8F00B9D1F6 /* AWSS3StoragePlugin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */;
+			productName = AWSS3StoragePlugin;
+		};
+		7193BC602E005F8F00B9D1F6 /* Amplify */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7193BC572E005F8F00B9D1F6 /* XCRemoteSwiftPackageReference "amplify-swift" */;
+			productName = Amplify;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 71B2A8C32DF35EB800F2784F /* Project object */;
 }

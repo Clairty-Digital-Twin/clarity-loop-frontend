@@ -1,3 +1,6 @@
+import Amplify
+import AWSCognitoAuthPlugin
+import AWSPluginsCore
 import BackgroundTasks
 import SwiftData
 import SwiftUI
@@ -25,6 +28,9 @@ struct ClarityPulseApp: App {
     // MARK: - Initializer
 
     init() {
+        // Configure Amplify first, before any other initialization
+        AmplifyConfigurator.configure()
+        
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
         let client: APIClientProtocol
@@ -32,28 +38,35 @@ struct ClarityPulseApp: App {
             let backendClient = BackendAPIClient(tokenProvider: {
                 print("🔍 APP: Token provider called")
 
-                // Use TokenManager directly for backend-centric auth
-                let token = await TokenManager.shared.getAccessToken()
+                // Use Amplify Auth to get token
+                do {
+                    let authSession = try await Amplify.Auth.fetchAuthSession()
+                    
+                    if let cognitoTokenProvider = authSession as? AuthCognitoTokensProvider {
+                        let tokens = try await cognitoTokenProvider.getCognitoTokens().get()
+                        let token = tokens.accessToken
+                        
+                        print("✅ APP: Token obtained from Amplify Auth")
+                        print("   - Length: \(token.count)")
 
-                if let token {
-                    print("✅ APP: Token obtained from TokenManager")
-                    print("   - Length: \(token.count)")
+                        #if DEBUG
+                            // Print the full JWT so we can copy from the console
+                            print("🧪 FULL_ACCESS_TOKEN → \(token)")
 
-                    #if DEBUG
-                        // Print the full JWT so we can copy from the console
-                        print("🧪 FULL_ID_TOKEN → \(token)")
-
-                        // Copy to clipboard for CLI use
-                        #if canImport(UIKit)
-                            UIPasteboard.general.string = token
-                            print("📋 Token copied to clipboard")
+                            // Copy to clipboard for CLI use
+                            #if canImport(UIKit)
+                                UIPasteboard.general.string = token
+                                print("📋 Token copied to clipboard")
+                            #endif
                         #endif
-                    #endif
-                } else {
-                    print("⚠️ APP: No token available")
+                        
+                        return token
+                    }
+                } catch {
+                    print("⚠️ APP: Failed to get token from Amplify: \(error)")
                 }
-
-                return token
+                
+                return nil
             }) {
             client = backendClient
         } else {
@@ -68,7 +81,7 @@ struct ClarityPulseApp: App {
         let service = AuthService(apiClient: client)
         self.authService = service
 
-        // TokenManagementService no longer needed - using TokenManager directly
+        // TokenManagementService no longer needed - using Amplify Auth
 
         let healthKit = HealthKitService(apiClient: client)
         self.healthKitService = healthKit

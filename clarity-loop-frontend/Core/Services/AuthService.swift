@@ -1,3 +1,6 @@
+import Amplify
+import AWSCognitoAuthPlugin
+import AWSPluginsCore
 import Combine
 import Foundation
 #if canImport(UIKit) && DEBUG
@@ -48,6 +51,9 @@ enum AuthenticationError: LocalizedError {
     case userDisabled
     case networkError
     case configurationError
+    case emailNotVerified
+    case invalidVerificationCode
+    case verificationCodeExpired
     case unknown(String)
 
     var errorDescription: String? {
@@ -64,21 +70,26 @@ enum AuthenticationError: LocalizedError {
             "Unable to connect to the server. Please check your internet connection and try again."
         case .configurationError:
             "App configuration error. Please restart the app or contact support."
+        case .emailNotVerified:
+            "Please verify your email address before signing in."
+        case .invalidVerificationCode:
+            "The verification code is invalid. Please check and try again."
+        case .verificationCodeExpired:
+            "The verification code has expired. Please request a new one."
         case let .unknown(message):
-            "Registration failed: \(message)"
+            "Authentication failed: \(message)"
         }
     }
 }
 
-/// The concrete implementation of the authentication service using AWS Cognito.
+/// The concrete implementation of the authentication service using AWS Amplify.
 @MainActor
 final class AuthService: AuthServiceProtocol {
     // MARK: - Properties
 
     private nonisolated let apiClient: APIClientProtocol
-    // REMOVED: Direct Cognito integration
-    // private let cognitoAuth = CognitoAuthService()
     private var authStateTask: Task<Void, Never>?
+    private var pendingEmailForVerification: String?
 
     /// A continuation to drive the `authState` async stream.
     private var authStateContinuation: AsyncStream<AuthUser?>.Continuation?
@@ -86,11 +97,10 @@ final class AuthService: AuthServiceProtocol {
     /// An async stream that emits the current user whenever the auth state changes.
     lazy var authState: AsyncStream<AuthUser?> = AsyncStream { continuation in
         self.authStateContinuation = continuation
-
-        // FIXED: No more Cognito auth state
+        
+        // Listen to Amplify Auth events
         self.authStateTask = Task { [weak self] in
-            // Auth state will be managed through backend tokens
-            continuation.yield(nil) // Start with no user
+            await self?.listenToAuthEvents()
         }
     }
 
@@ -98,8 +108,33 @@ final class AuthService: AuthServiceProtocol {
 
     var currentUser: AuthUser? {
         get async {
-            // Return cached user from last login
-            _currentUser
+            // Get current user from Amplify
+            do {
+                let user = try await Amplify.Auth.getCurrentUser()
+                let attributes = try await Amplify.Auth.fetchUserAttributes()
+                
+                var email: String?
+                var name: String?
+                
+                for attribute in attributes {
+                    switch attribute.key {
+                    case .email:
+                        email = attribute.value
+                    case .name:
+                        name = attribute.value
+                    default:
+                        break
+                    }
+                }
+                
+                return AuthUser(
+                    id: user.userId,
+                    email: email ?? "",
+                    displayName: name
+                )
+            } catch {
+                return nil
+            }
         }
     }
 
@@ -109,38 +144,67 @@ final class AuthService: AuthServiceProtocol {
         self.apiClient = apiClient
     }
 
+    // MARK: - Private Methods
+    
+    private func listenToAuthEvents() async {
+        for await event in Amplify.Hub.asyncEvents(for: .auth) {
+            switch event.eventName {
+            case HubPayload.EventName.Auth.signedIn:
+                if let user = await currentUser {
+                    _currentUser = user
+                    authStateContinuation?.yield(user)
+                }
+            case HubPayload.EventName.Auth.signedOut:
+                _currentUser = nil
+                authStateContinuation?.yield(nil)
+            default:
+                break
+            }
+        }
+    }
+    
+    private func syncUserWithBackend(email: String) async throws -> UserSessionResponseDTO {
+        // After successful Amplify sign-in, sync with backend
+        let deviceInfo = DeviceInfoHelper.generateDeviceInfo()
+        let loginDTO = UserLoginRequestDTO(
+            email: email,
+            password: "", // Backend won't validate password since user is already authenticated via Cognito
+            rememberMe: true,
+            deviceInfo: deviceInfo
+        )
+        
+        // This will create/update user in backend and return user data
+        return try await apiClient.login(requestDTO: loginDTO)
+    }
+
     // MARK: - Public Methods
 
     func signIn(withEmail email: String, password: String) async throws -> UserSessionResponseDTO {
         do {
-            // FIXED: NO MORE DIRECT COGNITO! Only use backend API
-            // _ = try await cognitoAuth.signIn(email: email, password: password)
-
-            // Create backend login request with device info
-            let deviceInfo = DeviceInfoHelper.generateDeviceInfo()
-            let loginDTO = UserLoginRequestDTO(
-                email: email,
-                password: password,
-                rememberMe: true,
-                deviceInfo: deviceInfo
+            // Sign in with Amplify
+            let signInResult = try await Amplify.Auth.signIn(
+                username: email,
+                password: password
             )
-            let response = try await apiClient.login(requestDTO: loginDTO)
-
-            // Store tokens in TokenManager
-            await TokenManager.shared.store(
-                accessToken: response.tokens.accessToken,
-                refreshToken: response.tokens.refreshToken,
-                expiresIn: response.tokens.expiresIn
-            )
-
-            // Update auth state with the logged in user
-            let user = response.user.authUser
-            _currentUser = user
-            authStateContinuation?.yield(user)
-
-            return response.user
+            
+            if signInResult.isSignedIn {
+                // Sync with backend to get user data
+                let response = try await syncUserWithBackend(email: email)
+                
+                // Update auth state
+                let user = response.user.authUser
+                _currentUser = user
+                authStateContinuation?.yield(user)
+                
+                return response.user
+            } else {
+                // Handle additional steps if needed (MFA, etc)
+                throw AuthenticationError.unknown("Additional sign-in steps required")
+            }
+        } catch let error as AuthError {
+            throw mapAmplifyError(error)
         } catch {
-            throw mapCognitoError(error)
+            throw error
         }
     }
 
@@ -150,127 +214,195 @@ final class AuthService: AuthServiceProtocol {
         details: UserRegistrationRequestDTO
     ) async throws -> RegistrationResponseDTO {
         do {
-            // FIXED: Register only through backend
-            // let fullName = "\(details.firstName) \(details.lastName)"
-            // _ = try await cognitoAuth.signUp(email: email, password: password, fullName: fullName)
-
-            // Register with our backend
-            let response = try await apiClient.register(requestDTO: details)
-            return response
-        } catch let error as APIError {
-            // Special handling for email verification required
-            if case .emailVerificationRequired = error {
-                // Re-throw the error as-is so the ViewModel can handle it
-                throw error
+            // Register with Amplify
+            let userAttributes = [
+                AuthUserAttribute(.email, value: email),
+                AuthUserAttribute(.name, value: "\(details.firstName) \(details.lastName)")
+            ]
+            
+            let options = AuthSignUpRequest.Options(userAttributes: userAttributes)
+            let signUpResult = try await Amplify.Auth.signUp(
+                username: email,
+                password: password,
+                options: options
+            )
+            
+            // Store email for verification
+            pendingEmailForVerification = email
+            
+            // Check if we need email verification
+            switch signUpResult.nextStep {
+            case .confirmUser:
+                // Email verification required
+                throw APIError.emailVerificationRequired
+            case .done:
+                // Auto-confirmed (shouldn't happen in production)
+                // Register with backend
+                let response = try await apiClient.register(requestDTO: details)
+                return response
             }
-            throw mapCognitoError(error)
+        } catch let error as AuthError {
+            throw mapAmplifyError(error)
         } catch {
-            throw mapCognitoError(error)
+            throw error
         }
     }
 
     func signOut() async throws {
-        // FIXED: Clear local auth state
-        // try await cognitoAuth.signOut()
-
-        // Clear tokens
-        await TokenManager.shared.clear()
-
-        // Clear user state
-        _currentUser = nil
-        authStateContinuation?.yield(nil)
+        do {
+            _ = await Amplify.Auth.signOut()
+            
+            // Clear user state
+            _currentUser = nil
+            authStateContinuation?.yield(nil)
+        } catch {
+            // Even if Amplify signOut fails, clear local state
+            _currentUser = nil
+            authStateContinuation?.yield(nil)
+            throw mapAmplifyError(error)
+        }
     }
 
     func sendPasswordReset(to email: String) async throws {
-        // Cognito password reset is handled through the hosted UI
-        // For now, we'll throw an error indicating this
-        throw AuthenticationError.unknown("Password reset is available through the Cognito hosted UI")
+        do {
+            _ = try await Amplify.Auth.resetPassword(for: email)
+        } catch let error as AuthError {
+            throw mapAmplifyError(error)
+        }
     }
 
     func getCurrentUserToken() async throws -> String {
         print("🔍 AUTH: getCurrentUserToken() called")
 
-        // FIXED: Get token from TokenManager instead of Cognito
-        guard let token = await TokenManager.shared.getAccessToken() else {
-            throw AuthenticationError.unknown("No valid access token")
-        }
+        do {
+            let session = try await Amplify.Auth.fetchAuthSession()
+            
+            guard let cognitoTokenProvider = session as? AuthCognitoTokensProvider else {
+                throw AuthenticationError.unknown("Could not get Cognito tokens")
+            }
+            
+            let tokens = try await cognitoTokenProvider.getCognitoTokens().get()
+            let token = tokens.accessToken
+            
+            print("✅ AUTH: Token retrieved successfully")
+            print("   - Length: \(token.count) characters")
+            print("   - Preview: \(String(token.prefix(50)))...")
 
-        print("✅ AUTH: Token retrieved successfully")
-        print("   - Length: \(token.count) characters")
-        print("   - Preview: \(String(token.prefix(50)))...")
+            #if DEBUG
+                // Print the full JWT so we can copy from the console
+                print("🧪 FULL_ACCESS_TOKEN → \(token)")
 
-        #if DEBUG
-            // 1️⃣  Print the full JWT so we can copy from the console
-            print("🧪 FULL_ID_TOKEN → \(token)")
-
-            // 2️⃣  Copy to clipboard for CLI use
-            #if canImport(UIKit)
-                UIPasteboard.general.string = token
-                print("📋 Token copied to clipboard")
+                // Copy to clipboard for CLI use
+                #if canImport(UIKit)
+                    UIPasteboard.general.string = token
+                    print("📋 Token copied to clipboard")
+                #endif
             #endif
-        #endif
 
-        return token
+            return token
+        } catch {
+            throw AuthenticationError.unknown("Failed to get access token: \(error)")
+        }
     }
 
     func verifyEmail(email: String, code: String) async throws -> LoginResponseDTO {
         do {
-            // Call backend verify-email endpoint and get tokens
-            let response = try await apiClient.verifyEmail(email: email, code: code)
-
-            // Store tokens in TokenManager
-            await TokenManager.shared.store(
-                accessToken: response.tokens.accessToken,
-                refreshToken: response.tokens.refreshToken,
-                expiresIn: response.tokens.expiresIn
+            // Confirm sign-up with Amplify
+            let confirmResult = try await Amplify.Auth.confirmSignUp(
+                for: email,
+                confirmationCode: code
             )
-
-            // Update auth state with the logged in user
-            let user = response.user.authUser
-            _currentUser = user
-            authStateContinuation?.yield(user)
-
-            return response
+            
+            if confirmResult.isSignUpComplete {
+                // Email verified successfully
+                // Return a dummy response since the actual login will happen separately
+                // The ViewModel will handle the sign-in after verification
+                return LoginResponseDTO(
+                    user: UserSessionResponseDTO(
+                        id: "",
+                        email: email,
+                        displayName: "",
+                        avatarUrl: nil,
+                        provider: "email",
+                        role: "user",
+                        isActive: true,
+                        isEmailVerified: true,
+                        preferences: UserPreferencesResponseDTO(
+                            theme: "light",
+                            notifications: true,
+                            language: "en"
+                        ),
+                        metadata: UserMetadataResponseDTO(
+                            lastLogin: Date(),
+                            loginCount: 1,
+                            createdAt: Date(),
+                            updatedAt: Date()
+                        )
+                    ),
+                    tokens: AuthTokensResponseDTO(
+                        accessToken: "",
+                        refreshToken: "",
+                        tokenType: "Bearer",
+                        expiresIn: 3600
+                    )
+                )
+            } else {
+                throw AuthenticationError.unknown("Email verification incomplete")
+            }
+        } catch let error as AuthError {
+            throw mapAmplifyError(error)
         } catch {
-            throw mapCognitoError(error)
+            throw error
         }
     }
 
     func resendVerificationEmail(to email: String) async throws {
         do {
-            _ = try await apiClient.resendVerificationEmail(email: email)
-            // Email sent successfully
-        } catch {
-            throw mapCognitoError(error)
+            _ = try await Amplify.Auth.resendSignUpCode(for: email)
+        } catch let error as AuthError {
+            throw mapAmplifyError(error)
         }
     }
 
     // MARK: - Private Error Mapping
 
-    private func mapCognitoError(_ error: Error) -> Error {
-        // Map Cognito-specific errors to our AuthenticationError enum
-        if error is URLError {
-            return AuthenticationError.networkError
+    private func mapAmplifyError(_ error: Error) -> Error {
+        guard let authError = error as? AuthError else {
+            return AuthenticationError.unknown(error.localizedDescription)
         }
-
-        // Check for specific Cognito error messages
-        let errorMessage = error.localizedDescription.lowercased()
-
-        if errorMessage.contains("email"), errorMessage.contains("exist") {
-            return AuthenticationError.emailAlreadyInUse
-        } else if errorMessage.contains("password") {
-            return AuthenticationError.weakPassword
-        } else if errorMessage.contains("invalid"), errorMessage.contains("email") {
-            return AuthenticationError.invalidEmail
-        } else if errorMessage.contains("disabled") {
-            return AuthenticationError.userDisabled
-        } else if errorMessage.contains("network") {
-            return AuthenticationError.networkError
-        } else if errorMessage.contains("configuration") {
+        
+        switch authError {
+        case .service(let message, _, _):
+            // Parse service errors
+            if message.contains("UsernameExistsException") {
+                return AuthenticationError.emailAlreadyInUse
+            } else if message.contains("InvalidPasswordException") {
+                return AuthenticationError.weakPassword
+            } else if message.contains("InvalidParameterException") && message.contains("email") {
+                return AuthenticationError.invalidEmail
+            } else if message.contains("UserNotConfirmedException") {
+                return AuthenticationError.emailNotVerified
+            } else if message.contains("CodeMismatchException") {
+                return AuthenticationError.invalidVerificationCode
+            } else if message.contains("ExpiredCodeException") {
+                return AuthenticationError.verificationCodeExpired
+            } else if message.contains("NotAuthorizedException") {
+                return AuthenticationError.unknown("Invalid email or password")
+            }
+            return AuthenticationError.unknown(message)
+            
+        case .notAuthorized:
+            return AuthenticationError.unknown("Invalid email or password")
+            
+        case .invalidState:
             return AuthenticationError.configurationError
+            
+        case .network(let message):
+            return AuthenticationError.networkError
+            
+        default:
+            return AuthenticationError.unknown(error.localizedDescription)
         }
-
-        return AuthenticationError.unknown(error.localizedDescription)
     }
 
     deinit {

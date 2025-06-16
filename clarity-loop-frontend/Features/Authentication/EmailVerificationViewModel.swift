@@ -51,8 +51,12 @@ final class EmailVerificationViewModel: ObservableObject {
         hasError = false
 
         do {
-            // Call verify email endpoint - this now returns tokens and logs in automatically
+            // First verify the email with Amplify
             _ = try await authService.verifyEmail(email: email, code: otpCode)
+            
+            // Since Amplify's email verification doesn't automatically sign in,
+            // we need to sign in the user with their stored credentials
+            _ = try await authService.signIn(withEmail: email, password: password)
 
             // Success! User is now logged in
             isVerified = true
@@ -81,7 +85,7 @@ final class EmailVerificationViewModel: ObservableObject {
         errorMessage = nil
 
         do {
-            // Call resend email endpoint (assuming it exists)
+            // Call resend email endpoint
             try await authService.resendVerificationEmail(to: email)
 
             // Start cooldown
@@ -123,16 +127,27 @@ final class EmailVerificationViewModel: ObservableObject {
     // MARK: - Private Methods
 
     private func handleVerificationError(_ error: Error) {
-        if let urlError = error as? URLError {
+        if let authError = error as? AuthenticationError {
+            switch authError {
+            case .invalidVerificationCode:
+                errorMessage = "Invalid verification code. Please check and try again."
+                // Clear the OTP fields
+                otpDigits = Array(repeating: "", count: 6)
+            case .verificationCodeExpired:
+                errorMessage = "Verification code expired. Please request a new one."
+                // Clear the OTP fields
+                otpDigits = Array(repeating: "", count: 6)
+            case .networkError:
+                errorMessage = "No internet connection"
+            default:
+                errorMessage = authError.localizedDescription
+            }
+        } else if let urlError = error as? URLError {
             if urlError.code == .notConnectedToInternet {
                 errorMessage = "No internet connection"
             } else {
                 errorMessage = "Network error. Please try again."
             }
-        } else if (error as NSError).code == 400 {
-            errorMessage = "Invalid or expired code"
-            // Clear the OTP fields
-            otpDigits = Array(repeating: "", count: 6)
         } else {
             errorMessage = "Verification failed. Please try again."
         }
