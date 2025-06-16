@@ -11,6 +11,7 @@ final class LoginViewModel {
     var password = ""
     var errorMessage: String?
     var isLoading = false
+    var shouldShowEmailVerification = false
 
     // MARK: - Private Properties
 
@@ -28,12 +29,19 @@ final class LoginViewModel {
     func login() async {
         isLoading = true
         errorMessage = nil
+        shouldShowEmailVerification = false
 
         do {
             _ = try await authService.signIn(withEmail: email, password: password)
             // On success, the AuthViewModel observing the auth state will trigger the UI change.
         } catch {
-            errorMessage = error.localizedDescription
+            if let apiError = error as? APIError, case .emailVerificationRequired = apiError {
+                // Email verification is required - navigate to verification screen
+                shouldShowEmailVerification = true
+                errorMessage = nil // Don't show error since we're navigating to verification
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false

@@ -65,6 +65,13 @@ struct LoginView: View {
                 )
             }
             .padding()
+            .sheet(isPresented: $viewModel.shouldShowEmailVerification) {
+                EmailVerificationView(
+                    email: viewModel.email,
+                    password: viewModel.password,
+                    authService: authService
+                )
+            }
         }
     }
 }
