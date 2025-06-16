@@ -12,12 +12,63 @@ import SwiftUI
 struct ClarityPulseApp: App {
     // MARK: - Properties
     
-    /// Detects if running in test environment using runtime checks
+    /// Detects if running in test environment using comprehensive checks
     private static var isRunningInTestEnvironment: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
-        NSClassFromString("XCTestCase") != nil ||
-        Bundle.main.bundlePath.hasSuffix(".xctest") ||
-        ProcessInfo.processInfo.processName.contains("Test")
+        // Check for TESTING compiler flag first (most reliable)
+        #if TESTING
+        return true
+        #endif
+        
+        // Check 1: Direct test environment flags (works for unit tests)
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return true
+        }
+        
+        // Check 2: Test class availability (works for unit tests)
+        if NSClassFromString("XCTestCase") != nil {
+            return true
+        }
+        
+        // Check 3: Bundle name contains test indicators (works for unit tests)
+        if Bundle.main.bundlePath.hasSuffix(".xctest") {
+            return true
+        }
+        
+        // Check 4: Process name contains test indicators (works for both unit and UI tests)
+        let processName = ProcessInfo.processInfo.processName
+        if processName.contains("Test") || processName.contains("-Runner") {
+            return true
+        }
+        
+        // Check 5: Look for UI test environment indicators
+        if ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
+           ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
+            return true
+        }
+        
+        // Check 6: Arguments contain test indicators (works for UI tests)
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains(where: { $0.contains("XCTest") || $0.contains("UITest") }) {
+            return true
+        }
+        
+        // Check 7: Special case for simulator launched by test runner
+        if ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil &&
+           arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
+            return true
+        }
+        
+        // Check 8: UI Test specific - check for test bundle injection
+        if ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"]?.contains("XCTestBundleInject") == true {
+            return true
+        }
+        
+        // Check 9: UI Test specific - check for test session identifier
+        if ProcessInfo.processInfo.environment["XCTestSessionIdentifier"] != nil {
+            return true
+        }
+        
+        return false
     }
 
     // By using the @State property wrapper, we ensure that the AuthViewModel
@@ -36,9 +87,19 @@ struct ClarityPulseApp: App {
     // MARK: - Initializer
 
     init() {
+        // Debug logging to understand the environment
+        let isTest = Self.isRunningInTestEnvironment
+        print("🔍 APP INIT: isRunningInTestEnvironment = \(isTest)")
+        print("🔍 APP INIT: processName = \(ProcessInfo.processInfo.processName)")
+        print("🔍 APP INIT: arguments = \(ProcessInfo.processInfo.arguments)")
+        print("🔍 APP INIT: XCTestConfigurationFilePath = \(ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? "nil")")
+        
         // Configure Amplify, but skip during test execution to prevent crashes
-        if !Self.isRunningInTestEnvironment {
+        if !isTest {
+            print("🚀 APP INIT: Configuring Amplify")
             AmplifyConfigurator.configure()
+        } else {
+            print("🧪 APP INIT: Skipping Amplify configuration (test environment detected)")
         }
         
         // Initialize the BackendAPIClient with proper token provider

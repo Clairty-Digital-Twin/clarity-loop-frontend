@@ -106,21 +106,64 @@ final class AuthService: AuthServiceProtocol {
 
     private var _currentUser: AuthUser?
     
-    /// Detects if running in test environment using runtime checks
+    /// Detects if running in test environment using comprehensive checks
     private var isRunningInTestEnvironment: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
-        NSClassFromString("XCTestCase") != nil ||
-        Bundle.main.bundlePath.hasSuffix(".xctest") ||
-        ProcessInfo.processInfo.processName.contains("Test")
+        // Check for TESTING compiler flag first (most reliable)
+        #if TESTING
+        return true
+        #endif
+        
+        // Check 1: Direct test environment flags (works for unit tests)
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return true
+        }
+        
+        // Check 2: Test class availability (works for unit tests)
+        if NSClassFromString("XCTestCase") != nil {
+            return true
+        }
+        
+        // Check 3: Bundle name contains test indicators (works for unit tests)
+        if Bundle.main.bundlePath.hasSuffix(".xctest") {
+            return true
+        }
+        
+        // Check 4: Process name contains test indicators (works for both unit and UI tests)
+        let processName = ProcessInfo.processInfo.processName
+        if processName.contains("Test") || processName.contains("-Runner") {
+            return true
+        }
+        
+        // Check 5: Look for UI test environment indicators
+        if ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
+           ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
+            return true
+        }
+        
+        // Check 6: Arguments contain test indicators (works for UI tests)
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains(where: { $0.contains("XCTest") || $0.contains("UITest") }) {
+            return true
+        }
+        
+        // Check 7: Special case for simulator launched by test runner
+        if ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil &&
+           arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
+            return true
+        }
+        
+        return false
     }
 
     var currentUser: AuthUser? {
         get async {
             // Skip Amplify calls during tests to prevent crashes
             if isRunningInTestEnvironment {
+                print("🧪 AUTH: Skipping Amplify in test environment, returning cached user: \(_currentUser?.email ?? "nil")")
                 return _currentUser
             }
             
+            print("🔍 AUTH: Getting current user from Amplify")
             // Get current user from Amplify
             do {
                 let user = try await Amplify.Auth.getCurrentUser()
@@ -165,7 +208,7 @@ final class AuthService: AuthServiceProtocol {
         }
         
         // Listen to Amplify Auth Hub events
-        _ = Amplify.Hub.listen(to: .auth) { [weak self] event in
+        _ = Amplify.Hub.listen(to: .auth, listener: { [weak self] event in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 
@@ -182,7 +225,7 @@ final class AuthService: AuthServiceProtocol {
                     break
                 }
             }
-        }
+        })
     }
     
     private func syncUserWithBackend(email: String) async throws -> UserSessionResponseDTO {
