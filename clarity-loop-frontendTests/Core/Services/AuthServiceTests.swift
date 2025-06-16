@@ -165,6 +165,7 @@ final class AuthServiceTests: XCTestCase {
 
     func testRegistration_Success() async throws {
         // Given
+        authService = MockAuthService()
         authService.shouldSucceed = true
         let details = UserRegistrationRequestDTO(
             email: "newuser@example.com",
@@ -190,6 +191,7 @@ final class AuthServiceTests: XCTestCase {
 
     func testRegistration_Failure() async throws {
         // Given
+        authService = MockAuthService()
         authService.shouldSucceed = false
         let details = UserRegistrationRequestDTO(
             email: "newuser@example.com",
