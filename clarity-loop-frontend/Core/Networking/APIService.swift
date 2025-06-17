@@ -6,7 +6,19 @@ import Combine
 final class APIService: ObservableObject {
     // MARK: - Properties
     
-    static let shared = APIService()
+    static var shared: APIService?
+    
+    static func configure(
+        apiClient: APIClientProtocol,
+        authService: AuthServiceProtocol,
+        offlineQueue: OfflineQueueManagerProtocol
+    ) {
+        shared = APIService(
+            apiClient: apiClient,
+            authService: authService,
+            offlineQueue: offlineQueue
+        )
+    }
     
     private let apiClient: APIClientProtocol
     private let authService: AuthServiceProtocol
@@ -40,6 +52,23 @@ final class APIService: ObservableObject {
     
     /// Execute API request with automatic retry and caching
     func execute<T: Decodable>(
+        _ endpoint: APIEndpoint,
+        cachePolicy: CachePolicy = .networkFirst,
+        retryPolicy: RetryPolicy = .standard
+    ) async throws -> T {
+        // Check cache first if applicable
+        if let cached: T = getCachedResponse(for: endpoint, policy: cachePolicy) {
+            return cached
+        }
+        
+        // Execute with retry
+        let response: T = try await executeWithRetry(endpoint, policy: retryPolicy)
+        
+        return response
+    }
+    
+    /// Execute API request with caching support for Codable responses
+    func executeWithCaching<T: Codable>(
         _ endpoint: APIEndpoint,
         cachePolicy: CachePolicy = .networkFirst,
         retryPolicy: RetryPolicy = .standard
@@ -179,16 +208,16 @@ final class APIService: ObservableObject {
     private func handleAuthEndpoint<T>(_ endpoint: AuthEndpoint) async throws -> T {
         switch endpoint {
         case .login(let request):
-            let response = try await apiClient.login(request: request)
+            let response = try await apiClient.login(requestDTO: request)
             return response as! T
         case .register(let request):
-            let response = try await apiClient.register(request: request)
+            let response = try await apiClient.register(requestDTO: request)
             return response as! T
         case .verifyEmail(let request):
-            let response = try await apiClient.verifyEmail(request: request)
+            let response = try await apiClient.verifyEmail(email: request.email, code: request.code)
             return response as! T
-        case .refreshToken:
-            let response = try await apiClient.refreshAuthToken()
+        case .refreshToken(let request):
+            let response = try await apiClient.refreshToken(requestDTO: request)
             return response as! T
         case .logout:
             try await apiClient.logout()

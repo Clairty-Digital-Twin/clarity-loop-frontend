@@ -20,7 +20,7 @@ final class PushNotificationManager: NSObject, ObservableObject {
     private let authService: AuthServiceProtocol
     
     private var cancellables = Set<AnyCancellable>()
-    private var notificationHandlers: [NotificationType: [NotificationHandler]] = [:]
+    private var notificationHandlers: [NotificationType: [NotificationHandlerWrapper]] = [:]
     
     // MARK: - Configuration
     
@@ -90,9 +90,9 @@ final class PushNotificationManager: NSObject, ObservableObject {
     
     // MARK: - Initialization
     
-    private override init() {
-        self.apiClient = BackendAPIClient.shared
-        self.authService = AuthService.shared
+    init(apiClient: APIClientProtocol, authService: AuthServiceProtocol) {
+        self.apiClient = apiClient
+        self.authService = authService
         super.init()
         
         notificationCenter.delegate = self
@@ -190,7 +190,7 @@ final class PushNotificationManager: NSObject, ObservableObject {
         notificationHandlers[type]?.append(wrapper)
         
         return AnyCancellable { [weak self] in
-            self?.notificationHandlers[type]?.removeAll { ($0 as? NotificationHandlerWrapper)?.id == id }
+            self?.notificationHandlers[type]?.removeAll { $0.id == id }
         }
     }
     
@@ -333,7 +333,7 @@ final class PushNotificationManager: NSObject, ObservableObject {
     }
     
     private func handleAuthStateChange() async {
-        if await authService.isAuthenticated {
+        if await authService.currentUser != nil {
             // Re-register device token if needed
             if deviceToken != nil {
                 await registerForRemoteNotifications()
@@ -462,7 +462,7 @@ extension PushNotificationManager: UNUserNotificationCenterDelegate {
 
 // MARK: - Supporting Types
 
-enum NotificationType: String, CaseIterable {
+enum NotificationType: String, CaseIterable, Codable {
     case healthInsight = "health_insight"
     case patReminder = "pat_reminder"
     case healthAlert = "health_alert"
@@ -554,13 +554,9 @@ struct NotificationInfo {
     let userInfo: [AnyHashable: Any]
 }
 
-private struct NotificationHandlerWrapper: NotificationHandler {
+private struct NotificationHandlerWrapper {
     let id: UUID
     let handler: NotificationHandler
-    
-    func callAsFunction(_ info: NotificationInfo) {
-        handler(info)
-    }
 }
 
 struct NotificationPreferences: Codable {

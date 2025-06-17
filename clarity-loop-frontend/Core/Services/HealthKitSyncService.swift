@@ -7,7 +7,7 @@ import Combine
 final class HealthKitSyncService: ObservableObject {
     // MARK: - Properties
     
-    static let shared = HealthKitSyncService()
+    static var shared: HealthKitSyncService?
     
     @Published private(set) var syncStatus: HealthKitSyncStatus = .idle
     @Published private(set) var lastSyncDate: Date?
@@ -31,6 +31,20 @@ final class HealthKitSyncService: ObservableObject {
     private let maxRetries = 3
     
     // MARK: - Initialization
+    
+    static func configure(
+        healthKitService: HealthKitServiceProtocol,
+        healthRepository: HealthRepository,
+        apiClient: APIClientProtocol,
+        backgroundTaskManager: BackgroundTaskManager
+    ) {
+        shared = HealthKitSyncService(
+            healthKitService: healthKitService,
+            healthRepository: healthRepository,
+            apiClient: apiClient,
+            backgroundTaskManager: backgroundTaskManager
+        )
+    }
     
     private init(
         healthKitService: HealthKitServiceProtocol,
@@ -257,21 +271,41 @@ final class HealthKitSyncService: ObservableObject {
         for sample in samples {
             let workout = sample as! HKWorkout
             
-            // Active energy
-            if let energy = workout.totalEnergyBurned {
-                let metric = HealthMetric(
-                    timestamp: workout.startDate,
-                    value: energy.doubleValue(for: .kilocalorie()),
-                    type: .activeEnergy,
-                    unit: "kcal"
-                )
-                metric.source = "HealthKit"
-                metric.metadata = [
-                    "workoutType": workout.workoutActivityType.name,
-                    "duration": "\(workout.duration)"
-                ]
-                
-                metrics.append(metric)
+            // Active energy - use statistics for iOS 18+
+            if #available(iOS 18.0, *) {
+                if let energyStats = workout.statistics(for: HKQuantityType(.activeEnergyBurned)),
+                   let energy = energyStats.sumQuantity() {
+                    let metric = HealthMetric(
+                        timestamp: workout.startDate,
+                        value: energy.doubleValue(for: .kilocalorie()),
+                        type: .activeEnergy,
+                        unit: "kcal"
+                    )
+                    metric.source = "HealthKit"
+                    metric.metadata = [
+                        "workoutType": workout.workoutActivityType.name,
+                        "duration": "\(workout.duration)"
+                    ]
+                    
+                    metrics.append(metric)
+                }
+            } else {
+                // Fallback for older iOS versions
+                if let energy = workout.totalEnergyBurned {
+                    let metric = HealthMetric(
+                        timestamp: workout.startDate,
+                        value: energy.doubleValue(for: .kilocalorie()),
+                        type: .activeEnergy,
+                        unit: "kcal"
+                    )
+                    metric.source = "HealthKit"
+                    metric.metadata = [
+                        "workoutType": workout.workoutActivityType.name,
+                        "duration": "\(workout.duration)"
+                    ]
+                    
+                    metrics.append(metric)
+                }
             }
         }
         

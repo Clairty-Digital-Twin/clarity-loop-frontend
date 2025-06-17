@@ -39,14 +39,13 @@ final class UserProfileViewModel: BaseViewModel {
         guard let profile = profile else { return 0 }
         
         var completedFields = 0
-        let totalFields = 7
+        let totalFields = 5
         
         if !profile.displayName.isEmpty { completedFields += 1 }
         if profile.dateOfBirth != nil { completedFields += 1 }
         if profile.heightInCentimeters != nil { completedFields += 1 }
         if profile.weightInKilograms != nil { completedFields += 1 }
-        // Activity level and health goals are now in preferences
-        if !profile.preferences.goals.isEmpty { completedFields += 1 }
+        if profile.privacySettings.dataSharingEnabled { completedFields += 1 }
         
         return Double(completedFields) / Double(totalFields)
     }
@@ -90,7 +89,7 @@ final class UserProfileViewModel: BaseViewModel {
                 }
             } else {
                 // No user ID available
-                profileState = .error(ProfileError.userNotAuthenticated)
+                profileState = .error(ProfileError.notAuthenticated)
             }
         } catch {
             profileState = .error(error)
@@ -143,9 +142,9 @@ final class UserProfileViewModel: BaseViewModel {
                 
                 // TODO: Upload image to storage service
                 // For now, we'll just store it locally
-                if var profile = profile {
-                    profile.profileImageUrl = "local://\(UUID().uuidString)"
-                    profile.lastModified = Date()
+                if let profile = profile {
+                    // Update lastSync as a proxy for update time
+                    profile.lastSync = Date()
                     try await userProfileRepository.update(profile)
                     profileState = .loaded(profile)
                 }
@@ -166,7 +165,7 @@ final class UserProfileViewModel: BaseViewModel {
             try await userProfileRepository.delete(profile)
             
             // Sign out
-            await authService.signOut()
+            try await authService.signOut()
         } catch {
             handle(error: error)
         }
@@ -184,10 +183,12 @@ final class UserProfileViewModel: BaseViewModel {
             // let response = try await apiClient.getUserProfile(userId: userId)
             
             // For now, create a default profile
-            let profile = UserProfileModel()
-            profile.userId = userId
-            profile.email = await authService.currentUser?.email ?? ""
-            profile.displayName = await authService.currentUser?.displayName ?? ""
+            let currentUser = await authService.currentUser
+            let profile = UserProfileModel(
+                userID: userId,
+                email: currentUser?.email ?? "",
+                displayName: currentUser?.email ?? "" // Using email as displayName since AuthUser doesn't have displayName
+            )
             
             try await userProfileRepository.create(profile)
             profileState = .loaded(profile)
@@ -269,21 +270,3 @@ enum ActivityLevel: String, CaseIterable {
     }
 }
 
-// MARK: - Profile Error
-
-enum ProfileError: LocalizedError {
-    case userNotAuthenticated
-    case profileNotFound
-    case updateFailed
-    
-    var errorDescription: String? {
-        switch self {
-        case .userNotAuthenticated:
-            return "User is not authenticated"
-        case .profileNotFound:
-            return "User profile not found"
-        case .updateFailed:
-            return "Failed to update profile"
-        }
-    }
-}
