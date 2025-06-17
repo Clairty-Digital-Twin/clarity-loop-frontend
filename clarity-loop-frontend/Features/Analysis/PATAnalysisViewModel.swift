@@ -106,9 +106,9 @@ final class PATAnalysisViewModel {
                 await pollForCompletion(analysisId: result.analysisId)
             }
         } catch {
-            let errorMsg = "Analysis failed: \(error.localizedDescription)"
-            analysisState = .error(errorMsg)
-            errorMessage = errorMsg
+            let analysisError = PATAnalysisError.fetchFailed(underlying: error)
+            analysisState = .error(analysisError)
+            errorMessage = analysisError.errorDescription
         }
 
         isAnalyzing = false
@@ -147,7 +147,7 @@ final class PATAnalysisViewModel {
                 }
             } catch {
                 if attempt == maxAttempts {
-                    analysisState = .error("Failed to get analysis results: \(error.localizedDescription)")
+                    analysisState = .error(PATAnalysisError.pollingFailed(underlying: error))
                 }
                 // Continue polling on errors except for the last attempt
             }
