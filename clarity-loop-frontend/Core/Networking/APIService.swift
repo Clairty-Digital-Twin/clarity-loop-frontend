@@ -220,7 +220,9 @@ final class APIService: ObservableObject {
         
         if let apiError = error as? APIError {
             switch apiError {
-            case .networkError, .serverError(let code, _) where code >= 500:
+            case .networkError:
+                return true
+            case .serverError(let code, _) where code >= 500:
                 return true
             case .unauthorized where policy == .includeAuth:
                 return true
