@@ -1,0 +1,212 @@
+CLARITY LOOP iOS - PRODUCTION-READY FRONTEND WITH SWIFTDATA INTEGRATION
+======================================================================
+
+PROJECT OVERVIEW
+----------------
+CLARITY Loop is a HIPAA-compliant iOS health tracking app using SwiftUI 5.0, SwiftData, and AWS Amplify authentication. The backend team has provided comprehensive integration guides recommending a local-first architecture with SwiftData for optimal performance and offline support.
+
+CURRENT STATE
+-------------
+✅ WORKING:
+- AWS Amplify/Cognito authentication (fully functional)
+- Basic app structure (SwiftUI + MVVM)
+- Backend URL: https://clarity.novamindnyc.com
+- User registration, login, email verification flows
+
+❌ BROKEN/INCOMPLETE:
+- Build errors due to duplicate .md files in Xcode project
+- Debug features visible in production builds
+- BackendAPIClient has many unimplemented endpoints (throwing notImplemented)
+- No SwiftData implementation (still using direct API calls)
+- No WebSocket support for real-time features
+- Missing health data upload functionality
+- No offline support
+
+BACKEND INTEGRATION GUIDANCE
+----------------------------
+The backend team has provided:
+1. Complete API documentation with all endpoints
+2. SwiftData models with sync tracking
+3. WebSocket integration examples  
+4. Repository pattern implementation
+5. Modern iOS 17+ Observable patterns
+
+Key Backend Features:
+- PAT Analysis (Pretrained Actigraphy Transformer)
+- Google Gemini AI insights
+- Real-time health analysis via WebSocket
+- Batch health data uploads (max 100 metrics)
+- HAL-style pagination
+
+IMPLEMENTATION PHASES
+---------------------
+
+PHASE 0: CRITICAL FIXES (Day 1)
+--------------------------------
+0.1 Fix Build Issues
+- Remove duplicate PULSE_DASHBOARD.md from Xcode project
+- Clean up all .md files incorrectly included in app bundle
+- Fix any other duplicate file issues
+
+0.2 Remove Debug Features
+- Remove Debug tab from MainTabView
+- Delete DebugAPIView and TokenDebugView
+- Clean up excessive token logging
+- Add #if DEBUG compiler flags
+
+0.3 Fix BackendAPIClient Token References
+- Remove all TokenManager references
+- Use Amplify for token management
+- Ensure all API calls use proper Amplify auth tokens
+
+PHASE 1: SWIFTDATA FOUNDATION (Days 2-3)
+-----------------------------------------
+1.1 Implement SwiftData Models
+- HealthMetric with sync tracking (lastSyncedAt, syncStatus, localID, remoteID)
+- UserProfile with preferences
+- PATAnalysis for assessment results
+- AIInsight for Gemini responses
+- Follow backend team's model structure
+
+1.2 Create Repository Layer
+- HealthRepository with local-first approach
+- UserRepository with profile management
+- Implement backend team's repository pattern
+- Add @Observable ViewModels
+
+1.3 Update Existing Views
+- Migrate from direct API calls to repositories
+- Implement @Query for SwiftData
+- Add proper loading states using ViewState<T>
+
+PHASE 2: API INTEGRATION (Days 4-5)
+------------------------------------
+2.1 Complete DTOs Implementation
+- HealthDataUploadRequest/Response
+- PATAnalysisRequest/Response  
+- InsightRequest/Response
+- WebSocket message DTOs
+- Match backend's exact field names
+
+2.2 Implement All API Endpoints
+- Health data upload (POST /api/v1/health-data/upload)
+- PAT analysis endpoints
+- AI insights endpoints
+- User profile management
+- Use async/await throughout
+
+2.3 Add Sync Service
+- Background sync coordinator
+- Conflict resolution (last-write-wins)
+- Network monitoring with NWPathMonitor
+- Queue for offline operations
+
+PHASE 3: HEALTH FEATURES (Days 6-8)
+------------------------------------
+3.1 HealthKit Integration
+- Complete authorization flow
+- Implement all health metric types
+- Background delivery setup
+- HKObserverQuery for real-time updates
+- Map to backend's metric types
+
+3.2 Health Data Upload
+- Batch upload implementation (max 100)
+- Progress tracking UI
+- Error handling with retry
+- Success confirmation
+
+3.3 Dashboard Improvements
+- Fix "No data available" errors
+- Implement charts with SwiftUI Charts
+- Add date range selection
+- Create metric detail views
+
+PHASE 4: ADVANCED FEATURES (Days 9-11)
+---------------------------------------
+4.1 WebSocket Integration
+- Health analysis updates channel
+- Chat functionality  
+- Connection management
+- Reconnection logic
+- Message queuing
+
+4.2 PAT Analysis Feature
+- Assessment questionnaire UI
+- Real-time analysis updates via WebSocket
+- Results visualization
+- History tracking
+
+4.3 AI Insights & Chat
+- Gemini insights display
+- Interactive chat UI
+- Message persistence in SwiftData
+- Typing indicators
+- Rich content support
+
+PHASE 5: OFFLINE & BACKGROUND (Days 12-13)
+-------------------------------------------
+5.1 Offline Support
+- Queue operations when offline
+- Sync on connection restored
+- Conflict resolution UI
+- Progress indicators
+
+5.2 Background Tasks
+- BGProcessingTask for bulk sync
+- BGAppRefreshTask for periodic updates
+- HealthKit background delivery
+- Push notification support
+
+PHASE 6: PRODUCTION READY (Days 14-15)
+---------------------------------------
+6.1 Security & Compliance
+- Biometric authentication
+- Certificate pinning
+- Jailbreak detection
+- HIPAA audit
+- Secure data storage
+
+6.2 Polish & Performance
+- App icons and launch screen
+- Animations and haptics
+- Memory optimization
+- Crash reporting (Sentry)
+- Analytics integration
+
+6.3 App Store Preparation
+- Privacy policy integration
+- App Store metadata
+- Screenshots
+- TestFlight beta
+- Production deployment
+
+TECHNICAL REQUIREMENTS
+----------------------
+- iOS 17.0+ deployment target
+- SwiftUI 5.0 with Observable
+- SwiftData for persistence
+- AWS Amplify for auth (existing)
+- Async/await throughout
+- Repository pattern
+- MVVM architecture
+- Offline-first approach
+
+SUCCESS CRITERIA
+----------------
+- Zero crashes in production
+- All features work offline
+- Sync completes < 5 seconds
+- App launch < 2 seconds
+- 80%+ test coverage
+- App Store approval
+- HIPAA compliant
+
+DELIVERABLES
+------------
+1. Production iOS app with offline support
+2. Complete health tracking functionality
+3. Real-time updates via WebSocket
+4. AI-powered health insights
+5. Comprehensive test suite
+6. App Store ready build
