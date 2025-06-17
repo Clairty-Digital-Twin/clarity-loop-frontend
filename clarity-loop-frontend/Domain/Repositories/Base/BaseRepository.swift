@@ -210,8 +210,11 @@ protocol SyncableModel: PersistentModel {
 struct RepositoryPredicates {
     
     static func pendingSync<T: SyncableModel>() -> Predicate<T> {
-        #Predicate<T> { model in
-            model.syncStatus == SyncStatus.pending || model.syncStatus == SyncStatus.failed
+        let pendingStatus = SyncStatus.pending.rawValue
+        let failedStatus = SyncStatus.failed.rawValue
+        
+        return #Predicate<T> { model in
+            model.syncStatus.rawValue == pendingStatus || model.syncStatus.rawValue == failedStatus
         }
     }
     
