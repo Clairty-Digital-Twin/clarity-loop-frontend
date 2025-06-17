@@ -154,7 +154,7 @@ final class PATAnalysisViewModel {
         }
 
         // Timeout
-        analysisState = .error("Analysis timed out. Please check back later.")
+        analysisState = .error(PATAnalysisError.analysisTimeout)
     }
 }
 
