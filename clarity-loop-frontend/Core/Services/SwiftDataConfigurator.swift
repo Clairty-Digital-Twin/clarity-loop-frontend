@@ -52,17 +52,15 @@ final class SwiftDataConfigurator {
     // MARK: - Test Support
 
     func createTestContainer() throws -> ModelContainer {
+        // For tests, use a minimal model that doesn't depend on other models
         let schema = Schema([
-            HealthMetric.self,
-            UserProfileModel.self,
-            PATAnalysis.self,
-            AIInsight.self,
-            PersistedOfflineOperation.self,
+            TestOnlyModel.self
         ])
 
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: true
+            isStoredInMemoryOnly: true,
+            allowsSave: false
         )
 
         return try ModelContainer(
