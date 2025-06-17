@@ -10,8 +10,8 @@ final class BackendContractValidationTests: XCTestCase {
     private var encoder: JSONEncoder!
     private var decoder: JSONDecoder!
 
-    override func setUp() throws {
-        try super.setUp()
+    override func setUpWithError() throws {
+        try super.setUpWithError()
         // Skip all tests - Integration tests require backend running
         throw XCTSkip("Backend contract validation tests require actual backend integration")
 
