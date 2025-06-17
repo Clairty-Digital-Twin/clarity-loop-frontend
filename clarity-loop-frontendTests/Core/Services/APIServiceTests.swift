@@ -17,15 +17,21 @@ final class APIServiceTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         
-        // TODO: Setup test dependencies
-        // modelContext = createTestModelContext()
-        // mockAPIClient = CorrectMockAPIClient()
-        // mockOfflineQueueManager = MockEnhancedOfflineQueueManager()
-        // apiService = APIService(
-        //     apiClient: mockAPIClient,
-        //     offlineQueueManager: mockOfflineQueueManager,
-        //     modelContext: modelContext
-        // )
+        // Create test model container
+        let container = try SwiftDataConfigurator.shared.createTestContainer()
+        modelContext = container.mainContext
+        
+        // Create mocks
+        mockAPIClient = CorrectMockAPIClient()
+        mockOfflineQueueManager = MockEnhancedOfflineQueueManager()
+        
+        // Create API service
+        apiService = APIService(
+            baseURL: URL(string: "https://test.api.com")!,
+            session: .shared,
+            tokenProvider: { "test-token" },
+            contractAdapter: BackendContractAdapter()
+        )
     }
     
     override func tearDown() async throws {
@@ -39,8 +45,30 @@ final class APIServiceTests: XCTestCase {
     // MARK: - Health Metrics Sync Tests
     
     func testSyncHealthMetricsOnlineSuccess() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Given: Some health metrics to sync
+        let metric1 = HealthMetric(
+            timestamp: Date(),
+            value: 72,
+            type: .heartRate,
+            unit: "bpm"
+        )
+        let metric2 = HealthMetric(
+            timestamp: Date().addingTimeInterval(-60),
+            value: 85,
+            type: .heartRate,
+            unit: "bpm"
+        )
+        
+        let metrics = [metric1, metric2]
+        
+        // When: Syncing metrics
+        do {
+            // Note: APIService doesn't have sync methods directly
+            // This would need to be implemented or we test through repositories
+            XCTSkip("APIService doesn't expose sync methods directly - test through repositories instead")
+        } catch {
+            XCTFail("Sync should not fail: \(error)")
+        }
     }
     
     func testSyncHealthMetricsOfflineQueues() async throws {

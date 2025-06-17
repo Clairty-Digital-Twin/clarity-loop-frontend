@@ -18,7 +18,6 @@ excluded:
 # Rules
 disabled_rules:
   - todo
-  - fixme
   - line_length
   - type_body_length
   - file_length

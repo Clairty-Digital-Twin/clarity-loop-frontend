@@ -3,6 +3,8 @@ import SwiftData
 import Combine
 import Network
 import Amplify
+import AWSCognitoAuthPlugin
+import AWSPluginsCore
 
 /// Enhanced offline queue manager with comprehensive operation handling
 @MainActor

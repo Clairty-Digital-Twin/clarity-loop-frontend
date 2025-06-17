@@ -15,9 +15,10 @@ final class HealthRepositoryTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         
-        // TODO: Setup test dependencies
-        // modelContext = createTestModelContext()
-        // repository = HealthRepository(modelContext: modelContext)
+        // Create test model container
+        let container = try SwiftDataConfigurator.shared.createTestContainer()
+        modelContext = container.mainContext
+        repository = HealthRepository(modelContext: modelContext)
     }
     
     override func tearDown() async throws {
@@ -29,8 +30,28 @@ final class HealthRepositoryTests: XCTestCase {
     // MARK: - Fetch Tests
     
     func testFetchMetricsByTypeAndDate() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Given
+        let now = Date()
+        let yesterday = now.addingTimeInterval(-86400)
+        let twoDaysAgo = now.addingTimeInterval(-172800)
+        
+        let metric1 = HealthMetric(timestamp: now, value: 80, type: .heartRate, unit: "bpm")
+        let metric2 = HealthMetric(timestamp: yesterday, value: 75, type: .heartRate, unit: "bpm")
+        let metric3 = HealthMetric(timestamp: twoDaysAgo, value: 70, type: .heartRate, unit: "bpm")
+        let metric4 = HealthMetric(timestamp: now, value: 5000, type: .steps, unit: "count")
+        
+        try await repository.create(metric1)
+        try await repository.create(metric2)
+        try await repository.create(metric3)
+        try await repository.create(metric4)
+        
+        // When
+        let heartRateMetrics = try await repository.fetchMetrics(for: .heartRate, since: yesterday)
+        
+        // Then
+        XCTAssertEqual(heartRateMetrics.count, 2)
+        XCTAssertTrue(heartRateMetrics.allSatisfy { $0.type == .heartRate })
+        XCTAssertTrue(heartRateMetrics.allSatisfy { $0.timestamp >= yesterday })
     }
     
     func testFetchMetricsReturnsEmptyForNoData() async throws {
@@ -56,8 +77,23 @@ final class HealthRepositoryTests: XCTestCase {
     // MARK: - Create Tests
     
     func testCreateHealthMetricSuccess() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Given
+        let metric = HealthMetric(
+            timestamp: Date(),
+            value: 72.0,
+            type: .heartRate,
+            unit: "bpm"
+        )
+        
+        // When
+        try await repository.create(metric)
+        
+        // Then
+        let fetched = try await repository.fetchAll()
+        XCTAssertEqual(fetched.count, 1)
+        XCTAssertEqual(fetched.first?.value, 72.0)
+        XCTAssertEqual(fetched.first?.type, .heartRate)
+        XCTAssertEqual(fetched.first?.unit, "bpm")
     }
     
     func testCreateMultipleMetrics() async throws {
