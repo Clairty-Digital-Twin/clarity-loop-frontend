@@ -199,19 +199,3 @@ struct PATAnalysisResult: Equatable {
     }
 }
 
-enum PATAnalysisError: LocalizedError {
-    case analysisTimeout
-    case invalidData
-    case serviceUnavailable
-
-    var errorDescription: String? {
-        switch self {
-        case .analysisTimeout:
-            "PAT analysis timed out. Please try again later."
-        case .invalidData:
-            "The provided data is invalid for PAT analysis."
-        case .serviceUnavailable:
-            "PAT analysis service is currently unavailable."
-        }
-    }
-}
