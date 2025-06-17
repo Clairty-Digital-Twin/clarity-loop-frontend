@@ -8,8 +8,8 @@ final class PATContractValidationTests: XCTestCase {
     private var encoder: JSONEncoder!
     private var decoder: JSONDecoder!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         // Configure encoder to match backend expectations
         encoder = JSONEncoder()
