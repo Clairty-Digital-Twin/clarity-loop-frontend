@@ -11,11 +11,11 @@ final class PATAnalysisRepository: ObservableBaseRepository<PATAnalysis>, PATAna
     
     func fetchAnalyses(between startDate: Date, and endDate: Date) async throws -> [PATAnalysis] {
         let predicate = #Predicate<PATAnalysis> { analysis in
-            analysis.startTime >= startDate && analysis.endTime <= endDate
+            analysis.startDate >= startDate && analysis.endDate <= endDate
         }
         
         var descriptor = FetchDescriptor<PATAnalysis>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.startTime, order: .reverse)]
+        descriptor.sortBy = [SortDescriptor(\.startDate, order: .reverse)]
         
         return try await fetch(descriptor: descriptor)
     }
@@ -92,8 +92,11 @@ final class PATAnalysisRepository: ObservableBaseRepository<PATAnalysis>, PATAna
     // MARK: - Private Helpers
     
     private func fetchPendingSyncAnalyses() async throws -> [PATAnalysis] {
+        let pendingStatus = SyncStatus.pending.rawValue
+        let failedStatus = SyncStatus.failed.rawValue
+        
         let predicate = #Predicate<PATAnalysis> { analysis in
-            analysis.syncStatus == .pending || analysis.syncStatus == .failed
+            analysis.syncStatus.rawValue == pendingStatus || analysis.syncStatus.rawValue == failedStatus
         }
         
         var descriptor = FetchDescriptor<PATAnalysis>(predicate: predicate)

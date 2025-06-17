@@ -160,8 +160,11 @@ final class AIInsightRepository: ObservableBaseRepository<AIInsight>, AIInsightR
     // MARK: - Private Helpers
     
     private func fetchPendingSyncInsights() async throws -> [AIInsight] {
+        let pendingStatus = SyncStatus.pending.rawValue
+        let failedStatus = SyncStatus.failed.rawValue
+        
         let predicate = #Predicate<AIInsight> { insight in
-            insight.syncStatus == .pending || insight.syncStatus == .failed
+            insight.syncStatus.rawValue == pendingStatus || insight.syncStatus.rawValue == failedStatus
         }
         
         var descriptor = FetchDescriptor<AIInsight>(predicate: predicate)

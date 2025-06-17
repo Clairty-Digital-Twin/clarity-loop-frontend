@@ -56,8 +56,11 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
     }
     
     func fetchPendingSyncMetrics(limit: Int = 100) async throws -> [HealthMetric] {
+        let pendingStatus = SyncStatus.pending.rawValue
+        let failedStatus = SyncStatus.failed.rawValue
+        
         let predicate = #Predicate<HealthMetric> { metric in
-            metric.syncStatus == .pending || metric.syncStatus == .failed
+            metric.syncStatus.rawValue == pendingStatus || metric.syncStatus.rawValue == failedStatus
         }
         
         var descriptor = FetchDescriptor<HealthMetric>(predicate: predicate)
