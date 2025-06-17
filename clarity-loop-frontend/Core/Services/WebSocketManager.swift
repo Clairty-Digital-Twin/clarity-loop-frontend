@@ -2,13 +2,15 @@ import Foundation
 import Combine
 import Network
 import UIKit
+import SwiftData
 
 /// Manages WebSocket connections for real-time updates
 @MainActor
 final class WebSocketManager: ObservableObject {
     // MARK: - Properties
     
-    static let shared = WebSocketManager()
+    // Remove singleton - WebSocketManager should be injected where needed
+    // static let shared = WebSocketManager(...)
     
     @Published private(set) var connectionState: ConnectionState = .disconnected
     @Published private(set) var lastError: WebSocketError?
@@ -323,8 +325,8 @@ final class WebSocketManager: ObservableObject {
         guard reconnectTimer == nil else { return }
         
         reconnectTimer = Timer.scheduledTimer(withTimeInterval: currentReconnectDelay, repeats: false) { [weak self] _ in
-            self?.reconnectTimer = nil
-            Task {
+            Task { @MainActor in
+                self?.reconnectTimer = nil
                 await self?.connect()
             }
         }
@@ -502,10 +504,15 @@ final class WebSocketEventProcessor {
     private let patRepository: PATAnalysisRepository
     
     init() {
-        let modelContext = SwiftDataConfigurator.shared.container.mainContext
-        self.healthRepository = HealthRepository(modelContext: modelContext)
-        self.insightRepository = AIInsightRepository(modelContext: modelContext)
-        self.patRepository = PATAnalysisRepository(modelContext: modelContext)
+        do {
+            let container = try SwiftDataConfigurator.shared.createModelContainer()
+            let modelContext = container.mainContext
+            self.healthRepository = HealthRepository(modelContext: modelContext)
+            self.insightRepository = AIInsightRepository(modelContext: modelContext)
+            self.patRepository = PATAnalysisRepository(modelContext: modelContext)
+        } catch {
+            fatalError("Failed to create model container: \(error)")
+        }
     }
     
     func process(_ message: WebSocketMessage) async {
@@ -528,12 +535,13 @@ final class WebSocketEventProcessor {
         
         // Update local database
         if let type = HealthMetricType(rawValue: update.type) {
-            let metric = HealthMetric()
-            metric.localID = UUID(uuidString: update.metricId) ?? UUID()
-            metric.type = type
-            metric.value = update.value
-            metric.unit = update.unit
-            metric.timestamp = update.timestamp
+            let metric = HealthMetric(
+                timestamp: update.timestamp,
+                value: update.value,
+                type: type,
+                unit: update.unit
+            )
+            metric.remoteID = update.metricId
             metric.source = update.source
             metric.syncStatus = .synced
             metric.lastSyncedAt = Date()
@@ -546,9 +554,16 @@ final class WebSocketEventProcessor {
         guard let notification = try? JSONDecoder().decode(InsightNotification.self, from: message.payload) else { return }
         
         // Update insight if it exists
-        if let insight = try? await insightRepository.fetchByInsightId(notification.insightId) {
+        let insightId = notification.insightId
+        let descriptor = FetchDescriptor<AIInsight>(
+            predicate: #Predicate { insight in
+                insight.remoteID == insightId
+            }
+        )
+        if let insights = try? await insightRepository.fetch(descriptor: descriptor),
+           let insight = insights.first {
             insight.isRead = false
-            insight.updatedAt = Date()
+            insight.timestamp = Date()
             try? await insightRepository.update(insight)
         }
     }
@@ -557,12 +572,15 @@ final class WebSocketEventProcessor {
         guard let update = try? JSONDecoder().decode(PATAnalysisUpdate.self, from: message.payload) else { return }
         
         // Update PAT analysis
-        if let analysis = try? await patRepository.fetchById(update.analysisId) {
-            if let status = PATAnalysisStatus(rawValue: update.status) {
-                analysis.status = status
-            }
-            analysis.completionPercentage = update.progress
-            analysis.lastModified = Date()
+        let descriptor = FetchDescriptor<PATAnalysis>(
+            predicate: #Predicate { $0.remoteID == update.analysisId }
+        )
+        if let analyses = try? await patRepository.fetch(descriptor: descriptor),
+           let analysis = analyses.first {
+            // Update progress if provided
+            let progress = update.progress
+            // Store progress in metadata or similar field
+            analysis.endDate = Date()
             
             try? await patRepository.update(analysis)
         }

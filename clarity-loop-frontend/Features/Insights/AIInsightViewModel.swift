@@ -209,8 +209,11 @@ final class AIInsightViewModel: BaseViewModel {
             // Convert and save new insights
             for insightDTO in response.data.insights {
                 // Check if we already have this insight
+                let remoteId = insightDTO.id
                 let descriptor = FetchDescriptor<AIInsight>(
-                    predicate: #Predicate { $0.remoteID == insightDTO.id }
+                    predicate: #Predicate { insight in
+                        insight.remoteID == remoteId
+                    }
                 )
                 let existingInsights = try await insightRepository.fetch(descriptor: descriptor)
                 
@@ -263,7 +266,7 @@ final class AIInsightViewModel: BaseViewModel {
         case .general: return .general
         case .sleep: return .sleep
         case .activity: return .activity
-        case .cardiovascular: return .cardiovascular
+        case .cardiovascular: return .heartHealth
         case .nutrition: return .nutrition
         case .mentalHealth: return .mentalHealth
         }
@@ -275,7 +278,7 @@ final class AIInsightViewModel: BaseViewModel {
         if lowercased.contains("sleep") || lowercased.contains("rest") {
             return .sleep
         } else if lowercased.contains("heart") || lowercased.contains("cardiovascular") {
-            return .cardiovascular
+            return .heartHealth
         } else if lowercased.contains("activity") || lowercased.contains("exercise") || lowercased.contains("step") {
             return .activity
         } else if lowercased.contains("nutrition") || lowercased.contains("diet") || lowercased.contains("calor") {
@@ -287,9 +290,20 @@ final class AIInsightViewModel: BaseViewModel {
         }
     }
     
-    private func determinePriority(_ insight: InsightGenerationResponseDTO) -> InsightPriority {
+    private func determinePriority(_ insight: HealthInsightDTO) -> InsightPriority {
         // High priority if confidence is high and has many recommendations
         if insight.confidenceScore > 0.8 && insight.recommendations.count > 2 {
+            return .high
+        } else if insight.confidenceScore > 0.6 {
+            return .medium
+        } else {
+            return .low
+        }
+    }
+    
+    private func determinePriority(_ insight: InsightPreviewDTO) -> InsightPriority {
+        // High priority if confidence is high and has many recommendations
+        if insight.confidenceScore > 0.8 && insight.recommendationsCount > 2 {
             return .high
         } else if insight.confidenceScore > 0.6 {
             return .medium

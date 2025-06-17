@@ -16,7 +16,8 @@ final class SwiftDataConfigurator {
             HealthMetric.self,
             UserProfileModel.self,
             PATAnalysis.self,
-            AIInsight.self
+            AIInsight.self,
+            PersistedOfflineOperation.self
         ])
         
         let modelConfiguration: ModelConfiguration
@@ -58,7 +59,8 @@ final class SwiftDataConfigurator {
             HealthMetric.self,
             UserProfileModel.self,
             PATAnalysis.self,
-            AIInsight.self
+            AIInsight.self,
+            PersistedOfflineOperation.self
         ])
         
         let modelConfiguration = ModelConfiguration(
