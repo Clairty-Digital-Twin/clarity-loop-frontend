@@ -1,5 +1,6 @@
 import Charts
 import SwiftUI
+import SwiftData
 
 struct PATAnalysisView: View {
     @State private var viewModel: PATAnalysisViewModel
@@ -480,7 +481,8 @@ enum SleepStage: String, CaseIterable {
         ) {
         let previewAuthService = AuthService(apiClient: previewAPIClient)
 
-        let modelContext = createTestModelContext()
+        let container = try! ModelContainer(for: PATAnalysis.self, HealthMetric.self)
+        let modelContext = container.mainContext
         PATAnalysisView(
             analysisId: nil,
             viewModel: PATAnalysisViewModel(

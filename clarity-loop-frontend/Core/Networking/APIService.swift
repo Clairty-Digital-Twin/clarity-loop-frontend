@@ -23,10 +23,10 @@ final class APIService: ObservableObject {
     
     // MARK: - Initialization
     
-    private init(
-        apiClient: APIClientProtocol = BackendAPIClient.shared,
-        authService: AuthServiceProtocol = AuthService.shared,
-        offlineQueue: OfflineQueueManager = .shared
+    init(
+        apiClient: APIClientProtocol,
+        authService: AuthServiceProtocol,
+        offlineQueue: OfflineQueueManager
     ) {
         self.apiClient = apiClient
         self.authService = authService
