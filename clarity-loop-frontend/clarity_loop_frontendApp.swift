@@ -12,6 +12,8 @@ import SwiftUI
 struct ClarityPulseApp: App {
     // MARK: - Properties
     
+    let modelContainer: ModelContainer
+    
     /// Detects if running in test environment using comprehensive checks
     private static var isRunningInTestEnvironment: Bool {
         // Check for TESTING compiler flag first (most reliable)
@@ -93,6 +95,17 @@ struct ClarityPulseApp: App {
             AmplifyConfigurator.configure()
         }
         
+        // Initialize SwiftData ModelContainer
+        do {
+            if isTest {
+                self.modelContainer = try SwiftDataConfigurator.shared.createTestContainer()
+            } else {
+                self.modelContainer = try SwiftDataConfigurator.shared.createModelContainer()
+            }
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+        
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
         let client: APIClientProtocol
@@ -155,7 +168,7 @@ struct ClarityPulseApp: App {
 
         // Initialize offline queue manager
         let queueManager = OfflineQueueManager(
-            modelContext: PersistenceController.shared.container.mainContext,
+            modelContext: modelContainer.mainContext,
             healthDataRepository: healthDataRepository,
             insightsRepository: insightsRepository
         )
@@ -183,7 +196,7 @@ struct ClarityPulseApp: App {
                 print("🔥 APP ROOT APPEARED")
                 print("🔥 ENVIRONMENT AVAILABLE: AuthService type = \(type(of: authService))")
             }
-            .modelContainer(PersistenceController.shared.container)
+            .modelContainer(modelContainer)
             .environment(authViewModel)
             .environment(\.authService, authService)
             .environment(\.healthKitService, healthKitService)
