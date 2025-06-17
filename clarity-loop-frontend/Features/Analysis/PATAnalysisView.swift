@@ -2,6 +2,15 @@ import Charts
 import SwiftUI
 import SwiftData
 
+// MARK: - Feature Definition
+
+private struct FeatureDefinition {
+    let key: String
+    let title: String
+    let unit: String
+    let icon: String
+}
+
 struct PATAnalysisView: View {
     @State private var viewModel: PATAnalysisViewModel
     let analysisId: String?
@@ -267,14 +276,14 @@ private struct PATFeaturesView: View {
         }
     }
 
-    private var relevantFeatures: [(key: String, title: String, unit: String, icon: String)] {
+    private var relevantFeatures: [FeatureDefinition] {
         [
-            ("sleep_efficiency", "Sleep Efficiency", "%", "bed.double.fill"),
-            ("total_sleep_time", "Total Sleep", "hrs", "moon.fill"),
-            ("wake_after_sleep_onset", "WASO", "min", "eye.fill"),
-            ("sleep_latency", "Sleep Latency", "min", "timer"),
-            ("rem_percentage", "REM Sleep", "%", "brain.head.profile"),
-            ("deep_sleep_percentage", "Deep Sleep", "%", "zzz"),
+            FeatureDefinition(key: "sleep_efficiency", title: "Sleep Efficiency", unit: "%", icon: "bed.double.fill"),
+            FeatureDefinition(key: "total_sleep_time", title: "Total Sleep", unit: "hrs", icon: "moon.fill"),
+            FeatureDefinition(key: "wake_after_sleep_onset", title: "WASO", unit: "min", icon: "eye.fill"),
+            FeatureDefinition(key: "sleep_latency", title: "Sleep Latency", unit: "min", icon: "timer"),
+            FeatureDefinition(key: "rem_percentage", title: "REM Sleep", unit: "%", icon: "brain.head.profile"),
+            FeatureDefinition(key: "deep_sleep_percentage", title: "Deep Sleep", unit: "%", icon: "zzz"),
         ]
     }
 
