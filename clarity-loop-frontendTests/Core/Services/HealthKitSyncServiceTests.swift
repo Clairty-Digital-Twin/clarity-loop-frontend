@@ -10,9 +10,9 @@ final class HealthKitSyncServiceTests: XCTestCase {
     
     private var syncService: HealthKitSyncService!
     private var mockHealthKitService: MockHealthKitService!
-    private var mockHealthRepository: MockHealthRepository!
+    // private var mockHealthRepository: MockHealthRepository! // TODO: Implement when needed
     private var mockAPIClient: MockAPIClient!
-    private var mockBackgroundTaskManager: MockBackgroundTaskManager!
+    // private var mockBackgroundTaskManager: MockBackgroundTaskManager! // TODO: Implement when needed
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Setup & Teardown
@@ -38,9 +38,9 @@ final class HealthKitSyncServiceTests: XCTestCase {
         syncService?.stopAutoSync()
         syncService = nil
         mockHealthKitService = nil
-        mockHealthRepository = nil
+        // mockHealthRepository = nil
         mockAPIClient = nil
-        mockBackgroundTaskManager = nil
+        // mockBackgroundTaskManager = nil
         try await super.tearDown()
     }
     

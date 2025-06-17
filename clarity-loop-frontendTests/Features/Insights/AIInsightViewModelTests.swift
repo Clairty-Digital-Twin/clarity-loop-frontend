@@ -12,7 +12,7 @@ final class AIInsightViewModelTests: XCTestCase {
     private var modelContext: ModelContext!
     private var mockInsightRepository: MockAIInsightRepository!
     private var mockInsightsRepo: MockInsightsRepositoryProtocol!
-    private var mockHealthRepository: MockHealthRepository!
+    // private var mockHealthRepository: MockHealthRepository! // TODO: Implement when needed
     private var mockAuthService: MockAuthService!
     private var cancellables = Set<AnyCancellable>()
     
@@ -41,7 +41,7 @@ final class AIInsightViewModelTests: XCTestCase {
         viewModel = nil
         mockInsightRepository = nil
         mockInsightsRepo = nil
-        mockHealthRepository = nil
+        // mockHealthRepository = nil
         mockAuthService = nil
         modelContext = nil
         try await super.tearDown()
@@ -207,47 +207,38 @@ private class MockInsightsRepositoryProtocol: InsightsRepositoryProtocol {
     var shouldFail = false
     var insightToGenerate: InsightGenerationResponseDTO?
     var historyToReturn: InsightHistoryResponseDTO?
-    var detailsToReturn: InsightDetailsResponseDTO?
     
-    func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> BaseResponseDTO<InsightGenerationResponseDTO> {
+    func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> InsightGenerationResponseDTO {
         if shouldFail {
             throw InsightError.generationFailed
         }
-        return BaseResponseDTO(
+        return insightToGenerate ?? InsightGenerationResponseDTO(
             success: true,
-            message: "Success",
-            data: insightToGenerate!,
-            error: nil,
-            timestamp: Date(),
-            requestId: UUID().uuidString
+            data: HealthInsightDTO(
+                userId: "test-user-id",
+                narrative: "Test Insight",
+                keyInsights: ["Test insight 1", "Test insight 2"],
+                recommendations: ["Test recommendation 1"],
+                confidenceScore: 0.9,
+                generatedAt: Date()
+            ),
+            metadata: nil
         )
     }
     
-    func getInsightHistory(userId: String, limit: Int, offset: Int) async throws -> BaseResponseDTO<InsightHistoryResponseDTO> {
+    func getInsightHistory(userId: String, limit: Int, offset: Int) async throws -> InsightHistoryResponseDTO {
         if shouldFail {
             throw InsightError.fetchFailed
         }
-        return BaseResponseDTO(
+        return historyToReturn ?? InsightHistoryResponseDTO(
             success: true,
-            message: "Success",
-            data: historyToReturn!,
-            error: nil,
-            timestamp: Date(),
-            requestId: UUID().uuidString
-        )
-    }
-    
-    func getInsightDetails(userId: String, insightId: String) async throws -> BaseResponseDTO<InsightDetailsResponseDTO> {
-        if shouldFail {
-            throw InsightError.fetchFailed
-        }
-        return BaseResponseDTO(
-            success: true,
-            message: "Success",
-            data: detailsToReturn!,
-            error: nil,
-            timestamp: Date(),
-            requestId: UUID().uuidString
+            data: InsightHistoryDataDTO(
+                insights: [],
+                totalCount: 0,
+                hasMore: false,
+                pagination: PaginationMetaDTO(page: 1, limit: 10)
+            ),
+            metadata: nil
         )
     }
 }

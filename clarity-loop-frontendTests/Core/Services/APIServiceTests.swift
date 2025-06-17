@@ -8,8 +8,8 @@ final class APIServiceTests: XCTestCase {
     // MARK: - Properties
     
     private var apiService: APIService!
-    private var mockAPIClient: CorrectMockAPIClient!
-    private var mockOfflineQueueManager: MockEnhancedOfflineQueueManager!
+    private var mockAPIClient: MockAPIClient!
+    private var mockOfflineQueueManager: MockOfflineQueueManager!
     private var modelContext: ModelContext!
     
     // MARK: - Setup & Teardown
@@ -22,15 +22,17 @@ final class APIServiceTests: XCTestCase {
         modelContext = container.mainContext
         
         // Create mocks
-        mockAPIClient = CorrectMockAPIClient()
-        mockOfflineQueueManager = MockEnhancedOfflineQueueManager()
+        mockAPIClient = MockAPIClient()
+        mockOfflineQueueManager = MockOfflineQueueManager()
+        
+        // Create mock auth service
+        let mockAuthService = MockAuthService()
         
         // Create API service
         apiService = APIService(
-            baseURL: URL(string: "https://test.api.com")!,
-            session: .shared,
-            tokenProvider: { "test-token" },
-            contractAdapter: BackendContractAdapter()
+            apiClient: mockAPIClient,
+            authService: mockAuthService,
+            offlineQueue: mockOfflineQueueManager
         )
     }
     
@@ -203,17 +205,37 @@ final class APIServiceTests: XCTestCase {
 
 // MARK: - Mock Enhanced Offline Queue Manager
 
-private class MockEnhancedOfflineQueueManager: EnhancedOfflineQueueManager {
-    var queuedOperations: [OfflineOperation] = []
+// Mock offline queue manager
+private class MockOfflineQueueManager: OfflineQueueManagerProtocol {
+    var queuedUploads: [QueuedUpload] = []
     var shouldFailQueue = false
+    var startMonitoringCalled = false
+    var stopMonitoringCalled = false
     
-    override func queueOperation(_ operation: OfflineOperation) async {
-        if !shouldFailQueue {
-            queuedOperations.append(operation)
+    func enqueue(_ upload: QueuedUpload) async throws {
+        if shouldFailQueue {
+            throw APIError.networkError(URLError(.notConnectedToInternet))
         }
+        queuedUploads.append(upload)
     }
     
-    override func processQueue() async {
+    func processQueue() async {
         // Mock processing
+    }
+    
+    func clearQueue() async throws {
+        queuedUploads.removeAll()
+    }
+    
+    func getQueuedItemsCount() async -> Int {
+        return queuedUploads.count
+    }
+    
+    func startMonitoring() {
+        startMonitoringCalled = true
+    }
+    
+    func stopMonitoring() {
+        stopMonitoringCalled = true
     }
 }

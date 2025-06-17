@@ -10,7 +10,7 @@ final class HealthViewModelTests: XCTestCase {
     
     private var viewModel: HealthViewModel!
     private var modelContext: ModelContext!
-    private var mockHealthRepository: MockHealthRepository!
+    // private var mockHealthRepository: MockHealthRepository! // TODO: Implement when needed
     private var mockHealthKitService: MockHealthKitService!
     private var cancellables = Set<AnyCancellable>()
     
@@ -33,7 +33,7 @@ final class HealthViewModelTests: XCTestCase {
     override func tearDown() async throws {
         cancellables.removeAll()
         viewModel = nil
-        mockHealthRepository = nil
+        // mockHealthRepository = nil
         mockHealthKitService = nil
         modelContext = nil
         try await super.tearDown()

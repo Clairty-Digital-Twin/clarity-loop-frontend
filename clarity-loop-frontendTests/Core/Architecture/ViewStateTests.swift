@@ -21,7 +21,8 @@ final class ViewStateTests: XCTestCase {
         let idleState = ViewState<String>.idle
         let loadingState = ViewState<String>.loading
         let loadedState = ViewState<String>.loaded("test data")
-        let errorState = ViewState<String>.error("Test error message")
+        let testError = NSError(domain: "TestDomain", code: 1, userInfo: [NSLocalizedDescriptionKey: "Test error message"])
+        let errorState = ViewState<String>.error(testError)
         let emptyState = ViewState<String>.empty
 
         // Verify no state contains NaN values
@@ -48,12 +49,13 @@ final class ViewStateTests: XCTestCase {
         }
 
         switch errorState {
-        case let .error(errorMessage):
+        case let .error(error):
+            let errorMessage = error.localizedDescription
             XCTAssertFalse(errorMessage.isEmpty, "Error message should not be empty")
             XCTAssertFalse(errorMessage.contains("nan"), "Error message should not contain 'nan'")
             XCTAssertFalse(errorMessage.contains("NaN"), "Error message should not contain 'NaN'")
         default:
-            XCTFail("Error state should contain error message")
+            XCTFail("Error state should contain error")
         }
 
         switch emptyState {
@@ -139,7 +141,8 @@ final class ViewStateTests: XCTestCase {
             }
 
             func updateToError(_ errorMessage: String) {
-                state = .error(errorMessage)
+                let error = NSError(domain: "TestDomain", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+                state = .error(error)
             }
 
             func updateToLoading() {
@@ -170,7 +173,8 @@ final class ViewStateTests: XCTestCase {
         let testErrorMessage = "Test error occurred"
         model.updateToError(testErrorMessage)
         switch model.state {
-        case let .error(errorMessage):
+        case let .error(error):
+            let errorMessage = error.localizedDescription
             XCTAssertEqual(errorMessage, testErrorMessage)
             XCTAssertFalse(errorMessage.isEmpty)
         default:
@@ -192,33 +196,37 @@ final class ViewStateTests: XCTestCase {
     func testErrorStateHandling() throws {
         // Test error state doesn't cause layout issues
         let errorMessage = "Test error message"
-        let errorState = ViewState<String>.error(errorMessage)
+        let testError = NSError(domain: "TestDomain", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        let errorState = ViewState<String>.error(testError)
 
         switch errorState {
-        case let .error(errorText):
+        case let .error(error):
             // Verify error is properly structured
+            let errorText = error.localizedDescription
             XCTAssertFalse(errorText.isEmpty, "Error message should not be empty")
             XCTAssertFalse(errorText.contains("nan"), "Error message should not contain 'nan'")
             XCTAssertFalse(errorText.contains("NaN"), "Error message should not contain 'NaN'")
             XCTAssertEqual(errorText, errorMessage, "Error message should match expected")
         default:
-            XCTFail("Error state should contain error message")
+            XCTFail("Error state should contain error")
         }
     }
 
     func testErrorStateNumericProperties() throws {
         // Test error states have valid numeric properties
         let errorMessage = "HTTP 404: Not found"
-        let errorState = ViewState<Double>.error(errorMessage)
+        let testError = NSError(domain: "TestDomain", code: 404, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        let errorState = ViewState<Double>.error(testError)
 
         switch errorState {
-        case let .error(errorText):
+        case let .error(error):
+            let errorText = error.localizedDescription
             XCTAssertFalse(errorText.isEmpty, "Error message should not be empty")
             XCTAssertFalse(errorText.contains("nan"), "Error message should not contain 'nan'")
             XCTAssertFalse(errorText.contains("NaN"), "Error message should not contain 'NaN'")
             XCTAssertEqual(errorText, errorMessage, "Error message should match expected")
         default:
-            XCTFail("Error state should contain error message")
+            XCTFail("Error state should contain error")
         }
 
         // Test that we can recover from error states without NaN propagation
@@ -258,13 +266,13 @@ final class ViewStateTests: XCTestCase {
     func testViewState_ErrorState() {
         let errorMessage = "Test Error"
         let error = NSError(domain: "TestDomain", code: 123, userInfo: [NSLocalizedDescriptionKey: errorMessage])
-        let state: ViewState<String> = .error(errorMessage)
+        let state: ViewState<String> = .error(error)
 
-        guard case let .error(message) = state else {
+        guard case let .error(actualError) = state else {
             XCTFail("State should be .error")
             return
         }
-        XCTAssertEqual(message, errorMessage, "Error message does not match expected message.")
+        XCTAssertEqual(actualError.localizedDescription, errorMessage, "Error message does not match expected message.")
     }
 
     func testViewState_EquatableConformance() {

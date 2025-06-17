@@ -10,7 +10,7 @@ final class UserProfileViewModelTests: XCTestCase {
     
     private var viewModel: UserProfileViewModel!
     private var modelContext: ModelContext!
-    private var mockUserProfileRepository: MockUserProfileRepository!
+    // private var mockUserProfileRepository: MockUserProfileRepository! // TODO: Implement when needed
     private var mockAuthService: MockAuthService!
     private var mockAPIClient: MockAPIClient!
     
@@ -34,7 +34,7 @@ final class UserProfileViewModelTests: XCTestCase {
     
     override func tearDown() async throws {
         viewModel = nil
-        mockUserProfileRepository = nil
+        // mockUserProfileRepository = nil
         mockAuthService = nil
         mockAPIClient = nil
         modelContext = nil

@@ -9,7 +9,7 @@ final class WebSocketManagerTests: XCTestCase {
     
     private var webSocketManager: WebSocketManager!
     private var mockURLSession: MockURLSession!
-    private var mockWebSocketTask: MockURLSessionWebSocketTask!
+    // private var mockWebSocketTask: MockURLSessionWebSocketTask! // Can't mock URLSessionWebSocketTask
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Setup & Teardown
@@ -31,7 +31,7 @@ final class WebSocketManagerTests: XCTestCase {
         await webSocketManager?.disconnect()
         webSocketManager = nil
         mockURLSession = nil
-        mockWebSocketTask = nil
+        // mockWebSocketTask = nil
         try await super.tearDown()
     }
     
@@ -185,48 +185,21 @@ final class WebSocketManagerTests: XCTestCase {
 // MARK: - Mock URLSession
 
 private class MockURLSession: URLSession {
-    var webSocketTask: MockURLSessionWebSocketTask?
     var shouldFailConnection = false
+    var mockWebSocketTask: URLSessionWebSocketTask?
     
-    init(webSocketTask: MockURLSessionWebSocketTask) {
-        self.webSocketTask = webSocketTask
+    override init() {
         super.init()
     }
     
     override func webSocketTask(with url: URL) -> URLSessionWebSocketTask {
-        return webSocketTask ?? MockURLSessionWebSocketTask()
+        return mockWebSocketTask ?? super.webSocketTask(with: url)
     }
     
     override func webSocketTask(with request: URLRequest) -> URLSessionWebSocketTask {
-        return webSocketTask ?? MockURLSessionWebSocketTask()
+        return mockWebSocketTask ?? super.webSocketTask(with: request)
     }
 }
 
-// MARK: - Mock URLSessionWebSocketTask
-
-private class MockURLSessionWebSocketTask: URLSessionWebSocketTask {
-    var isConnected = false
-    var sentMessages: [URLSessionWebSocketTask.Message] = []
-    var mockReceiveHandler: ((URLSessionWebSocketTask.Message) -> Void)?
-    
-    override func resume() {
-        isConnected = true
-    }
-    
-    override func cancel(with closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        isConnected = false
-    }
-    
-    override func send(_ message: URLSessionWebSocketTask.Message, completionHandler: @escaping (Error?) -> Void) {
-        sentMessages.append(message)
-        completionHandler(nil)
-    }
-    
-    override func receive(completionHandler: @escaping (Result<URLSessionWebSocketTask.Message, Error>) -> Void) {
-        // Mock implementation
-    }
-    
-    override func sendPing(pongReceiveHandler: @escaping (Error?) -> Void) {
-        pongReceiveHandler(nil)
-    }
-}
+// Note: We can't mock URLSessionWebSocketTask directly as it's not designed for subclassing
+// The tests will use the actual URLSession with mock server responses instead
