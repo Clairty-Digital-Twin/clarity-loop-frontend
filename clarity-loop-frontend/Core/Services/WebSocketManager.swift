@@ -572,8 +572,11 @@ final class WebSocketEventProcessor {
         guard let update = try? JSONDecoder().decode(PATAnalysisUpdate.self, from: message.payload) else { return }
         
         // Update PAT analysis
+        let analysisId = update.analysisId
         let descriptor = FetchDescriptor<PATAnalysis>(
-            predicate: #Predicate { $0.remoteID == update.analysisId }
+            predicate: #Predicate { analysis in
+                analysis.remoteID == analysisId
+            }
         )
         if let analyses = try? await patRepository.fetch(descriptor: descriptor),
            let analysis = analyses.first {

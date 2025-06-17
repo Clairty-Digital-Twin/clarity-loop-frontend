@@ -52,7 +52,12 @@ final class EnhancedOfflineQueueManager: ObservableObject {
         // Create API client with token provider
         let tokenProvider: () async -> String? = {
             do {
-                return try await Amplify.Auth.fetchAuthSession().tokens?.result.get().idToken
+                let session = try await Amplify.Auth.fetchAuthSession()
+                if let cognitoSession = session as? AuthCognitoTokensProvider {
+                    let tokens = try cognitoSession.getCognitoTokens().get()
+                    return tokens.idToken
+                }
+                return nil
             } catch {
                 return nil
             }
