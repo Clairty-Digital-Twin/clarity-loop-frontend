@@ -180,11 +180,10 @@ final class UserProfileViewModel: BaseViewModel {
             // let response = try await apiClient.getUserProfile(userId: userId)
             
             // For now, create a default profile
-            let profile = UserProfileModel(
-                userId: userId,
-                email: await authService.currentUser?.email ?? "",
-                displayName: await authService.currentUser?.displayName ?? ""
-            )
+            let profile = UserProfileModel()
+            profile.userId = userId
+            profile.email = await authService.currentUser?.email ?? ""
+            profile.displayName = await authService.currentUser?.displayName ?? ""
             
             try await userProfileRepository.create(profile)
             profileState = .loaded(profile)

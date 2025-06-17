@@ -11,7 +11,7 @@ final class AIInsightViewModel: BaseViewModel {
     private(set) var insightsState: ViewState<[AIInsight]> = .idle
     private(set) var generationState: ViewState<AIInsight> = .idle
     private(set) var selectedTimeframe: InsightTimeframe = .week
-    private(set) var selectedCategory: InsightCategory?
+    private(set) var selectedCategory: InsightCategoryFilter?
     
     // MARK: - Dependencies
     
@@ -30,13 +30,15 @@ final class AIInsightViewModel: BaseViewModel {
         var filtered = insights
         
         // Filter by category
-        if let category = selectedCategory {
+        if let categoryFilter = selectedCategory {
+            // Map filter to actual category
+            let category = mapFilterToCategory(categoryFilter)
             filtered = filtered.filter { $0.category == category }
         }
         
         // Filter by timeframe
         let cutoffDate = selectedTimeframe.cutoffDate
-        filtered = filtered.filter { $0.generatedAt >= cutoffDate }
+        filtered = filtered.filter { $0.timestamp >= cutoffDate }
         
         return filtered
     }
@@ -116,20 +118,20 @@ final class AIInsightViewModel: BaseViewModel {
             }
             
             // Request insight generation
-            let response = try await insightsRepo.generateInsight(userId: userId)
+            let requestDTO = InsightGenerationRequestDTO(userId: userId)
+            let response = try await insightsRepo.generateInsight(requestDTO: requestDTO)
             
             // Create local AIInsight model
-            let insight = AIInsight(
-                insightId: response.data.id,
-                narrative: response.data.narrative,
-                category: categorizeInsight(response.data.narrative),
-                priority: determinePriority(response.data),
-                generatedAt: response.data.generatedAt,
-                confidenceScore: response.data.confidenceScore,
-                keyInsights: response.data.keyInsights,
-                recommendations: response.data.recommendations,
-                dataPointsAnalyzed: response.data.dataPoints.count
-            )
+            let insight = AIInsight()
+            insight.insightId = response.data.id
+            insight.narrative = response.data.narrative
+            insight.category = categorizeInsight(response.data.narrative)
+            insight.priority = determinePriority(response.data)
+            insight.timestamp = response.data.generatedAt
+            insight.confidenceScore = response.data.confidenceScore
+            insight.keyInsights = response.data.keyInsights
+            insight.recommendations = response.data.recommendations
+            insight.dataPointsAnalyzed = response.data.dataPoints.count
             
             // Save locally
             try await insightRepository.create(insight)
@@ -146,7 +148,7 @@ final class AIInsightViewModel: BaseViewModel {
     
     func markAsRead(_ insight: AIInsight) async {
         insight.isRead = true
-        insight.lastModified = Date()
+        insight.updatedAt = Date()
         
         do {
             try await insightRepository.update(insight)
@@ -156,8 +158,8 @@ final class AIInsightViewModel: BaseViewModel {
     }
     
     func toggleBookmark(_ insight: AIInsight) async {
-        insight.isBookmarked.toggle()
-        insight.lastModified = Date()
+        insight.isFavorite.toggle()
+        insight.updatedAt = Date()
         
         do {
             try await insightRepository.update(insight)
@@ -179,28 +181,13 @@ final class AIInsightViewModel: BaseViewModel {
         selectedTimeframe = timeframe
     }
     
-    func selectCategory(_ category: InsightCategory?) {
+    func selectCategory(_ category: InsightCategoryFilter?) {
         selectedCategory = category
     }
     
     func exportInsights() async -> URL? {
-        do {
-            let insights = filteredInsights
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            
-            let data = try encoder.encode(insights)
-            
-            let fileName = "ai_insights_\(Date().ISO8601Format()).json"
-            let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
-            
-            try data.write(to: url)
-            return url
-        } catch {
-            handle(error: error)
-            return nil
-        }
+        // TODO: Implement export when AIInsight conforms to Codable
+        return nil
     }
     
     // MARK: - Private Methods
@@ -223,22 +210,21 @@ final class AIInsightViewModel: BaseViewModel {
                 
                 if existingInsight == nil {
                     // Fetch full insight details
-                    let fullInsight = try await insightsRepo.getInsight(
+                    let fullInsight = try await insightsRepo.getInsightDetails(
                         userId: userId,
                         insightId: insightDTO.id
                     )
                     
-                    let insight = AIInsight(
-                        insightId: fullInsight.data.id,
-                        narrative: fullInsight.data.narrative,
-                        category: categorizeInsight(fullInsight.data.narrative),
-                        priority: determinePriority(fullInsight.data),
-                        generatedAt: fullInsight.data.generatedAt,
-                        confidenceScore: fullInsight.data.confidenceScore,
-                        keyInsights: fullInsight.data.keyInsights,
-                        recommendations: fullInsight.data.recommendations,
-                        dataPointsAnalyzed: fullInsight.data.dataPoints.count
-                    )
+                    let insight = AIInsight()
+                    insight.insightId = fullInsight.data.id
+                    insight.narrative = fullInsight.data.narrative
+                    insight.category = categorizeInsight(fullInsight.data.narrative)
+                    insight.priority = determinePriority(fullInsight.data)
+                    insight.timestamp = fullInsight.data.generatedAt
+                    insight.confidenceScore = fullInsight.data.confidenceScore
+                    insight.keyInsights = fullInsight.data.keyInsights
+                    insight.recommendations = fullInsight.data.recommendations
+                    insight.dataPointsAnalyzed = fullInsight.data.dataPoints.count
                     
                     try await insightRepository.create(insight)
                 }
@@ -256,15 +242,30 @@ final class AIInsightViewModel: BaseViewModel {
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -3, to: endDate)!
             
-            let metrics = try await healthRepository.fetchMetrics(
-                from: startDate,
-                to: endDate,
-                type: nil
-            )
+            // Check for any recent metrics
+            var hasMetrics = false
+            for type in HealthMetricType.allCases {
+                let metrics = try await healthRepository.fetchMetrics(for: type, since: startDate)
+                if !metrics.isEmpty {
+                    hasMetrics = true
+                    break
+                }
+            }
             
-            return !metrics.isEmpty
+            return hasMetrics
         } catch {
             return false
+        }
+    }
+    
+    private func mapFilterToCategory(_ filter: InsightCategoryFilter) -> InsightCategory {
+        switch filter {
+        case .general: return .general
+        case .sleep: return .sleep
+        case .activity: return .activity
+        case .cardiovascular: return .cardiovascular
+        case .nutrition: return .nutrition
+        case .mentalHealth: return .mentalHealth
         }
     }
     
@@ -286,7 +287,7 @@ final class AIInsightViewModel: BaseViewModel {
         }
     }
     
-    private func determinePriority(_ insight: InsightResponseDTO) -> InsightPriority {
+    private func determinePriority(_ insight: InsightGenerationResponseDTO) -> InsightPriority {
         // High priority if confidence is high and has many recommendations
         if insight.confidenceScore > 0.8 && insight.recommendations.count > 2 {
             return .high
@@ -321,7 +322,7 @@ enum InsightTimeframe: String, CaseIterable {
     }
 }
 
-enum InsightCategory: String, CaseIterable {
+enum InsightCategoryFilter: String, CaseIterable {
     case general = "General"
     case sleep = "Sleep"
     case activity = "Activity"
@@ -352,7 +353,7 @@ enum InsightCategory: String, CaseIterable {
     }
 }
 
-enum InsightPriority: String, CaseIterable {
+enum InsightPriorityLevel: String, CaseIterable {
     case high = "High"
     case medium = "Medium"
     case low = "Low"

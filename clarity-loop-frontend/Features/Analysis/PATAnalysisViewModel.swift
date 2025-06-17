@@ -56,7 +56,7 @@ final class PATAnalysisViewModel: BaseViewModel {
         guard let history = analysisHistory.value,
               let latest = history.first else { return false }
         
-        let daysSinceAnalysis = Calendar.current.dateComponents([.day], from: latest.createdAt, to: Date()).day ?? 0
+        let daysSinceAnalysis = Calendar.current.dateComponents([.day], from: latest.completedAt ?? latest.lastModified, to: Date()).day ?? 0
         return daysSinceAnalysis < 7
     }
     
@@ -180,11 +180,7 @@ final class PATAnalysisViewModel: BaseViewModel {
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate)!
             
-            let metrics = try await healthRepository.fetchMetrics(
-                from: startDate,
-                to: endDate,
-                type: .steps
-            )
+            let metrics = try await healthRepository.fetchMetrics(for: .steps, since: startDate)
             
             return metrics.count >= 3 // Need at least 3 days of data
         } catch {
@@ -193,14 +189,13 @@ final class PATAnalysisViewModel: BaseViewModel {
     }
     
     private func saveAnalysisResult(_ result: PATAnalysisResult) async {
-        let analysis = PATAnalysis(
-            analysisId: result.analysisId,
-            status: result.status,
-            patFeatures: result.patFeatures,
-            confidence: result.confidence ?? 0,
-            completedAt: result.completedAt ?? Date(),
-            error: result.error
-        )
+        let analysis = PATAnalysis()
+        analysis.analysisId = result.analysisId
+        analysis.status = result.status
+        analysis.patFeatures = result.patFeatures
+        analysis.confidence = result.confidence ?? 0
+        analysis.completedAt = result.completedAt ?? Date()
+        analysis.error = result.error
         
         do {
             try await patRepository.create(analysis)
@@ -258,14 +253,6 @@ final class PATAnalysisViewModel: BaseViewModel {
 // MARK: - Supporting Types
 
 extension PATAnalysisViewModel {
-    var isLoading: Bool {
-        switch analysisState {
-        case .loading:
-            true
-        default:
-            false
-        }
-    }
 
     var hasError: Bool {
         switch analysisState {

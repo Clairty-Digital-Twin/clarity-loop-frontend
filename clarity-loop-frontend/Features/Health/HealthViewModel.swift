@@ -54,11 +54,19 @@ final class HealthViewModel: BaseViewModel {
             let endDate = Date()
             let startDate = selectedDateRange.startDate(from: endDate)
             
-            let metrics = try await healthRepository.fetchMetrics(
-                from: startDate,
-                to: endDate,
-                type: selectedMetricType
-            )
+            // If no type selected, fetch all types
+            let metrics: [HealthMetric]
+            if let type = selectedMetricType {
+                metrics = try await healthRepository.fetchMetrics(for: type, since: startDate)
+            } else {
+                // Fetch all types
+                var allMetrics: [HealthMetric] = []
+                for type in HealthMetricType.allCases {
+                    let typeMetrics = try await healthRepository.fetchMetrics(for: type, since: startDate)
+                    allMetrics.append(contentsOf: typeMetrics)
+                }
+                metrics = allMetrics
+            }
             
             metricsState = metrics.isEmpty ? .empty : .loaded(metrics)
         } catch {
@@ -114,41 +122,38 @@ final class HealthViewModel: BaseViewModel {
             for (date, metrics) in dailyMetrics {
                 // Steps
                 if metrics.stepCount > 0 {
-                    let stepMetric = HealthMetric(
-                        type: .steps,
-                        value: Double(metrics.stepCount),
-                        unit: "steps",
-                        date: date,
-                        source: .healthKit
-                    )
+                    let stepMetric = HealthMetric()
+                    stepMetric.type = .steps
+                    stepMetric.value = Double(metrics.stepCount)
+                    stepMetric.unit = "steps"
+                    stepMetric.timestamp = date
+                    stepMetric.source = "HealthKit"
                     healthMetrics.append(stepMetric)
                 }
                 
                 // Heart Rate
                 if let heartRate = metrics.restingHeartRate {
-                    let heartMetric = HealthMetric(
-                        type: .heartRate,
-                        value: heartRate,
-                        unit: "bpm",
-                        date: date,
-                        source: .healthKit
-                    )
+                    let heartMetric = HealthMetric()
+                    heartMetric.type = .heartRate
+                    heartMetric.value = heartRate
+                    heartMetric.unit = "bpm"
+                    heartMetric.timestamp = date
+                    heartMetric.source = "HealthKit"
                     healthMetrics.append(heartMetric)
                 }
                 
                 // Sleep
                 if let sleepData = metrics.sleepData {
-                    let sleepMetric = HealthMetric(
-                        type: .sleep,
-                        value: sleepData.totalTimeAsleep / 3600, // Convert to hours
-                        unit: "hours",
-                        date: date,
-                        source: .healthKit,
-                        metadata: [
-                            "efficiency": "\(sleepData.sleepEfficiency)",
-                            "timeInBed": "\(sleepData.totalTimeInBed)"
-                        ]
-                    )
+                    let sleepMetric = HealthMetric()
+                    sleepMetric.type = .sleepDuration
+                    sleepMetric.value = sleepData.totalTimeAsleep / 3600 // Convert to hours
+                    sleepMetric.unit = "hours"
+                    sleepMetric.timestamp = date
+                    sleepMetric.source = "HealthKit"
+                    sleepMetric.metadata = [
+                        "efficiency": "\(sleepData.sleepEfficiency)",
+                        "timeInBed": "\(sleepData.totalTimeInBed)"
+                    ]
                     healthMetrics.append(sleepMetric)
                 }
             }
@@ -251,37 +256,34 @@ extension HealthMetric {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: endDate) else { continue }
             
             // Steps
-            let steps = HealthMetric(
-                type: .steps,
-                value: Double.random(in: 5000...15000),
-                unit: "steps",
-                date: date,
-                source: .manual
-            )
+            let steps = HealthMetric()
+            steps.type = .steps
+            steps.value = Double.random(in: 5000...15000)
+            steps.unit = "steps"
+            steps.timestamp = date
+            steps.source = "Manual"
             metrics.append(steps)
             
             // Heart Rate
-            let heartRate = HealthMetric(
-                type: .heartRate,
-                value: Double.random(in: 60...80),
-                unit: "bpm",
-                date: date,
-                source: .manual
-            )
+            let heartRate = HealthMetric()
+            heartRate.type = .heartRate
+            heartRate.value = Double.random(in: 60...80)
+            heartRate.unit = "bpm"
+            heartRate.timestamp = date
+            heartRate.source = "Manual"
             metrics.append(heartRate)
             
             // Sleep
-            let sleep = HealthMetric(
-                type: .sleep,
-                value: Double.random(in: 6...9),
-                unit: "hours",
-                date: date,
-                source: .manual,
-                metadata: [
-                    "efficiency": "\(Double.random(in: 0.7...0.95))",
-                    "timeInBed": "\(Double.random(in: 7...10) * 3600)"
-                ]
-            )
+            let sleep = HealthMetric()
+            sleep.type = .sleepDuration
+            sleep.value = Double.random(in: 6...9)
+            sleep.unit = "hours"
+            sleep.timestamp = date
+            sleep.source = "Manual"
+            sleep.metadata = [
+                "efficiency": "\(Double.random(in: 0.7...0.95))",
+                "timeInBed": "\(Double.random(in: 7...10) * 3600)"
+            ]
             metrics.append(sleep)
         }
         
