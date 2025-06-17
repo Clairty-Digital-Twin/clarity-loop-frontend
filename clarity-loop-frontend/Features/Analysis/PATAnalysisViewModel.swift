@@ -79,7 +79,7 @@ final class PATAnalysisViewModel {
                 await pollForCompletion(analysisId: analysisId)
             }
         } catch {
-            analysisState = .error("Failed to fetch analysis: \(error.localizedDescription)")
+            analysisState = .error(PATAnalysisError.fetchFailed(underlying: error))
         }
     }
 
