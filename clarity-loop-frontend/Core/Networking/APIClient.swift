@@ -223,60 +223,23 @@ final class APIClient: APIClientProtocol {
 
         var authorizedRequest = request
         if requiresAuth {
-            print("🔑 APIClient: Attempting to retrieve auth token...")
             guard let token = await tokenProvider() else {
-                print("❌ APIClient: Failed to retrieve auth token")
                 throw APIError.unauthorized
             }
-            print("✅ APIClient: Token retrieved (length: \(token.count))")
-
-            // Check if this is a test token
-            if token == "test-token-123" {
-                print("⚠️ WARNING: Using test token 'test-token-123'! This will fail authentication!")
-            }
-
-            #if DEBUG
-                // Print token details for debugging
-                print("🔍 Token details:")
-                print("   - First 50 chars: \(String(token.prefix(50)))")
-                print("   - Last 10 chars: \(String(token.suffix(10)))")
-                print("   - Full token: \(token)")
-
-                // Copy to clipboard for CLI use
-                #if canImport(UIKit)
-                    UIPasteboard.general.string = token
-                #endif
-
-                print("✅ ID-token copied to clipboard")
-            #endif
-
+            
             authorizedRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            print("📤 APIClient: Authorization header set: Bearer \(String(token.prefix(20)))...")
         }
 
         do {
-            print("📡 APIClient: Sending request to \(authorizedRequest.url?.absoluteString ?? "unknown URL")")
-            print("📋 APIClient: Request headers:")
-            authorizedRequest.allHTTPHeaderFields?.forEach { key, value in
-                if key == "Authorization" {
-                    print("   - \(key): Bearer \(String(value.dropFirst(7).prefix(20)))...")
-                } else {
-                    print("   - \(key): \(value)")
-                }
-            }
             let (data, response) = try await session.data(for: authorizedRequest)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                print("❌ APIClient: Invalid response type")
                 throw APIError.unknown(URLError(.badServerResponse))
             }
-
-            print("📥 APIClient: Response status code: \(httpResponse.statusCode)")
 
             switch httpResponse.statusCode {
             case 202:
                 // Special handling for 202 Accepted (email verification required)
-                print("📥 APIClient: 202 Accepted - Email verification required")
 
                 // Check if we can decode the email verification required response
                 if
@@ -333,24 +296,9 @@ final class APIClient: APIClientProtocol {
     }
 
     private func retryWithRefreshedToken<T: Decodable>(_ request: URLRequest) async -> T? {
-        print("🔄 APIClient: Attempting token refresh...")
         guard let refreshedToken = await tokenProvider() else {
             return nil
         }
-
-        print("🔑 APIClient: Retrying with refreshed token...")
-
-        #if DEBUG
-            // 1️⃣  Print the full JWT so we can copy from the console
-            print("FULL_ID_TOKEN → \(refreshedToken)")
-
-            // 2️⃣  Copy to clipboard for CLI use
-            #if canImport(UIKit)
-                UIPasteboard.general.string = refreshedToken
-            #endif
-
-            print("✅ ID-token copied to clipboard (length: \(refreshedToken.count))")
-        #endif
 
         var authorizedRequest = request
         authorizedRequest.setValue("Bearer \(refreshedToken)", forHTTPHeaderField: "Authorization")
@@ -362,8 +310,6 @@ final class APIClient: APIClientProtocol {
             retryResponse.statusCode >= 200, retryResponse.statusCode < 300 else {
             return nil
         }
-
-        print("✅ APIClient: Retry succeeded after token refresh")
         do {
             if retryData.0.isEmpty, let empty = EmptyResponse() as? T {
                 return empty

@@ -214,11 +214,6 @@
 			path = "clarity-loop-frontendUITests";
 			sourceTree = "<group>";
 		};
-		71B2A9072DF36F9800F2784F /* docs */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = docs;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -266,7 +261,6 @@
 		71B2A8C22DF35EB800F2784F = {
 			isa = PBXGroup;
 			children = (
-				71B2A9072DF36F9800F2784F /* docs */,
 				71B2A8CD2DF35EB800F2784F /* clarity-loop-frontend */,
 				71B2A8DD2DF35EBB00F2784F /* clarity-loop-frontendTests */,
 				71B2A8E72DF35EBB00F2784F /* clarity-loop-frontendUITests */,
@@ -302,7 +296,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				71B2A8CD2DF35EB800F2784F /* clarity-loop-frontend */,
-				71B2A9072DF36F9800F2784F /* docs */,
 			);
 			name = "clarity-loop-frontend";
 			packageProductDependencies = (

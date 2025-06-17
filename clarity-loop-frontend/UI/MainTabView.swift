@@ -38,22 +38,6 @@ struct MainTabView: View {
             }
             .tag(2)
 
-            NavigationStack {
-                LazyTabContent(tab: 3, selectedTab: selectedTab) {
-                    VStack {
-                        DebugAPIView()
-
-                        NavigationLink("Token Debug Info", destination: TokenDebugView())
-                            .buttonStyle(.borderedProminent)
-                            .padding()
-                    }
-                }
-            }
-            .tabItem {
-                Image(systemName: "ladybug.fill")
-                Text("Debug")
-            }
-            .tag(3)
         }
         .accentColor(.red)
     }

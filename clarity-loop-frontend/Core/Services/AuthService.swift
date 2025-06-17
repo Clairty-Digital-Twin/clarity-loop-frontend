@@ -457,11 +457,8 @@ final class AuthService: AuthServiceProtocol {
     }
 
     func getCurrentUserToken() async throws -> String {
-        print("🔍 AUTH: getCurrentUserToken() called")
-        
         // Return mock token during tests
         if isRunningInTestEnvironment {
-            print("🧪 AUTH: Running in test mode - returning mock token")
             return "mock-test-token"
         }
 
@@ -475,21 +472,6 @@ final class AuthService: AuthServiceProtocol {
             let tokens = try cognitoTokenProvider.getCognitoTokens().get()
             let token = tokens.accessToken
             
-            print("✅ AUTH: Token retrieved successfully")
-            print("   - Length: \(token.count) characters")
-            print("   - Preview: \(String(token.prefix(50)))...")
-
-            #if DEBUG
-                // Print the full JWT so we can copy from the console
-                print("🧪 FULL_ACCESS_TOKEN → \(token)")
-
-                // Copy to clipboard for CLI use
-                #if canImport(UIKit)
-                    UIPasteboard.general.string = token
-                    print("📋 Token copied to clipboard")
-                #endif
-            #endif
-
             return token
         } catch {
             throw AuthenticationError.unknown("Failed to get access token: \(error)")

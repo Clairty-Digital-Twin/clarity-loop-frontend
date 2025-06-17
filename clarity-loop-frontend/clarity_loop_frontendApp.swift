@@ -87,19 +87,10 @@ struct ClarityPulseApp: App {
     // MARK: - Initializer
 
     init() {
-        // Debug logging to understand the environment
-        let isTest = Self.isRunningInTestEnvironment
-        print("🔍 APP INIT: isRunningInTestEnvironment = \(isTest)")
-        print("🔍 APP INIT: processName = \(ProcessInfo.processInfo.processName)")
-        print("🔍 APP INIT: arguments = \(ProcessInfo.processInfo.arguments)")
-        print("🔍 APP INIT: XCTestConfigurationFilePath = \(ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? "nil")")
-        
         // Configure Amplify, but skip during test execution to prevent crashes
+        let isTest = Self.isRunningInTestEnvironment
         if !isTest {
-            print("🚀 APP INIT: Configuring Amplify")
             AmplifyConfigurator.configure()
-        } else {
-            print("🧪 APP INIT: Skipping Amplify configuration (test environment detected)")
         }
         
         // Initialize the BackendAPIClient with proper token provider
@@ -107,11 +98,8 @@ struct ClarityPulseApp: App {
         let client: APIClientProtocol
         if
             let backendClient = BackendAPIClient(tokenProvider: {
-                print("🔍 APP: Token provider called")
-
                 // Skip Amplify Auth during tests to prevent crashes
                 if Self.isRunningInTestEnvironment {
-                    print("🧪 APP: Running in test mode - returning mock token")
                     return "mock-test-token"
                 }
 
@@ -122,32 +110,16 @@ struct ClarityPulseApp: App {
                     if let cognitoTokenProvider = authSession as? AuthCognitoTokensProvider {
                         let tokens = try cognitoTokenProvider.getCognitoTokens().get()
                         let token = tokens.accessToken
-                        
-                        print("✅ APP: Token obtained from Amplify Auth")
-                        print("   - Length: \(token.count)")
-
-                        #if DEBUG
-                            // Print the full JWT so we can copy from the console
-                            print("🧪 FULL_ACCESS_TOKEN → \(token)")
-
-                            // Copy to clipboard for CLI use
-                            #if canImport(UIKit)
-                                UIPasteboard.general.string = token
-                                print("📋 Token copied to clipboard")
-                            #endif
-                        #endif
-                        
                         return token
                     }
                 } catch {
-                    print("⚠️ APP: Failed to get token from Amplify: \(error)")
+                    // Silently fail - Amplify will handle retry
                 }
                 
                 return nil
             }) {
             client = backendClient
         } else {
-            print("⚠️ APP: Failed to initialize BackendAPIClient, using fallback DummyAPIClient")
             // Fallback to dummy client instead of crashing
             client = DummyAPIClient()
         }
