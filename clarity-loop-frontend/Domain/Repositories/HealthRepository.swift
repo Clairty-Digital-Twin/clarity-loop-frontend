@@ -71,12 +71,8 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
     }
     
     func fetchMetricsNeedingSync() async throws -> [HealthMetric] {
-        let predicate = RepositoryPredicates.pendingSync() as Predicate<HealthMetric>
-        
-        var descriptor = FetchDescriptor<HealthMetric>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.timestamp)]
-        
-        return try await fetch(descriptor: descriptor)
+        // Use the same logic as fetchPendingSyncMetrics
+        return try await fetchPendingSyncMetrics()
     }
     
     // MARK: - Batch Operations
@@ -176,7 +172,7 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
     override func resolveSyncConflicts(for models: [HealthMetric]) async throws {
         // Implement last-write-wins strategy
         for metric in models {
-            if let remoteID = metric.remoteID {
+            if metric.remoteID != nil {
                 // In a real implementation, we would fetch the remote version
                 // and compare timestamps to resolve conflicts
                 
