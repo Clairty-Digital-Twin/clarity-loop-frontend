@@ -142,7 +142,7 @@ final class CloudKitSyncManager: ObservableObject {
         case .available:
             if syncState == .disabled(reason: "CloudKit not available") {
                 Task {
-                    await startSync()
+                    startSync()
                 }
             }
         case .noAccount:

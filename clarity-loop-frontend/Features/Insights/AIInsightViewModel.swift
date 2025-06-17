@@ -113,7 +113,7 @@ final class AIInsightViewModel: BaseViewModel {
             }
             
             // Get user ID
-            guard let userId = await authService.currentUser?.id else {
+            guard await authService.currentUser?.id != nil else {
                 throw InsightError.notAuthenticated
             }
             

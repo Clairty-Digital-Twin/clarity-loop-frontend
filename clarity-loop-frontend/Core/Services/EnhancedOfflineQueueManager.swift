@@ -568,7 +568,7 @@ struct HealthDataOperationHandler: OperationHandler {
         }
         
         // Convert to HealthMetric objects
-        let metrics = try metricsData.compactMap { dict -> HealthMetric? in
+        let metrics = metricsData.compactMap { dict -> HealthMetric? in
             guard let typeString = dict["type"] as? String,
                   let type = HealthMetricType(rawValue: typeString),
                   let value = dict["value"] as? Double,
@@ -600,7 +600,7 @@ struct InsightOperationHandler: OperationHandler {
         }
         
         // Create insight generation request
-        let request = InsightGenerationRequestDTO(
+        let _ = InsightGenerationRequestDTO(
             analysisResults: [:],
             context: nil,
             insightType: "general",
@@ -620,7 +620,7 @@ struct ProfileOperationHandler: OperationHandler {
     
     func process(_ operation: OfflineOperation) async throws {
         // Profile update implementation
-        guard let userId = operation.payload["userId"] as? String else {
+        guard operation.payload["userId"] != nil else {
             throw OfflineQueueError.invalidPayload
         }
         
@@ -633,7 +633,7 @@ struct PATOperationHandler: OperationHandler {
     let apiClient: APIClientProtocol
     
     func process(_ operation: OfflineOperation) async throws {
-        guard let stepData = operation.payload["stepData"] as? [String: Any] else {
+        guard operation.payload["stepData"] != nil else {
             throw OfflineQueueError.invalidPayload
         }
         
@@ -668,8 +668,8 @@ struct DeleteOperationHandler: OperationHandler {
     let apiClient: APIClientProtocol
     
     func process(_ operation: OfflineOperation) async throws {
-        guard let entityType = operation.payload["entityType"] as? String,
-              let entityId = operation.payload["entityId"] as? String else {
+        guard operation.payload["entityType"] != nil,
+              operation.payload["entityId"] != nil else {
             throw OfflineQueueError.invalidPayload
         }
         

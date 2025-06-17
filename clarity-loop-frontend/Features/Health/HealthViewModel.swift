@@ -109,7 +109,7 @@ final class HealthViewModel: BaseViewModel {
         do {
             // Fetch latest data from HealthKit
             let endDate = Date()
-            let startDate = Calendar.current.date(byAdding: .day, value: -30, to: endDate)!
+            let _ = Calendar.current.date(byAdding: .day, value: -30, to: endDate)!
             
             let dailyMetrics = try await healthKitService.fetchAllDailyMetrics(
                 for: endDate
@@ -197,7 +197,7 @@ final class HealthViewModel: BaseViewModel {
                     "value": metric.value,
                     "unit": metric.unit,
                     "timestamp": ISO8601DateFormatter().string(from: metric.timestamp),
-                    "source": metric.source ?? "Unknown"
+                    "source": metric.source
                 ] as [String: Any]
             }
             
