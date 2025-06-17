@@ -22,7 +22,7 @@ final class AIInsight {
     // Context
     var contextData: [String: String]?
     var relatedMetrics: [HealthMetricType]?
-    var dateRange: DateRange?
+    var dateRange: InsightDateRange?
     
     // AI metadata
     var modelVersion: String?
@@ -148,7 +148,7 @@ enum MessageRole: String, Codable {
     case system = "system"
 }
 
-struct DateRange: Codable {
+struct InsightDateRange: Codable {
     let startDate: Date
     let endDate: Date
     

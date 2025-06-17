@@ -33,13 +33,13 @@ final class HealthKitSyncService: ObservableObject {
     // MARK: - Initialization
     
     private init(
-        healthKitService: HealthKitServiceProtocol = HealthKitService.shared,
-        healthRepository: HealthRepository? = nil,
-        apiClient: APIClientProtocol = BackendAPIClient.shared,
-        backgroundTaskManager: BackgroundTaskManager = .shared
+        healthKitService: HealthKitServiceProtocol,
+        healthRepository: HealthRepository,
+        apiClient: APIClientProtocol,
+        backgroundTaskManager: BackgroundTaskManager
     ) {
         self.healthKitService = healthKitService
-        self.healthRepository = healthRepository ?? HealthRepository(modelContext: SwiftDataConfigurator.shared.container.mainContext)
+        self.healthRepository = healthRepository
         self.apiClient = apiClient
         self.backgroundTaskManager = backgroundTaskManager
         
@@ -51,8 +51,9 @@ final class HealthKitSyncService: ObservableObject {
     
     /// Start automatic syncing
     func startAutoSync() {
-        guard healthKitService.isAuthorized else {
-            print("HealthKit not authorized")
+        // Check if HealthKit is available
+        guard healthKitService.isHealthDataAvailable() else {
+            print("HealthKit not available on this device")
             return
         }
         
@@ -160,11 +161,12 @@ final class HealthKitSyncService: ObservableObject {
             let quantity = sample as! HKQuantitySample
             let value = quantity.quantity.doubleValue(for: .count())
             
-            let metric = HealthMetric()
-            metric.type = .steps
-            metric.value = value
-            metric.unit = "steps"
-            metric.timestamp = quantity.startDate
+            let metric = HealthMetric(
+                timestamp: quantity.startDate,
+                value: value,
+                type: .steps,
+                unit: "steps"
+            )
             metric.source = "HealthKit"
             metric.metadata = [
                 "device": quantity.device?.name ?? "Unknown",
@@ -188,11 +190,12 @@ final class HealthKitSyncService: ObservableObject {
             let quantity = sample as! HKQuantitySample
             let value = quantity.quantity.doubleValue(for: HKUnit(from: "count/min"))
             
-            let metric = HealthMetric()
-            metric.type = .heartRate
-            metric.value = value
-            metric.unit = "bpm"
-            metric.timestamp = quantity.startDate
+            let metric = HealthMetric(
+                timestamp: quantity.startDate,
+                value: value,
+                type: .heartRate,
+                unit: "bpm"
+            )
             metric.source = "HealthKit"
             metric.metadata = [
                 "motionContext": getMotionContext(for: quantity)
@@ -228,11 +231,12 @@ final class HealthKitSyncService: ObservableObject {
         for (date, samples) in dailySleep {
             let totalSleep = calculateTotalSleep(from: samples)
             
-            let metric = HealthMetric()
-            metric.type = .sleepDuration
-            metric.value = totalSleep / 3600 // Convert to hours
-            metric.unit = "hours"
-            metric.timestamp = date
+            let metric = HealthMetric(
+                timestamp: date,
+                value: totalSleep / 3600, // Convert to hours
+                type: .sleepDuration,
+                unit: "hours"
+            )
             metric.source = "HealthKit"
             metric.metadata = [
                 "stages": analyzeSleepStages(from: samples)
@@ -255,11 +259,12 @@ final class HealthKitSyncService: ObservableObject {
             
             // Active energy
             if let energy = workout.totalEnergyBurned {
-                let metric = HealthMetric()
-                metric.type = .activeEnergy
-                metric.value = energy.doubleValue(for: .kilocalorie())
-                metric.unit = "kcal"
-                metric.timestamp = workout.startDate
+                let metric = HealthMetric(
+                    timestamp: workout.startDate,
+                    value: energy.doubleValue(for: .kilocalorie()),
+                    type: .activeEnergy,
+                    unit: "kcal"
+                )
                 metric.source = "HealthKit"
                 metric.metadata = [
                     "workoutType": workout.workoutActivityType.name,
@@ -433,16 +438,11 @@ final class HealthKitSyncService: ObservableObject {
     }
     
     private func registerBackgroundTasks() {
-        backgroundTaskManager.registerTask(
-            identifier: "com.clarity.healthkit.sync",
-            handler: { [weak self] in
-                await self?.performFullSync()
-            }
-        )
+        // Background sync is handled by BackgroundTaskManager
     }
     
     private func handleAuthorizationChange() async {
-        if healthKitService.isAuthorized {
+        if healthKitService.isHealthDataAvailable() {
             await performFullSync()
         } else {
             stopAutoSync()
@@ -480,13 +480,7 @@ extension HKWorkoutActivityType {
     }
 }
 
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
-        }
-    }
-}
+// Array.chunked is already defined in EnhancedOfflineQueueManager
 
 extension Notification.Name {
     static let healthKitAuthorizationStatusChanged = Notification.Name("healthKitAuthorizationStatusChanged")
