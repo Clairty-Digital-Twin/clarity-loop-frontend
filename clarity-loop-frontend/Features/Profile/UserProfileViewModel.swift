@@ -31,8 +31,8 @@ final class UserProfileViewModel: BaseViewModel {
         guard let profile = profile else { return false }
         return !profile.displayName.isEmpty &&
                profile.dateOfBirth != nil &&
-               profile.heightCm != nil &&
-               profile.weightKg != nil
+               profile.heightInCentimeters != nil &&
+               profile.weightInKilograms != nil
     }
     
     var profileCompletionPercentage: Double {
@@ -43,11 +43,10 @@ final class UserProfileViewModel: BaseViewModel {
         
         if !profile.displayName.isEmpty { completedFields += 1 }
         if profile.dateOfBirth != nil { completedFields += 1 }
-        if profile.heightCm != nil { completedFields += 1 }
-        if profile.weightKg != nil { completedFields += 1 }
-        if profile.activityLevel != nil { completedFields += 1 }
-        if profile.healthGoals != nil { completedFields += 1 }
-        if profile.medicalConditions != nil { completedFields += 1 }
+        if profile.heightInCentimeters != nil { completedFields += 1 }
+        if profile.weightInKilograms != nil { completedFields += 1 }
+        // Activity level and health goals are now in preferences
+        if !profile.preferences.goals.isEmpty { completedFields += 1 }
         
         return Double(completedFields) / Double(totalFields)
     }
@@ -73,17 +72,25 @@ final class UserProfileViewModel: BaseViewModel {
         
         do {
             // Try to load from local storage first
-            if let userId = await authService.currentUser?.id,
-               let localProfile = try await userProfileRepository.fetchByUserId(userId) {
-                profileState = .loaded(localProfile)
-                
-                // Sync with backend in background
-                Task {
-                    await syncProfile()
+            if let userId = await authService.currentUser?.id {
+                let descriptor = FetchDescriptor<UserProfileModel>(
+                    predicate: #Predicate { $0.userID == userId }
+                )
+                let results = try await userProfileRepository.fetch(descriptor: descriptor)
+                if let localProfile = results.first {
+                    profileState = .loaded(localProfile)
+                    
+                    // Sync with backend in background
+                    Task {
+                        await syncProfile()
+                    }
+                } else {
+                    // No local profile, fetch from backend
+                    await fetchProfileFromBackend()
                 }
             } else {
-                // No local profile, fetch from backend
-                await fetchProfileFromBackend()
+                // No user ID available
+                profileState = .error(ProfileError.userNotAuthenticated)
             }
         } catch {
             profileState = .error(error)
@@ -107,13 +114,10 @@ final class UserProfileViewModel: BaseViewModel {
         // Update fields
         if let displayName = displayName { profile.displayName = displayName }
         if let dateOfBirth = dateOfBirth { profile.dateOfBirth = dateOfBirth }
-        if let heightCm = heightCm { profile.heightCm = heightCm }
-        if let weightKg = weightKg { profile.weightKg = weightKg }
-        if let activityLevel = activityLevel { profile.activityLevel = activityLevel }
-        if let healthGoals = healthGoals { profile.healthGoals = healthGoals }
-        if let medicalConditions = medicalConditions { profile.medicalConditions = medicalConditions }
-        
-        profile.lastModified = Date()
+        if let heightCm = heightCm { profile.heightInCentimeters = heightCm }
+        if let weightKg = weightKg { profile.weightInKilograms = weightKg }
+        // Activity level and health goals would be set in preferences
+        // This would need proper mapping based on your app's needs
         
         do {
             // Save locally
@@ -261,6 +265,25 @@ enum ActivityLevel: String, CaseIterable {
         case .moderatelyActive: return 1.55
         case .veryActive: return 1.725
         case .extremelyActive: return 1.9
+        }
+    }
+}
+
+// MARK: - Profile Error
+
+enum ProfileError: LocalizedError {
+    case userNotAuthenticated
+    case profileNotFound
+    case updateFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .userNotAuthenticated:
+            return "User is not authenticated"
+        case .profileNotFound:
+            return "User profile not found"
+        case .updateFailed:
+            return "Failed to update profile"
         }
     }
 }

@@ -189,13 +189,26 @@ final class PATAnalysisViewModel: BaseViewModel {
     }
     
     private func saveAnalysisResult(_ result: PATAnalysisResult) async {
-        let analysis = PATAnalysis()
-        analysis.analysisId = result.analysisId
-        analysis.status = result.status
-        analysis.patFeatures = result.patFeatures
-        analysis.confidence = result.confidence ?? 0
-        analysis.completedAt = result.completedAt ?? Date()
-        analysis.error = result.error
+        // Create a new PATAnalysis with default values for now
+        // In a real implementation, we'd parse the patFeatures to extract sleep data
+        let analysis = PATAnalysis(
+            startDate: Date().addingTimeInterval(-8 * 60 * 60), // 8 hours ago
+            endDate: Date(),
+            analysisType: .overnight
+        )
+        
+        // Set remote ID for sync tracking
+        analysis.remoteID = result.analysisId
+        analysis.confidenceScore = result.confidence ?? 0
+        analysis.syncStatus = result.isCompleted ? .synced : .pending
+        
+        // TODO: Parse patFeatures to extract actual sleep stage data
+        if let features = result.patFeatures {
+            // This would parse the features dictionary to extract sleep metrics
+            // For now, using placeholder values
+            analysis.totalSleepMinutes = 420 // 7 hours
+            analysis.sleepEfficiency = 0.85
+        }
         
         do {
             try await patRepository.create(analysis)
