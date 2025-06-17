@@ -3,6 +3,7 @@ import Observation
 import SwiftData
 import PhotosUI
 import SwiftUI
+import UIKit
 
 @Observable
 @MainActor
