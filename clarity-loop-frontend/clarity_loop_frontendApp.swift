@@ -132,16 +132,8 @@ struct ClarityPulseApp: App {
                 } catch {
                     print("⚠️ Cannot create even dummy ModelContainer: \(error)")
                     print("⚠️ Tests will run without SwiftData support")
-                    // As absolute last resort, create container with empty schema
-                    let emptySchema = Schema([])
-                    self.modelContainer = try! ModelContainer(
-                        for: emptySchema,
-                        configurations: [ModelConfiguration(
-                            schema: emptySchema,
-                            isStoredInMemoryOnly: true,
-                            allowsSave: false
-                        )]
-                    )
+                    // As absolute last resort, create container with TestOnlyModel
+                    self.modelContainer = try! ModelContainer(for: TestOnlyModel.self)
                 }
             } else {
                 fatalError("Failed to create production ModelContainer: \(error)")
