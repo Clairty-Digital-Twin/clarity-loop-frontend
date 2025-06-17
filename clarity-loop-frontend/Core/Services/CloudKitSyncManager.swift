@@ -117,7 +117,7 @@ final class CloudKitSyncManager: ObservableObject {
     
     private func setupCloudKit() {
         // Configure CloudKit for efficient sync
-        container.privateCloudDatabase.configuration.maximumResults = syncBatchSize
+        // Note: Batch size will be handled at the operation level
     }
     
     private func observeAccountStatus() {
@@ -136,7 +136,9 @@ final class CloudKitSyncManager: ObservableObject {
         switch status {
         case .available:
             if syncState == .disabled(reason: "CloudKit not available") {
-                await startSync()
+                Task {
+                    await startSync()
+                }
             }
         case .noAccount:
             syncState = .disabled(reason: "No iCloud account")
@@ -172,7 +174,8 @@ final class CloudKitSyncManager: ObservableObject {
             syncErrors.append(CloudKitSyncError(
                 timestamp: Date(),
                 operation: "initialSync",
-                error: error
+                error: error,
+                recordID: nil
             ))
         }
     }
@@ -181,19 +184,25 @@ final class CloudKitSyncManager: ObservableObject {
         // Fetch pending changes
         let pendingHealthMetrics = try modelContext.fetch(
             FetchDescriptor<HealthMetric>(
-                predicate: #Predicate { $0.syncStatus == .pending }
+                predicate: #Predicate { metric in
+                    metric.syncStatus.rawValue == "pending"
+                }
             )
         )
         
         let pendingInsights = try modelContext.fetch(
             FetchDescriptor<AIInsight>(
-                predicate: #Predicate { $0.syncStatus == .pending }
+                predicate: #Predicate { insight in
+                    insight.syncStatus.rawValue == "pending"
+                }
             )
         )
         
         let pendingAnalyses = try modelContext.fetch(
             FetchDescriptor<PATAnalysis>(
-                predicate: #Predicate { $0.syncStatus == .pending }
+                predicate: #Predicate { analysis in
+                    analysis.syncStatus.rawValue == "pending"
+                }
             )
         )
         
@@ -208,7 +217,9 @@ final class CloudKitSyncManager: ObservableObject {
     }
     
     private func uploadHealthMetrics(_ metrics: [HealthMetric]) async throws {
-        let chunks = metrics.chunked(into: syncBatchSize)
+        let chunks = stride(from: 0, to: metrics.count, by: syncBatchSize).map {
+            Array(metrics[$0..<min($0 + syncBatchSize, metrics.count)])
+        }
         
         for chunk in chunks {
             let records = chunk.map { createRecord(from: $0) }
@@ -249,27 +260,33 @@ final class CloudKitSyncManager: ObservableObject {
     private func downloadRemoteChanges() async throws {
         let serverChangeToken = UserDefaults.standard.object(forKey: "cloudKitServerChangeToken") as? Data
         
-        let options = CKFetchRecordZoneChangesOperation.ZoneOptions()
-        options.previousServerChangeToken = serverChangeToken.flatMap { try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: $0) }
+        let configuration = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
+        configuration.previousServerChangeToken = serverChangeToken.flatMap { try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: $0) }
         
-        let operation = CKFetchRecordZoneChangesOperation(
-            recordZoneIDs: [recordZoneID],
-            optionsByRecordZoneID: [recordZoneID: options]
-        )
+        var configurationsPerZone = [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneConfiguration]()
+        configurationsPerZone[recordZoneID] = configuration
+        
+        let operation = CKFetchRecordZoneChangesOperation(recordZoneIDs: [recordZoneID], configurationsByRecordZoneID: configurationsPerZone)
         
         var downloadedRecords: [CKRecord] = []
         
-        operation.recordChangedBlock = { record in
-            downloadedRecords.append(record)
+        operation.recordWasChangedBlock = { recordID, result in
+            switch result {
+            case .success(let record):
+                downloadedRecords.append(record)
+            case .failure(let error):
+                print("Failed to fetch record \(recordID): \(error)")
+            }
         }
         
-        operation.recordZoneFetchCompletionBlock = { [weak self] zoneID, serverChangeToken, _, _, error in
-            if let token = serverChangeToken,
-               let data = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
-                UserDefaults.standard.set(data, forKey: "cloudKitServerChangeToken")
-            }
-            
-            if let error = error {
+        operation.recordZoneFetchResultBlock = { [weak self] zoneID, result in
+            switch result {
+            case .success(let fetchResult):
+                if let token = fetchResult.serverChangeToken,
+                   let data = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
+                    UserDefaults.standard.set(data, forKey: "cloudKitServerChangeToken")
+                }
+            case .failure(let error):
                 self?.handleSyncError(error, for: nil)
             }
         }
@@ -310,7 +327,7 @@ final class CloudKitSyncManager: ObservableObject {
         if let existing = existing {
             // Update if remote is newer
             if let remoteModified = record.modificationDate,
-               remoteModified > existing.updatedAt {
+               remoteModified > existing.timestamp {
                 updateHealthMetric(existing, from: record)
             }
         } else {

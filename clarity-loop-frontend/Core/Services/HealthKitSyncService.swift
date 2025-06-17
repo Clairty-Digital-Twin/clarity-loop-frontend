@@ -9,7 +9,7 @@ final class HealthKitSyncService: ObservableObject {
     
     static let shared = HealthKitSyncService()
     
-    @Published private(set) var syncStatus: SyncStatus = .idle
+    @Published private(set) var syncStatus: HealthKitSyncStatus = .idle
     @Published private(set) var lastSyncDate: Date?
     @Published private(set) var syncProgress: Double = 0.0
     @Published private(set) var syncErrors: [SyncError] = []
@@ -452,7 +452,7 @@ final class HealthKitSyncService: ObservableObject {
 
 // MARK: - Supporting Types
 
-enum SyncStatus {
+enum HealthKitSyncStatus {
     case idle
     case syncing
     case synced
