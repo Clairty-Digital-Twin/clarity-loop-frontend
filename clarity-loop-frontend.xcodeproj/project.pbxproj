@@ -116,10 +116,8 @@
 				Features/Dashboard/DashboardViewModel.swift = (ios, );
 				Features/Insights/ChatView.swift = (ios, );
 				Features/Insights/ChatViewModel.swift = (ios, );
-				Features/Insights/DebugAPIView.swift = (ios, );
 				Features/Insights/InsightsListView.swift = (ios, );
 				Features/Insights/InsightsListViewModel.swift = (ios, );
-				Features/Insights/TokenDebugView.swift = (ios, );
 				Features/Settings/DataManagementView.swift = (ios, );
 				Features/Settings/DataManagementViewModel.swift = (ios, );
 				Features/Settings/SettingsView.swift = (ios, );
