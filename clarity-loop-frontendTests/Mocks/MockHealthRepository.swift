@@ -40,7 +40,7 @@ struct MockHealthMetric {
 }
 
 @MainActor
-final class MockHealthRepository: HealthRepositoryProtocol {
+final class MockHealthRepository: BaseRepository<HealthMetric>, HealthRepositoryProtocol {
     // MARK: - Properties
     
     private var metrics: [MockHealthMetric] = []
