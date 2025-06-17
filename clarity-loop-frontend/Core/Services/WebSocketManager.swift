@@ -20,7 +20,7 @@ final class WebSocketManager: ObservableObject {
     private let eventProcessor: WebSocketEventProcessor
     
     private var cancellables = Set<AnyCancellable>()
-    private var messageHandlers: [MessageType: [MessageHandler]] = [:]
+    private var messageHandlers: [MessageType: [HandlerWrapper]] = [:]
     private var pingTimer: Timer?
     private var reconnectTimer: Timer?
     
@@ -42,12 +42,12 @@ final class WebSocketManager: ObservableObject {
     
     // MARK: - Initialization
     
-    private init(
+    init(
         baseURL: String = "wss://clarity.novamindnyc.com",
-        authService: AuthServiceProtocol? = nil
+        authService: AuthServiceProtocol
     ) {
         self.webSocketURL = URL(string: "\(baseURL)/ws")!
-        self.authService = authService ?? AuthService.shared
+        self.authService = authService
         self.eventProcessor = WebSocketEventProcessor()
         
         setupAuthObserver()
@@ -65,9 +65,7 @@ final class WebSocketManager: ObservableObject {
         
         do {
             // Get auth token
-            guard let token = try await authService.getAuthToken() else {
-                throw WebSocketError.authenticationRequired
-            }
+            let token = try await authService.getCurrentUserToken()
             
             // Create WebSocket request
             var request = URLRequest(url: webSocketURL)
@@ -156,7 +154,7 @@ final class WebSocketManager: ObservableObject {
         messageHandlers[type]?.append(wrapper)
         
         return AnyCancellable { [weak self] in
-            self?.messageHandlers[type]?.removeAll { ($0 as? HandlerWrapper)?.id == id }
+            self?.messageHandlers[type]?.removeAll { $0.id == id }
         }
     }
     
@@ -183,7 +181,7 @@ final class WebSocketManager: ObservableObject {
         NotificationCenter.default.publisher(for: .authStateChanged)
             .sink { [weak self] _ in
                 Task {
-                    if await self?.authService.isAuthenticated == true {
+                    if await self?.authService.currentUser != nil {
                         await self?.connect()
                     } else {
                         self?.disconnect()
@@ -375,13 +373,9 @@ struct WebSocketMessage: Codable {
 
 typealias MessageHandler = (WebSocketMessage) -> Void
 
-private struct HandlerWrapper: MessageHandler {
+private struct HandlerWrapper {
     let id: UUID
     let handler: MessageHandler
-    
-    func callAsFunction(_ message: WebSocketMessage) {
-        handler(message)
-    }
 }
 
 // MARK: - Message Types

@@ -22,7 +22,7 @@ final class APIService: ObservableObject {
     
     private let apiClient: APIClientProtocol
     private let authService: AuthServiceProtocol
-    private let offlineQueue: OfflineQueueManager
+    private let offlineQueue: OfflineQueueManagerProtocol
     
     private var cancellables = Set<AnyCancellable>()
     private let responseCache = NSCache<NSString, CachedResponse>()
@@ -38,7 +38,7 @@ final class APIService: ObservableObject {
     init(
         apiClient: APIClientProtocol,
         authService: AuthServiceProtocol,
-        offlineQueue: OfflineQueueManager
+        offlineQueue: OfflineQueueManagerProtocol
     ) {
         self.apiClient = apiClient
         self.authService = authService
@@ -207,21 +207,27 @@ final class APIService: ObservableObject {
     
     private func handleAuthEndpoint<T>(_ endpoint: AuthEndpoint) async throws -> T {
         switch endpoint {
-        case .login(let request):
-            let response = try await apiClient.login(requestDTO: request)
+        case .login(let dto):
+            let response = try await apiClient.login(requestDTO: dto)
             return response as! T
-        case .register(let request):
-            let response = try await apiClient.register(requestDTO: request)
+        case .register(let dto):
+            let response = try await apiClient.register(requestDTO: dto)
             return response as! T
-        case .verifyEmail(let request):
-            let response = try await apiClient.verifyEmail(email: request.email, code: request.code)
+        case .verifyEmail(let email, let code):
+            let response = try await apiClient.verifyEmail(email: email, code: code)
             return response as! T
-        case .refreshToken(let request):
-            let response = try await apiClient.refreshToken(requestDTO: request)
+        case .refreshToken(let dto):
+            let response = try await apiClient.refreshToken(requestDTO: dto)
             return response as! T
         case .logout:
-            try await apiClient.logout()
-            return () as! T
+            let response = try await apiClient.logout()
+            return response as! T
+        case .getCurrentUser:
+            let response = try await apiClient.getCurrentUser()
+            return response as! T
+        case .resendVerificationEmail(let email):
+            let response = try await apiClient.resendVerificationEmail(email: email)
+            return response as! T
         }
     }
     
@@ -235,11 +241,17 @@ final class APIService: ObservableObject {
     
     private func handlePATEndpoint<T>(_ endpoint: PATEndpoint) async throws -> T {
         switch endpoint {
-        case .submitStepData(let request):
-            let response = try await apiClient.submitPATData(request: request)
+        case .analyzeStepData(let dto):
+            let response = try await apiClient.analyzeStepData(requestDTO: dto)
+            return response as! T
+        case .analyzeActigraphy(let dto):
+            let response = try await apiClient.analyzeActigraphy(requestDTO: dto)
             return response as! T
         case .getAnalysis(let id):
             let response = try await apiClient.getPATAnalysis(id: id)
+            return response as! T
+        case .getServiceHealth:
+            let response = try await apiClient.getPATServiceHealth()
             return response as! T
         }
     }

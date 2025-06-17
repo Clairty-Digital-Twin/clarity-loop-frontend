@@ -45,7 +45,7 @@ final class UserProfileViewModel: BaseViewModel {
         if profile.dateOfBirth != nil { completedFields += 1 }
         if profile.heightInCentimeters != nil { completedFields += 1 }
         if profile.weightInKilograms != nil { completedFields += 1 }
-        if profile.privacySettings.dataSharingEnabled { completedFields += 1 }
+        if profile.privacySettings.shareHealthData { completedFields += 1 }
         
         return Double(completedFields) / Double(totalFields)
     }

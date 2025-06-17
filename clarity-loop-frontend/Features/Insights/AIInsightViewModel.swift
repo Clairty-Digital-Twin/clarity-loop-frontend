@@ -118,20 +118,25 @@ final class AIInsightViewModel: BaseViewModel {
             }
             
             // Request insight generation
-            let requestDTO = InsightGenerationRequestDTO(userId: userId)
+            let requestDTO = InsightGenerationRequestDTO(
+                analysisResults: [:],
+                context: nil,
+                insightType: "general",
+                includeRecommendations: true,
+                language: "en"
+            )
             let response = try await insightsRepo.generateInsight(requestDTO: requestDTO)
             
             // Create local AIInsight model
-            let insight = AIInsight()
-            insight.insightId = response.data.id
-            insight.narrative = response.data.narrative
-            insight.category = categorizeInsight(response.data.narrative)
+            let insight = AIInsight(
+                content: response.data.narrative,
+                category: categorizeInsight(response.data.narrative)
+            )
+            insight.remoteID = response.data.id
+            insight.summary = response.data.narrative
             insight.priority = determinePriority(response.data)
             insight.timestamp = response.data.generatedAt
             insight.confidenceScore = response.data.confidenceScore
-            insight.keyInsights = response.data.keyInsights
-            insight.recommendations = response.data.recommendations
-            insight.dataPointsAnalyzed = response.data.dataPoints.count
             
             // Save locally
             try await insightRepository.create(insight)
@@ -148,7 +153,6 @@ final class AIInsightViewModel: BaseViewModel {
     
     func markAsRead(_ insight: AIInsight) async {
         insight.isRead = true
-        insight.updatedAt = Date()
         
         do {
             try await insightRepository.update(insight)
@@ -159,7 +163,6 @@ final class AIInsightViewModel: BaseViewModel {
     
     func toggleBookmark(_ insight: AIInsight) async {
         insight.isFavorite.toggle()
-        insight.updatedAt = Date()
         
         do {
             try await insightRepository.update(insight)
@@ -206,25 +209,22 @@ final class AIInsightViewModel: BaseViewModel {
             // Convert and save new insights
             for insightDTO in response.data.insights {
                 // Check if we already have this insight
-                let existingInsight = try await insightRepository.fetchByInsightId(insightDTO.id)
+                let descriptor = FetchDescriptor<AIInsight>(
+                    predicate: #Predicate { $0.remoteID == insightDTO.id }
+                )
+                let existingInsights = try await insightRepository.fetch(descriptor: descriptor)
                 
-                if existingInsight == nil {
-                    // Fetch full insight details
-                    let fullInsight = try await insightsRepo.getInsightDetails(
-                        userId: userId,
-                        insightId: insightDTO.id
+                if existingInsights.isEmpty {
+                    // Create new insight from DTO
+                    let insight = AIInsight(
+                        content: insightDTO.narrative,
+                        category: categorizeInsight(insightDTO.narrative)
                     )
-                    
-                    let insight = AIInsight()
-                    insight.insightId = fullInsight.data.id
-                    insight.narrative = fullInsight.data.narrative
-                    insight.category = categorizeInsight(fullInsight.data.narrative)
-                    insight.priority = determinePriority(fullInsight.data)
-                    insight.timestamp = fullInsight.data.generatedAt
-                    insight.confidenceScore = fullInsight.data.confidenceScore
-                    insight.keyInsights = fullInsight.data.keyInsights
-                    insight.recommendations = fullInsight.data.recommendations
-                    insight.dataPointsAnalyzed = fullInsight.data.dataPoints.count
+                    insight.remoteID = insightDTO.id
+                    insight.summary = insightDTO.narrative
+                    insight.priority = determinePriority(insightDTO)
+                    insight.timestamp = insightDTO.generatedAt
+                    insight.confidenceScore = insightDTO.confidenceScore
                     
                     try await insightRepository.create(insight)
                 }

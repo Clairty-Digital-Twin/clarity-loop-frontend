@@ -25,7 +25,7 @@ final class HealthViewModel: BaseViewModel {
     }
     
     var isHealthKitAuthorized: Bool {
-        healthKitService.isAuthorized
+        healthKitService.isHealthDataAvailable()
     }
     
     var filteredMetrics: [HealthMetric] {
@@ -112,50 +112,52 @@ final class HealthViewModel: BaseViewModel {
             let startDate = Calendar.current.date(byAdding: .day, value: -30, to: endDate)!
             
             let dailyMetrics = try await healthKitService.fetchAllDailyMetrics(
-                from: startDate,
-                to: endDate
+                for: endDate
             )
             
             // Convert to HealthMetric models and save
             var healthMetrics: [HealthMetric] = []
             
-            for (date, metrics) in dailyMetrics {
-                // Steps
-                if metrics.stepCount > 0 {
-                    let stepMetric = HealthMetric()
-                    stepMetric.type = .steps
-                    stepMetric.value = Double(metrics.stepCount)
-                    stepMetric.unit = "steps"
-                    stepMetric.timestamp = date
-                    stepMetric.source = "HealthKit"
-                    healthMetrics.append(stepMetric)
-                }
-                
-                // Heart Rate
-                if let heartRate = metrics.restingHeartRate {
-                    let heartMetric = HealthMetric()
-                    heartMetric.type = .heartRate
-                    heartMetric.value = heartRate
-                    heartMetric.unit = "bpm"
-                    heartMetric.timestamp = date
+            let date = dailyMetrics.date
+            
+            // Steps
+            if dailyMetrics.stepCount > 0 {
+                let stepMetric = HealthMetric(
+                    timestamp: date,
+                    value: Double(dailyMetrics.stepCount),
+                    type: .steps,
+                    unit: "steps"
+                )
+                stepMetric.source = "HealthKit"
+                healthMetrics.append(stepMetric)
+            }
+            
+            // Heart Rate
+            if let heartRate = dailyMetrics.restingHeartRate {
+                    let heartMetric = HealthMetric(
+                        timestamp: date,
+                        value: heartRate,
+                        type: .heartRate,
+                        unit: "bpm"
+                    )
                     heartMetric.source = "HealthKit"
                     healthMetrics.append(heartMetric)
                 }
                 
-                // Sleep
-                if let sleepData = metrics.sleepData {
-                    let sleepMetric = HealthMetric()
-                    sleepMetric.type = .sleepDuration
-                    sleepMetric.value = sleepData.totalTimeAsleep / 3600 // Convert to hours
-                    sleepMetric.unit = "hours"
-                    sleepMetric.timestamp = date
+            // Sleep
+            if let sleepData = dailyMetrics.sleepData {
+                    let sleepMetric = HealthMetric(
+                        timestamp: date,
+                        value: sleepData.totalTimeAsleep / 3600, // Convert to hours
+                        type: .sleepDuration,
+                        unit: "hours"
+                    )
                     sleepMetric.source = "HealthKit"
                     sleepMetric.metadata = [
                         "efficiency": "\(sleepData.sleepEfficiency)",
                         "timeInBed": "\(sleepData.totalTimeInBed)"
                     ]
-                    healthMetrics.append(sleepMetric)
-                }
+                healthMetrics.append(sleepMetric)
             }
             
             // Save to repository
@@ -186,11 +188,20 @@ final class HealthViewModel: BaseViewModel {
     func exportMetrics() async -> URL? {
         do {
             let metrics = self.metrics
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .iso8601
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             
-            let data = try encoder.encode(metrics)
+            // Convert to exportable format
+            let exportData = metrics.map { metric in
+                [
+                    "id": metric.localID.uuidString,
+                    "type": metric.type.rawValue,
+                    "value": metric.value,
+                    "unit": metric.unit,
+                    "timestamp": ISO8601DateFormatter().string(from: metric.timestamp),
+                    "source": metric.source ?? "Unknown"
+                ] as [String: Any]
+            }
+            
+            let data = try JSONSerialization.data(withJSONObject: exportData, options: [.prettyPrinted, .sortedKeys])
             
             let fileName = "health_metrics_\(Date().ISO8601Format()).json"
             let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
@@ -256,29 +267,32 @@ extension HealthMetric {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: endDate) else { continue }
             
             // Steps
-            let steps = HealthMetric()
-            steps.type = .steps
-            steps.value = Double.random(in: 5000...15000)
-            steps.unit = "steps"
-            steps.timestamp = date
+            let steps = HealthMetric(
+                timestamp: date,
+                value: Double.random(in: 5000...15000),
+                type: .steps,
+                unit: "steps"
+            )
             steps.source = "Manual"
             metrics.append(steps)
             
             // Heart Rate
-            let heartRate = HealthMetric()
-            heartRate.type = .heartRate
-            heartRate.value = Double.random(in: 60...80)
-            heartRate.unit = "bpm"
-            heartRate.timestamp = date
+            let heartRate = HealthMetric(
+                timestamp: date,
+                value: Double.random(in: 60...80),
+                type: .heartRate,
+                unit: "bpm"
+            )
             heartRate.source = "Manual"
             metrics.append(heartRate)
             
             // Sleep
-            let sleep = HealthMetric()
-            sleep.type = .sleepDuration
-            sleep.value = Double.random(in: 6...9)
-            sleep.unit = "hours"
-            sleep.timestamp = date
+            let sleep = HealthMetric(
+                timestamp: date,
+                value: Double.random(in: 6...9),
+                type: .sleepDuration,
+                unit: "hours"
+            )
             sleep.source = "Manual"
             sleep.metadata = [
                 "efficiency": "\(Double.random(in: 0.7...0.95))",

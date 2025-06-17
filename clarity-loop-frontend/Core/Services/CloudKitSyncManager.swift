@@ -8,7 +8,11 @@ import Combine
 final class CloudKitSyncManager: ObservableObject {
     // MARK: - Properties
     
-    static let shared = CloudKitSyncManager()
+    static var shared: CloudKitSyncManager?
+    
+    static func configure(modelContext: ModelContext) {
+        shared = CloudKitSyncManager(modelContext: modelContext)
+    }
     
     @Published private(set) var syncState: CloudKitSyncState = .idle
     @Published private(set) var lastSyncDate: Date?
@@ -31,10 +35,10 @@ final class CloudKitSyncManager: ObservableObject {
     
     // MARK: - Initialization
     
-    private init() {
+    private init(modelContext: ModelContext) {
         self.container = CKContainer(identifier: containerIdentifier)
         self.privateDatabase = container.privateCloudDatabase
-        self.modelContext = SwiftDataConfigurator.shared.container.mainContext
+        self.modelContext = modelContext
         
         setupCloudKit()
         observeAccountStatus()
@@ -50,7 +54,7 @@ final class CloudKitSyncManager: ObservableObject {
         }
         
         Task {
-            await setupSubscriptions()
+            try? await setupSubscriptions()
             await performInitialSync()
         }
     }
@@ -86,7 +90,8 @@ final class CloudKitSyncManager: ObservableObject {
             syncErrors.append(CloudKitSyncError(
                 timestamp: Date(),
                 operation: "forceSync",
-                error: error
+                error: error,
+                recordID: nil
             ))
         }
     }
@@ -234,7 +239,7 @@ final class CloudKitSyncManager: ObservableObject {
                     switch result {
                     case .success:
                         if let metric = chunk.first(where: { $0.localID.uuidString == recordID.recordName }) {
-                            metric.syncStatus = .synced
+                            metric.syncStatus = SyncStatus.synced
                             metric.lastSyncedAt = Date()
                         }
                     case .failure(let error):
@@ -282,8 +287,8 @@ final class CloudKitSyncManager: ObservableObject {
         operation.recordZoneFetchResultBlock = { [weak self] zoneID, result in
             switch result {
             case .success(let fetchResult):
-                if let token = fetchResult.serverChangeToken,
-                   let data = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
+                let token = fetchResult.serverChangeToken
+                if let data = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
                     UserDefaults.standard.set(data, forKey: "cloudKitServerChangeToken")
                 }
             case .failure(let error):
@@ -356,22 +361,28 @@ final class CloudKitSyncManager: ObservableObject {
         record["unit"] = metric.unit
         record["timestamp"] = metric.timestamp
         record["source"] = metric.source
-        record["metadata"] = metric.metadata as CKRecordValue?
+        if let metadata = metric.metadata {
+            record["metadata"] = try? JSONSerialization.data(withJSONObject: metadata) as CKRecordValue
+        }
         
         return record
     }
     
     private func createHealthMetric(from record: CKRecord) -> HealthMetric {
-        let metric = HealthMetric()
+        let metric = HealthMetric(
+            timestamp: record["timestamp"] as! Date,
+            value: record["value"] as! Double,
+            type: HealthMetricType(rawValue: record["type"] as! String)!,
+            unit: record["unit"] as! String
+        )
         
         metric.localID = UUID(uuidString: record.recordID.recordName)!
-        metric.type = HealthMetricType(rawValue: record["type"] as! String)!
-        metric.value = record["value"] as! Double
-        metric.unit = record["unit"] as! String
-        metric.timestamp = record["timestamp"] as! Date
-        metric.source = record["source"] as! String
-        metric.metadata = record["metadata"] as? [String: String]
-        metric.syncStatus = .synced
+        metric.source = record["source"] as? String ?? "CloudKit"
+        if let metadataData = record["metadata"] as? Data,
+           let metadata = try? JSONSerialization.jsonObject(with: metadataData) as? [String: String] {
+            metric.metadata = metadata
+        }
+        metric.syncStatus = SyncStatus.synced
         metric.lastSyncedAt = Date()
         
         return metric
@@ -381,7 +392,7 @@ final class CloudKitSyncManager: ObservableObject {
         metric.value = record["value"] as! Double
         metric.timestamp = record["timestamp"] as! Date
         metric.metadata = record["metadata"] as? [String: String]
-        metric.syncStatus = .synced
+        metric.syncStatus = SyncStatus.synced
         metric.lastSyncedAt = Date()
     }
     

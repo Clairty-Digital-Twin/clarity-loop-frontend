@@ -8,7 +8,11 @@ import Combine
 final class PushNotificationManager: NSObject, ObservableObject {
     // MARK: - Properties
     
-    static let shared = PushNotificationManager()
+    static var shared: PushNotificationManager?
+    
+    static func configure(apiClient: APIClientProtocol, authService: AuthServiceProtocol) {
+        shared = PushNotificationManager(apiClient: apiClient, authService: authService)
+    }
     
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var isRegistered = false
