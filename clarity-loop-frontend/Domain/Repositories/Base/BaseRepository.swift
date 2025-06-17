@@ -127,6 +127,15 @@ class ObservableBaseRepository<Model: PersistentModel>: BaseRepository {
         self.modelContext = modelContext
     }
     
+    // MARK: - BaseRepository Protocol Requirements
+    
+    func read(by id: PersistentIdentifier) async throws -> Model? {
+        // SwiftData doesn't directly support fetching by PersistentIdentifier
+        // We need to fetch all and find the matching one
+        let all = try await fetchAll()
+        return all.first { $0.persistentModelID == id }
+    }
+    
     // MARK: - Sync Operations (Must be overridden)
     
     func sync() async throws {
@@ -202,7 +211,7 @@ struct RepositoryPredicates {
     
     static func pendingSync<T: SyncableModel>() -> Predicate<T> {
         #Predicate<T> { model in
-            model.syncStatus == .pending || model.syncStatus == .failed
+            model.syncStatus == SyncStatus.pending || model.syncStatus == SyncStatus.failed
         }
     }
     
