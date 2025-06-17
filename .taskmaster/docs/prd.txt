@@ -1,30 +1,32 @@
-CLARITY PULSE iOS APPLICATION - PRODUCT REQUIREMENTS DOCUMENT
+CLARITY LOOP iOS APPLICATION - PRODUCTION IMPLEMENTATION PRD
 =============================================================
 
 PROJECT OVERVIEW
 ---------------
-CLARITY Pulse is a HIPAA-compliant iOS health data tracking application built with SwiftUI, following MVVM + Clean Architecture principles. The app integrates with HealthKit, Firebase, and provides secure biometric authentication for sensitive health data management. The backend API is migrating from http://clarity-alb-1762715656.us-east-1.elb.amazonaws.com to https://clarity.novamindnyc.com.
+CLARITY Loop is a HIPAA-compliant iOS health data tracking application built with SwiftUI, following MVVM + Clean Architecture principles. The app integrates with HealthKit and AWS services, using AWS Amplify for authentication. The backend API is hosted at https://clarity.novamindnyc.com.
 
 CURRENT STATE
 -------------
-- Authentication system: FULLY IMPLEMENTED and working
-- Core architecture: FULLY IMPLEMENTED (MVVM + Clean Architecture)
-- Basic UI structure: IMPLEMENTED
-- Firebase integration: WORKING
-- Basic dashboard: PARTIALLY IMPLEMENTED (needs data integration)
+- Authentication: AWS Amplify/Cognito FULLY WORKING
+- Core architecture: MVVM + Clean Architecture IMPLEMENTED
+- Basic UI structure: IMPLEMENTED but needs polish
+- Backend integration: PARTIALLY BROKEN (many unimplemented endpoints)
+- Dashboard: EXISTS but incomplete
+- Build issues: DUPLICATE FILES causing errors
+- Debug features: NEED REMOVAL for production
 
 MISSING FEATURES TO IMPLEMENT
 -----------------------------
 
-0. BACKEND URL MIGRATION (URGENT)
-   - Update Info.plist APIBaseURL from http://clarity-alb-1762715656.us-east-1.elb.amazonaws.com to https://clarity.novamindnyc.com
-   - Update AppConfig.swift fallback URL to use new HTTPS domain
-   - Update BackendIntegrationTests.swift baseURL to new domain
-   - Update validate_backend_contract.swift script URL
-   - Remove NSAppTransportSecurity exception for old ALB domain
-   - Ensure all API calls work with HTTPS protocol
-   - Run comprehensive test suite to verify connectivity
-   - Perform security audit of HTTPS implementation
+0. CRITICAL BUILD & CLEANUP FIXES (URGENT)
+   - Remove duplicate PULSE_DASHBOARD.md from Xcode project
+   - Clean up duplicate .md files in app bundle
+   - Remove Debug tab from MainTabView
+   - Remove DebugAPIView and TokenDebugView
+   - Clean up excessive token logging
+   - Add compiler flags to exclude debug code from production
+   - Fix BackendAPIClient to remove TokenManager references
+   - Use Amplify for all token management instead
 
 1. HEALTHKIT INTEGRATION
    - Complete authorization flow and permission handling
@@ -44,13 +46,17 @@ MISSING FEATURES TO IMPLEMENT
    - Implement Insights Service DTOs (ServiceStatusResponseDTO, ServiceStatusDataDTO, ModelInfoDTO)
    - Ensure all DTOs match backend API contracts exactly
 
-3. API ENDPOINTS IMPLEMENTATION
-   - Auth endpoints: refreshToken(), logout(), getCurrentUser(), verifyEmail()
-   - HealthKit endpoints: uploadHealthKit(), getHealthKitUploadStatus()
-   - Health Data endpoints: uploadHealthData(), getProcessingStatus()
-   - PAT Analysis endpoints: analyzeStepData(), analyzeActigraphy(), getPATAnalysis(), getPATServiceHealth()
-   - Insights endpoints: getInsight(), getInsightsServiceStatus()
-   - Ensure proper error handling and JWT token authentication
+3. BACKEND API CLIENT COMPLETION
+   - Implement all missing endpoints in BackendAPIClient:
+     * Health data: uploadHealthData(), getHealthData(), deleteHealthData()
+     * HealthKit: bulkUpload(), getSyncStatus()
+     * PAT: submitAssessment(), getHistory()
+     * Insights: generateInsights(), getInsightHistory()
+     * WebSocket: chat connection and messaging
+   - Add proper error handling with user-friendly messages
+   - Implement retry logic with exponential backoff
+   - Add request/response logging (without sensitive data)
+   - Ensure all endpoints use Amplify tokens correctly
 
 4. PAT ANALYSIS FEATURE
    - Create PATAnalysisView with sleep stage hypnogram visualization
@@ -94,6 +100,19 @@ MISSING FEATURES TO IMPLEMENT
    - Implement proper data mapping between DTOs and entities
    - Add sync timestamps and conflict resolution
 
+8. PRODUCTION READINESS
+   - Add biometric authentication (Face ID/Touch ID)
+   - Implement certificate pinning for API security
+   - Add jailbreak detection
+   - Integrate crash reporting (Sentry/Crashlytics)
+   - Add analytics tracking
+   - Implement performance monitoring
+   - Create app icons and launch screen
+   - Add privacy policy and terms of service
+   - Configure App Store metadata
+   - Implement proper logging levels
+   - Add feature flags system
+
 TECHNICAL REQUIREMENTS
 ----------------------
 - Use iOS 17+ @Observable pattern consistently
@@ -105,18 +124,22 @@ TECHNICAL REQUIREMENTS
 - Implement comprehensive error handling
 - Support offline functionality where possible
 - Use async/await for all asynchronous operations
+- Maintain AWS Amplify for authentication
+- Remove all Firebase references (replaced by AWS)
 
 PRIORITY ORDER
 --------------
-0. Backend URL migration to HTTPS (CRITICAL - blocks all API calls)
-1. Complete missing DTOs (foundation for all features)
-2. Implement missing API endpoints
-3. Fix dashboard data loading and error handling
-4. Complete HealthKit integration with background sync
-5. Implement PAT analysis display features
-6. Add Gemini AI insights UI and chat
-7. Implement offline support and data sync
-8. Add background task scheduling
+0. Fix build issues and remove debug code (CRITICAL - blocks everything)
+1. Complete BackendAPIClient implementation (foundation for all features)
+2. Fix authentication token handling with Amplify
+3. Implement missing DTOs matching backend contracts
+4. Fix dashboard data loading and error states
+5. Complete HealthKit integration with background sync
+6. Implement PAT analysis display features
+7. Add Gemini AI insights UI and chat
+8. Implement offline support and data sync
+9. Add production security and monitoring
+10. Prepare for App Store submission
 
 SUCCESS CRITERIA
 ----------------
@@ -132,12 +155,14 @@ SUCCESS CRITERIA
 
 CONSTRAINTS
 -----------
-- Must work with existing Modal backend API
+- Must work with AWS backend at https://clarity.novamindnyc.com
 - Must maintain iOS 17+ compatibility
-- Must follow existing architecture patterns
-- Test targets require manual Xcode intervention
+- Must follow existing MVVM architecture patterns
+- Must use AWS Amplify for authentication (no Firebase)
+- Test targets require fixing Amplify initialization
 - Must handle simulator limitations gracefully
-- Must ensure secure handling of health data
+- Must ensure HIPAA-compliant handling of health data
+- Must maintain backward compatibility with existing users
 
 DELIVERABLES
 ------------
