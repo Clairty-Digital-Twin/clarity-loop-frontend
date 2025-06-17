@@ -2,7 +2,7 @@ import Foundation
 
 /// A generic enum to represent the state of a view that loads data asynchronously.
 /// This provides a consistent way to handle loading, error, and content states across different features.
-enum ViewState<T: Equatable>: Equatable {
+public enum ViewState<T: Equatable>: Equatable {
     /// The view is idle and has not yet started loading.
     case idle
 
@@ -118,7 +118,7 @@ enum ViewState<T: Equatable>: Equatable {
 
 // MARK: - Equatable Conformance for Error
 
-extension ViewState {
+public extension ViewState {
     static func == (lhs: ViewState<T>, rhs: ViewState<T>) -> Bool {
         switch (lhs, rhs) {
         case (.idle, .idle), (.loading, .loading), (.empty, .empty):
@@ -139,9 +139,9 @@ extension ViewState {
 
 // MARK: - Convenience Methods
 
-extension ViewState {
+public extension ViewState {
     /// Creates a success state, automatically handling empty collections
-    static func success<C: Collection>(_ value: T) -> ViewState where T == C {
+    static func success(_ value: T) -> ViewState where T: Collection {
         return value.isEmpty ? .empty : .loaded(value)
     }
     

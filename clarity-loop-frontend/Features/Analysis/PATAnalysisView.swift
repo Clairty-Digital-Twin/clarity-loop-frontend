@@ -20,8 +20,8 @@ struct PATAnalysisView: View {
                     LoadingAnalysisView()
                 case let .loaded(result):
                     CompletedAnalysisView(result: result)
-                case let .error(message):
-                    ErrorAnalysisView(message: message, onRetry: {
+                case .error:
+                    ErrorAnalysisView(message: viewModel.analysisState.errorMessage ?? "Analysis failed", onRetry: {
                         Task {
                             await viewModel.retryAnalysis()
                         }

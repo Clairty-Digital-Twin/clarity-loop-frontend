@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftData
 
 // MARK: - PAT Analysis Errors
 
@@ -8,6 +9,8 @@ enum PATAnalysisError: LocalizedError {
     case analysisTimeout
     case analysisFailed(message: String)
     case pollingFailed(underlying: Error)
+    case noHealthData
+    case insufficientData
     
     var errorDescription: String? {
         switch self {
@@ -19,34 +22,82 @@ enum PATAnalysisError: LocalizedError {
             return message
         case .pollingFailed(let error):
             return "Failed to get analysis results: \(error.localizedDescription)"
+        case .noHealthData:
+            return "No health data available for analysis"
+        case .insufficientData:
+            return "Insufficient data for PAT analysis. Please sync more health data."
         }
     }
 }
 
 @Observable
-final class PATAnalysisViewModel {
+@MainActor
+final class PATAnalysisViewModel: BaseViewModel {
     // MARK: - Properties
 
-    var analysisState: ViewState<PATAnalysisResult> = .idle
-    var isAnalyzing = false
-    var errorMessage: String?
+    private(set) var analysisState: ViewState<PATAnalysisResult> = .idle
+    private(set) var analysisHistory: ViewState<[PATAnalysis]> = .idle
+    private(set) var isAnalyzing = false
+    
+    // MARK: - Dependencies
 
     private let analyzePATDataUseCase: AnalyzePATDataUseCase
     private let apiClient: APIClientProtocol
+    private let patRepository: PATAnalysisRepository
+    private let healthRepository: HealthRepository
 
+    // MARK: - Computed Properties
+    
+    var currentAnalysis: PATAnalysisResult? {
+        analysisState.value
+    }
+    
+    var hasRecentAnalysis: Bool {
+        guard let history = analysisHistory.value,
+              let latest = history.first else { return false }
+        
+        let daysSinceAnalysis = Calendar.current.dateComponents([.day], from: latest.createdAt, to: Date()).day ?? 0
+        return daysSinceAnalysis < 7
+    }
+    
     // MARK: - Initialization
 
     init(
+        modelContext: ModelContext,
         analyzePATDataUseCase: AnalyzePATDataUseCase,
-        apiClient: APIClientProtocol
+        apiClient: APIClientProtocol,
+        patRepository: PATAnalysisRepository,
+        healthRepository: HealthRepository
     ) {
         self.analyzePATDataUseCase = analyzePATDataUseCase
         self.apiClient = apiClient
+        self.patRepository = patRepository
+        self.healthRepository = healthRepository
+        super.init(modelContext: modelContext)
     }
 
     // MARK: - Public Methods
+    
+    func loadAnalysisHistory() async {
+        analysisHistory = .loading
+        
+        do {
+            let analyses = try await patRepository.fetchAll()
+            analysisHistory = analyses.isEmpty ? .empty : .loaded(analyses)
+        } catch {
+            analysisHistory = .error(error)
+            handle(error: error)
+        }
+    }
 
     func startStepAnalysis() async {
+        // Check if we have sufficient health data
+        let hasData = await checkHealthDataAvailability()
+        guard hasData else {
+            analysisState = .error(PATAnalysisError.noHealthData)
+            return
+        }
+        
         await performAnalysis {
             try await self.analyzePATDataUseCase.executeStepAnalysis()
         }
@@ -54,7 +105,6 @@ final class PATAnalysisViewModel {
 
     func startCustomAnalysis(for analysisId: String) async {
         analysisState = .loading
-        errorMessage = nil
 
         do {
             let response = try await apiClient.getPATAnalysis(id: analysisId)
@@ -72,6 +122,7 @@ final class PATAnalysisViewModel {
 
             if result.isCompleted {
                 analysisState = .loaded(result)
+                await saveAnalysisResult(result)
             } else if result.isFailed {
                 analysisState = .error(PATAnalysisError.analysisFailed(message: result.error ?? "Analysis failed"))
             } else {
@@ -80,11 +131,21 @@ final class PATAnalysisViewModel {
             }
         } catch {
             analysisState = .error(PATAnalysisError.fetchFailed(underlying: error))
+            handle(error: error)
         }
     }
 
     func retryAnalysis() async {
         await startStepAnalysis()
+    }
+    
+    func deleteAnalysis(_ analysis: PATAnalysis) async {
+        do {
+            try await patRepository.delete(analysis)
+            await loadAnalysisHistory()
+        } catch {
+            handle(error: error)
+        }
     }
 
     // MARK: - Private Methods
@@ -92,13 +153,13 @@ final class PATAnalysisViewModel {
     private func performAnalysis(analysisTask: @escaping () async throws -> PATAnalysisResult) async {
         analysisState = .loading
         isAnalyzing = true
-        errorMessage = nil
 
         do {
             let result = try await analysisTask()
 
             if result.isCompleted {
                 analysisState = .loaded(result)
+                await saveAnalysisResult(result)
             } else if result.isFailed {
                 analysisState = .error(PATAnalysisError.analysisFailed(message: result.error ?? "Analysis failed"))
             } else if result.isProcessing {
@@ -108,10 +169,45 @@ final class PATAnalysisViewModel {
         } catch {
             let analysisError = PATAnalysisError.fetchFailed(underlying: error)
             analysisState = .error(analysisError)
-            errorMessage = analysisError.errorDescription
+            handle(error: analysisError)
         }
 
         isAnalyzing = false
+    }
+    
+    private func checkHealthDataAvailability() async -> Bool {
+        do {
+            let endDate = Date()
+            let startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate)!
+            
+            let metrics = try await healthRepository.fetchMetrics(
+                from: startDate,
+                to: endDate,
+                type: .steps
+            )
+            
+            return metrics.count >= 3 // Need at least 3 days of data
+        } catch {
+            return false
+        }
+    }
+    
+    private func saveAnalysisResult(_ result: PATAnalysisResult) async {
+        let analysis = PATAnalysis(
+            analysisId: result.analysisId,
+            status: result.status,
+            patFeatures: result.patFeatures,
+            confidence: result.confidence ?? 0,
+            completedAt: result.completedAt ?? Date(),
+            error: result.error
+        )
+        
+        do {
+            try await patRepository.create(analysis)
+            await loadAnalysisHistory()
+        } catch {
+            print("Failed to save analysis: \(error)")
+        }
     }
 
     private func pollForCompletion(analysisId: String) async {
@@ -135,6 +231,7 @@ final class PATAnalysisViewModel {
 
                 if result.isCompleted {
                     analysisState = .loaded(result)
+                    await saveAnalysisResult(result)
                     return
                 } else if result.isFailed {
                     analysisState = .error(PATAnalysisError.analysisFailed(message: result.error ?? "Analysis failed"))
