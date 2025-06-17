@@ -1,6 +1,28 @@
 import Foundation
 import Observation
 
+// MARK: - PAT Analysis Errors
+
+enum PATAnalysisError: LocalizedError {
+    case fetchFailed(underlying: Error)
+    case analysisTimeout
+    case analysisFailed(message: String)
+    case pollingFailed(underlying: Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .fetchFailed(let error):
+            return "Failed to fetch analysis: \(error.localizedDescription)"
+        case .analysisTimeout:
+            return "Analysis timed out. Please check back later."
+        case .analysisFailed(let message):
+            return message
+        case .pollingFailed(let error):
+            return "Failed to get analysis results: \(error.localizedDescription)"
+        }
+    }
+}
+
 @Observable
 final class PATAnalysisViewModel {
     // MARK: - Properties
@@ -51,7 +73,7 @@ final class PATAnalysisViewModel {
             if result.isCompleted {
                 analysisState = .loaded(result)
             } else if result.isFailed {
-                analysisState = .error(result.error ?? "Analysis failed")
+                analysisState = .error(PATAnalysisError.analysisFailed(message: result.error ?? "Analysis failed"))
             } else {
                 // Still processing, start polling
                 await pollForCompletion(analysisId: analysisId)
@@ -78,7 +100,7 @@ final class PATAnalysisViewModel {
             if result.isCompleted {
                 analysisState = .loaded(result)
             } else if result.isFailed {
-                analysisState = .error(result.error ?? "Analysis failed")
+                analysisState = .error(PATAnalysisError.analysisFailed(message: result.error ?? "Analysis failed"))
             } else if result.isProcessing {
                 // Continue polling for completion
                 await pollForCompletion(analysisId: result.analysisId)
@@ -115,7 +137,7 @@ final class PATAnalysisViewModel {
                     analysisState = .loaded(result)
                     return
                 } else if result.isFailed {
-                    analysisState = .error(result.error ?? "Analysis failed")
+                    analysisState = .error(PATAnalysisError.analysisFailed(message: result.error ?? "Analysis failed"))
                     return
                 }
 

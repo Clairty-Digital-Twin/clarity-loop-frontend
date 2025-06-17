@@ -52,7 +52,7 @@ final class InsightsListViewModel {
             }
 
         } catch {
-            viewState = .error(error.localizedDescription)
+            viewState = .error(error)
         }
     }
 
@@ -109,7 +109,7 @@ final class InsightsListViewModel {
         } catch {
             // Keep showing existing data on refresh error
             if allInsights.isEmpty {
-                viewState = .error(error.localizedDescription)
+                viewState = .error(error)
             }
         }
     }

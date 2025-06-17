@@ -68,6 +68,19 @@ enum ViewState<T: Equatable>: Equatable {
         return nil
     }
     
+    /// Returns a user-friendly error message for display
+    var errorMessage: String? {
+        guard case .error(let error) = self else { return nil }
+        
+        // Handle specific error types with custom messages
+        if let apiError = error as? APIError {
+            return apiError.userFriendlyMessage
+        }
+        
+        // Default to localized description
+        return error.localizedDescription
+    }
+    
     // MARK: - Convenience Methods
     
     /// Maps the loaded value to a new type
@@ -113,10 +126,34 @@ extension ViewState {
         case (.loaded(let lhsValue), .loaded(let rhsValue)):
             return lhsValue == rhsValue
         case (.error(let lhsError), .error(let rhsError)):
-            // Compare error descriptions since Error isn't Equatable
-            return (lhsError as NSError) == (rhsError as NSError)
+            // Compare errors by domain and code for proper equality
+            let lhsNSError = lhsError as NSError
+            let rhsNSError = rhsError as NSError
+            return lhsNSError.domain == rhsNSError.domain && 
+                   lhsNSError.code == rhsNSError.code
         default:
             return false
         }
+    }
+}
+
+// MARK: - Convenience Methods
+
+extension ViewState {
+    /// Creates a success state, automatically handling empty collections
+    static func success<C: Collection>(_ value: T) -> ViewState where T == C {
+        return value.isEmpty ? .empty : .loaded(value)
+    }
+    
+    /// Checks if this is a specific error type
+    func isError<E: Error>(ofType type: E.Type) -> Bool {
+        guard case .error(let error) = self else { return false }
+        return error is E
+    }
+    
+    /// Gets the error cast to a specific type if available
+    func error<E: Error>(as type: E.Type) -> E? {
+        guard case .error(let error) = self else { return nil }
+        return error as? E
     }
 }
