@@ -11,65 +11,67 @@ import SwiftUI
 @main
 struct ClarityPulseApp: App {
     // MARK: - Properties
-    
+
     let modelContainer: ModelContainer
-    
+
     /// Detects if running in test environment using comprehensive checks
     private static var isRunningInTestEnvironment: Bool {
         // Check for TESTING compiler flag first (most reliable)
         #if TESTING
-        return true
+            return true
         #endif
-        
+
         // Check 1: Direct test environment flags (works for unit tests)
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             return true
         }
-        
+
         // Check 2: Test class availability (works for unit tests)
         if NSClassFromString("XCTestCase") != nil {
             return true
         }
-        
+
         // Check 3: Bundle name contains test indicators (works for unit tests)
         if Bundle.main.bundlePath.hasSuffix(".xctest") {
             return true
         }
-        
+
         // Check 4: Process name contains test indicators (works for both unit and UI tests)
         let processName = ProcessInfo.processInfo.processName
         if processName.contains("Test") || processName.contains("-Runner") {
             return true
         }
-        
+
         // Check 5: Look for UI test environment indicators
-        if ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
-           ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
+        if
+            ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
+            ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
             return true
         }
-        
+
         // Check 6: Arguments contain test indicators (works for UI tests)
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains(where: { $0.contains("XCTest") || $0.contains("UITest") }) {
             return true
         }
-        
+
         // Check 7: Special case for simulator launched by test runner
-        if ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil &&
-           arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
+        if
+            ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil,
+            arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
             return true
         }
-        
+
         // Check 8: UI Test specific - check for test bundle injection
         if ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"]?.contains("XCTestBundleInject") == true {
             return true
         }
-        
+
         // Check 9: UI Test specific - check for test session identifier
         if ProcessInfo.processInfo.environment["XCTestSessionIdentifier"] != nil {
             return true
         }
-        
+
         return false
     }
 
@@ -94,7 +96,7 @@ struct ClarityPulseApp: App {
         if !isTest {
             AmplifyConfigurator.configure()
         }
-        
+
         // Initialize SwiftData ModelContainer
         do {
             if isTest {
@@ -105,7 +107,7 @@ struct ClarityPulseApp: App {
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
-        
+
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
         let client: APIClientProtocol
@@ -119,7 +121,7 @@ struct ClarityPulseApp: App {
                 // Use Amplify Auth to get token
                 do {
                     let authSession = try await Amplify.Auth.fetchAuthSession()
-                    
+
                     if let cognitoTokenProvider = authSession as? AuthCognitoTokensProvider {
                         let tokens = try cognitoTokenProvider.getCognitoTokens().get()
                         let token = tokens.accessToken
@@ -128,7 +130,7 @@ struct ClarityPulseApp: App {
                 } catch {
                     // Silently fail - Amplify will handle retry
                 }
-                
+
                 return nil
             }) {
             client = backendClient

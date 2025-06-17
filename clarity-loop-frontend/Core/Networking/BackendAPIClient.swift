@@ -1,5 +1,5 @@
-import Foundation
 import Amplify
+import Foundation
 
 // MARK: - Backend API Client
 
@@ -169,7 +169,6 @@ final class BackendAPIClient: APIClientProtocol {
             }
         }
 
-
         // Perform request
         do {
             let (data, response) = try await session.data(for: request)
@@ -182,7 +181,6 @@ final class BackendAPIClient: APIClientProtocol {
             if httpResponse.statusCode >= 400 {
                 // Handle 401 Unauthorized with token refresh
                 if httpResponse.statusCode == 401, requiresAuth {
-
                     // Try to refresh token once
                     if let refreshedResponse: Response = await retryWithRefreshedToken(request) {
                         return refreshedResponse

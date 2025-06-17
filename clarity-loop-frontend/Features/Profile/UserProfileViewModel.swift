@@ -1,7 +1,7 @@
 import Foundation
 import Observation
-import SwiftData
 import PhotosUI
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -9,49 +9,49 @@ import UIKit
 @MainActor
 final class UserProfileViewModel: BaseViewModel {
     // MARK: - Properties
-    
+
     private(set) var profileState: ViewState<UserProfileModel> = .idle
     private(set) var updateState: ViewState<Bool> = .idle
     private(set) var imageSelection: PhotosPickerItem?
     private(set) var selectedImage: UIImage?
-    
+
     // MARK: - Dependencies
-    
+
     private let userProfileRepository: UserProfileRepository
     private let authService: AuthServiceProtocol
     private let apiClient: APIClientProtocol
-    
+
     // MARK: - Computed Properties
-    
+
     var profile: UserProfileModel? {
         profileState.value
     }
-    
+
     var isProfileComplete: Bool {
-        guard let profile = profile else { return false }
+        guard let profile else { return false }
         return !profile.displayName.isEmpty &&
-               profile.dateOfBirth != nil &&
-               profile.heightInCentimeters != nil &&
-               profile.weightInKilograms != nil
+            profile.dateOfBirth != nil &&
+            profile.heightInCentimeters != nil &&
+            profile.weightInKilograms != nil
     }
-    
+
     var profileCompletionPercentage: Double {
-        guard let profile = profile else { return 0 }
-        
+        guard let profile else { return 0 }
+
         var completedFields = 0
         let totalFields = 5
-        
+
         if !profile.displayName.isEmpty { completedFields += 1 }
         if profile.dateOfBirth != nil { completedFields += 1 }
         if profile.heightInCentimeters != nil { completedFields += 1 }
         if profile.weightInKilograms != nil { completedFields += 1 }
         if profile.privacySettings.shareHealthData { completedFields += 1 }
-        
+
         return Double(completedFields) / Double(totalFields)
     }
-    
+
     // MARK: - Initialization
-    
+
     init(
         modelContext: ModelContext,
         userProfileRepository: UserProfileRepository,
@@ -63,12 +63,12 @@ final class UserProfileViewModel: BaseViewModel {
         self.apiClient = apiClient
         super.init(modelContext: modelContext)
     }
-    
+
     // MARK: - Public Methods
-    
+
     func loadProfile() async {
         profileState = .loading
-        
+
         do {
             // Try to load from local storage first
             if let userId = await authService.currentUser?.id {
@@ -78,7 +78,7 @@ final class UserProfileViewModel: BaseViewModel {
                 let results = try await userProfileRepository.fetch(descriptor: descriptor)
                 if let localProfile = results.first {
                     profileState = .loaded(localProfile)
-                    
+
                     // Sync with backend in background
                     Task {
                         await syncProfile()
@@ -96,7 +96,7 @@ final class UserProfileViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     func updateProfile(
         displayName: String? = nil,
         dateOfBirth: Date? = nil,
@@ -106,23 +106,23 @@ final class UserProfileViewModel: BaseViewModel {
         healthGoals: String? = nil,
         medicalConditions: String? = nil
     ) async {
-        guard var profile = profile else { return }
-        
+        guard var profile else { return }
+
         updateState = .loading
-        
+
         // Update fields
-        if let displayName = displayName { profile.displayName = displayName }
-        if let dateOfBirth = dateOfBirth { profile.dateOfBirth = dateOfBirth }
-        if let heightCm = heightCm { profile.heightInCentimeters = heightCm }
-        if let weightKg = weightKg { profile.weightInKilograms = weightKg }
+        if let displayName { profile.displayName = displayName }
+        if let dateOfBirth { profile.dateOfBirth = dateOfBirth }
+        if let heightCm { profile.heightInCentimeters = heightCm }
+        if let weightKg { profile.weightInKilograms = weightKg }
         // Activity level and health goals would be set in preferences
         // This would need proper mapping based on your app's needs
-        
+
         do {
             // Save locally
             try await userProfileRepository.update(profile)
             profileState = .loaded(profile)
-            
+
             // Sync with backend
             try await syncProfileUpdate(profile)
             updateState = .loaded(true)
@@ -131,18 +131,19 @@ final class UserProfileViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     func updateProfileImage() async {
-        guard let imageSelection = imageSelection else { return }
-        
+        guard let imageSelection else { return }
+
         do {
-            if let data = try await imageSelection.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
+            if
+                let data = try await imageSelection.loadTransferable(type: Data.self),
+                let image = UIImage(data: data) {
                 selectedImage = image
-                
+
                 // TODO: Upload image to storage service
                 // For now, we'll just store it locally
-                if let profile = profile {
+                if let profile {
                     // Update lastSync as a proxy for update time
                     profile.lastSync = Date()
                     try await userProfileRepository.update(profile)
@@ -153,43 +154,44 @@ final class UserProfileViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     func deleteAccount() async {
-        guard let profile = profile else { return }
-        
+        guard let profile else { return }
+
         do {
             // Delete from backend first
             // TODO: Implement account deletion API
-            
+
             // Delete local data
             try await userProfileRepository.delete(profile)
-            
+
             // Sign out
             try await authService.signOut()
         } catch {
             handle(error: error)
         }
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func fetchProfileFromBackend() async {
         do {
             guard let userId = await authService.currentUser?.id else {
                 throw ProfileError.notAuthenticated
             }
-            
+
             // TODO: Replace with actual API call when endpoint is ready
             // let response = try await apiClient.getUserProfile(userId: userId)
-            
+
             // For now, create a default profile
             let currentUser = await authService.currentUser
             let profile = UserProfileModel(
                 userID: userId,
                 email: currentUser?.email ?? "",
-                displayName: currentUser?.email ?? "" // Using email as displayName since AuthUser doesn't have displayName
+                displayName: currentUser?
+                    .email ?? "" // Using email as displayName since AuthUser doesn't have displayName
             )
-            
+
             try await userProfileRepository.create(profile)
             profileState = .loaded(profile)
         } catch {
@@ -197,7 +199,7 @@ final class UserProfileViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     private func syncProfile() async {
         do {
             try await userProfileRepository.sync()
@@ -206,12 +208,12 @@ final class UserProfileViewModel: BaseViewModel {
             print("Profile sync error: \(error)")
         }
     }
-    
+
     private func syncProfileUpdate(_ profile: UserProfileModel) async throws {
         // TODO: Implement actual API call
         // let updateRequest = UpdateUserProfileRequest(...)
         // try await apiClient.updateUserProfile(userId: profile.userId, request: updateRequest)
-        
+
         // Mark as synced
         profile.syncStatus = .synced
         try await userProfileRepository.update(profile)
@@ -224,15 +226,15 @@ enum ProfileError: LocalizedError {
     case notAuthenticated
     case profileNotFound
     case updateFailed
-    
+
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "You must be signed in to access your profile"
+            "You must be signed in to access your profile"
         case .profileNotFound:
-            return "Profile not found"
+            "Profile not found"
         case .updateFailed:
-            return "Failed to update profile"
+            "Failed to update profile"
         }
     }
 }
@@ -243,30 +245,29 @@ enum ActivityLevel: String, CaseIterable {
     case moderatelyActive = "Moderately Active"
     case veryActive = "Very Active"
     case extremelyActive = "Extremely Active"
-    
+
     var description: String {
         switch self {
         case .sedentary:
-            return "Little or no exercise"
+            "Little or no exercise"
         case .lightlyActive:
-            return "Exercise 1-3 days/week"
+            "Exercise 1-3 days/week"
         case .moderatelyActive:
-            return "Exercise 3-5 days/week"
+            "Exercise 3-5 days/week"
         case .veryActive:
-            return "Exercise 6-7 days/week"
+            "Exercise 6-7 days/week"
         case .extremelyActive:
-            return "Very hard exercise daily"
+            "Very hard exercise daily"
         }
     }
-    
+
     var multiplier: Double {
         switch self {
-        case .sedentary: return 1.2
-        case .lightlyActive: return 1.375
-        case .moderatelyActive: return 1.55
-        case .veryActive: return 1.725
-        case .extremelyActive: return 1.9
+        case .sedentary: 1.2
+        case .lightlyActive: 1.375
+        case .moderatelyActive: 1.55
+        case .veryActive: 1.725
+        case .extremelyActive: 1.9
         }
     }
 }
-

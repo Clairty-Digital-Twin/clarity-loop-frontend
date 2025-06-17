@@ -11,16 +11,16 @@ enum PATAnalysisError: LocalizedError {
     case pollingFailed(underlying: Error)
     case noHealthData
     case insufficientData
-    
+
     var errorDescription: String? {
         switch self {
-        case .fetchFailed(let error):
+        case let .fetchFailed(error):
             return "Failed to fetch analysis: \(error.localizedDescription)"
         case .analysisTimeout:
             return "Analysis timed out. Please check back later."
-        case .analysisFailed(let message):
+        case let .analysisFailed(message):
             return message
-        case .pollingFailed(let error):
+        case let .pollingFailed(error):
             return "Failed to get analysis results: \(error.localizedDescription)"
         case .noHealthData:
             return "No health data available for analysis"
@@ -38,7 +38,7 @@ final class PATAnalysisViewModel: BaseViewModel {
     private(set) var analysisState: ViewState<PATAnalysisResult> = .idle
     private(set) var analysisHistory: ViewState<[PATAnalysis]> = .idle
     private(set) var isAnalyzing = false
-    
+
     // MARK: - Dependencies
 
     private let analyzePATDataUseCase: AnalyzePATDataUseCase
@@ -47,19 +47,20 @@ final class PATAnalysisViewModel: BaseViewModel {
     private let healthRepository: HealthRepository
 
     // MARK: - Computed Properties
-    
+
     var currentAnalysis: PATAnalysisResult? {
         analysisState.value
     }
-    
+
     var hasRecentAnalysis: Bool {
-        guard let history = analysisHistory.value,
-              let latest = history.first else { return false }
-        
+        guard
+            let history = analysisHistory.value,
+            let latest = history.first else { return false }
+
         let daysSinceAnalysis = Calendar.current.dateComponents([.day], from: latest.analysisDate, to: Date()).day ?? 0
         return daysSinceAnalysis < 7
     }
-    
+
     // MARK: - Initialization
 
     init(
@@ -77,10 +78,10 @@ final class PATAnalysisViewModel: BaseViewModel {
     }
 
     // MARK: - Public Methods
-    
+
     func loadAnalysisHistory() async {
         analysisHistory = .loading
-        
+
         do {
             let analyses = try await patRepository.fetchAll()
             analysisHistory = analyses.isEmpty ? .empty : .loaded(analyses)
@@ -97,7 +98,7 @@ final class PATAnalysisViewModel: BaseViewModel {
             analysisState = .error(PATAnalysisError.noHealthData)
             return
         }
-        
+
         await performAnalysis {
             try await self.analyzePATDataUseCase.executeStepAnalysis()
         }
@@ -138,7 +139,7 @@ final class PATAnalysisViewModel: BaseViewModel {
     func retryAnalysis() async {
         await startStepAnalysis()
     }
-    
+
     func deleteAnalysis(_ analysis: PATAnalysis) async {
         do {
             try await patRepository.delete(analysis)
@@ -174,20 +175,20 @@ final class PATAnalysisViewModel: BaseViewModel {
 
         isAnalyzing = false
     }
-    
+
     private func checkHealthDataAvailability() async -> Bool {
         do {
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate)!
-            
+
             let metrics = try await healthRepository.fetchMetrics(for: .steps, since: startDate)
-            
+
             return metrics.count >= 3 // Need at least 3 days of data
         } catch {
             return false
         }
     }
-    
+
     private func saveAnalysisResult(_ result: PATAnalysisResult) async {
         // Create a new PATAnalysis with default values for now
         // In a real implementation, we'd parse the patFeatures to extract sleep data
@@ -196,12 +197,12 @@ final class PATAnalysisViewModel: BaseViewModel {
             endDate: Date(),
             analysisType: .overnight
         )
-        
+
         // Set remote ID for sync tracking
         analysis.remoteID = result.analysisId
         analysis.confidenceScore = result.confidence ?? 0
         analysis.syncStatus = result.isCompleted ? .synced : .pending
-        
+
         // TODO: Parse patFeatures to extract actual sleep stage data
         if let features = result.patFeatures {
             // This would parse the features dictionary to extract sleep metrics
@@ -209,7 +210,7 @@ final class PATAnalysisViewModel: BaseViewModel {
             analysis.totalSleepMinutes = 420 // 7 hours
             analysis.sleepEfficiency = 0.85
         }
-        
+
         do {
             try await patRepository.create(analysis)
             await loadAnalysisHistory()
@@ -266,7 +267,6 @@ final class PATAnalysisViewModel: BaseViewModel {
 // MARK: - Supporting Types
 
 extension PATAnalysisViewModel {
-
     var hasError: Bool {
         switch analysisState {
         case .error:

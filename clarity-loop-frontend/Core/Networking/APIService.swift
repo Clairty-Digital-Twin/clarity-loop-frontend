@@ -1,13 +1,13 @@
-import Foundation
 import Combine
+import Foundation
 
 /// Modern API Service with async/await, Combine support, and automatic retry/caching
 @MainActor
 final class APIService: ObservableObject {
     // MARK: - Properties
-    
+
     static var shared: APIService?
-    
+
     static func configure(
         apiClient: APIClientProtocol,
         authService: AuthServiceProtocol,
@@ -19,22 +19,22 @@ final class APIService: ObservableObject {
             offlineQueue: offlineQueue
         )
     }
-    
+
     private let apiClient: APIClientProtocol
     private let authService: AuthServiceProtocol
     private let offlineQueue: OfflineQueueManagerProtocol
-    
+
     private var cancellables = Set<AnyCancellable>()
     private let responseCache = NSCache<NSString, CachedResponse>()
-    
+
     // MARK: - Configuration
-    
+
     private let maxRetries = 3
     private let retryDelay: TimeInterval = 1.0
     private let cacheExpirationInterval: TimeInterval = 300 // 5 minutes
-    
+
     // MARK: - Initialization
-    
+
     init(
         apiClient: APIClientProtocol,
         authService: AuthServiceProtocol,
@@ -43,13 +43,13 @@ final class APIService: ObservableObject {
         self.apiClient = apiClient
         self.authService = authService
         self.offlineQueue = offlineQueue
-        
+
         setupCachePolicy()
         observeNetworkChanges()
     }
-    
+
     // MARK: - Public Methods
-    
+
     /// Execute API request with automatic retry and caching
     func execute<T: Decodable>(
         _ endpoint: APIEndpoint,
@@ -60,13 +60,13 @@ final class APIService: ObservableObject {
         if let cached: T = getCachedResponse(for: endpoint, policy: cachePolicy) {
             return cached
         }
-        
+
         // Execute with retry
         let response: T = try await executeWithRetry(endpoint, policy: retryPolicy)
-        
+
         return response
     }
-    
+
     /// Execute API request with caching support for Codable responses
     func executeWithCaching<T: Codable>(
         _ endpoint: APIEndpoint,
@@ -77,16 +77,16 @@ final class APIService: ObservableObject {
         if let cached: T = getCachedResponse(for: endpoint, policy: cachePolicy) {
             return cached
         }
-        
+
         // Execute with retry
         let response: T = try await executeWithRetry(endpoint, policy: retryPolicy)
-        
+
         // Cache successful response
         cacheResponse(response, for: endpoint)
-        
+
         return response
     }
-    
+
     /// Execute API request that returns no content
     func executeVoid(
         _ endpoint: APIEndpoint,
@@ -94,7 +94,7 @@ final class APIService: ObservableObject {
     ) async throws {
         try await executeWithRetry(endpoint, policy: retryPolicy) as Void
     }
-    
+
     /// Upload data with progress tracking
     func upload<T: Decodable>(
         _ endpoint: APIEndpoint,
@@ -102,9 +102,9 @@ final class APIService: ObservableObject {
         progressHandler: ((Double) -> Void)? = nil
     ) async throws -> T {
         // TODO: Implement multipart upload with progress
-        return try await execute(endpoint)
+        try await execute(endpoint)
     }
-    
+
     /// Download data with progress tracking
     func download(
         _ endpoint: APIEndpoint,
@@ -113,7 +113,7 @@ final class APIService: ObservableObject {
         // TODO: Implement download with progress
         throw APIError.notImplemented
     }
-    
+
     /// Batch execute multiple requests
     func batch<T: Decodable>(
         _ endpoints: [APIEndpoint]
@@ -129,18 +129,18 @@ final class APIService: ObservableObject {
                     }
                 }
             }
-            
-            var results = Array<Result<T, Error>?>(repeating: nil, count: endpoints.count)
+
+            var results = [Result<T, Error>?](repeating: nil, count: endpoints.count)
             for try await (index, result) in group {
                 results[index] = result
             }
-            
+
             return results.compactMap { $0 }
         }
     }
-    
+
     // MARK: - Combine Publishers
-    
+
     /// Create a publisher for an API request
     func publisher<T: Decodable>(
         for endpoint: APIEndpoint,
@@ -158,27 +158,27 @@ final class APIService: ObservableObject {
         }
         .eraseToAnyPublisher()
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func executeWithRetry<T>(
         _ endpoint: APIEndpoint,
         policy: RetryPolicy
     ) async throws -> T {
         var lastError: Error?
         let maxAttempts = policy == .none ? 1 : maxRetries
-        
+
         for attempt in 0..<maxAttempts {
             do {
                 return try await performRequest(endpoint)
             } catch {
                 lastError = error
-                
+
                 // Don't retry certain errors
                 if !shouldRetry(error: error, policy: policy) {
                     throw error
                 }
-                
+
                 // Wait before retrying
                 if attempt < maxAttempts - 1 {
                     let delay = retryDelay * pow(2.0, Double(attempt))
@@ -186,28 +186,28 @@ final class APIService: ObservableObject {
                 }
             }
         }
-        
+
         throw lastError ?? APIError.unknown(NSError())
     }
-    
+
     private func performRequest<T>(_ endpoint: APIEndpoint) async throws -> T {
         // Since endpoints are specific enums, we need to handle them differently
         // For now, just throw not implemented
         throw APIError.notImplemented
     }
-    
+
     private func handleAuthEndpoint<T>(_ endpoint: AuthEndpoint) async throws -> T {
         switch endpoint {
-        case .login(let dto):
+        case let .login(dto):
             let response = try await apiClient.login(requestDTO: dto)
             return response as! T
-        case .register(let dto):
+        case let .register(dto):
             let response = try await apiClient.register(requestDTO: dto)
             return response as! T
-        case .verifyEmail(let email, let code):
+        case let .verifyEmail(email, code):
             let response = try await apiClient.verifyEmail(email: email, code: code)
             return response as! T
-        case .refreshToken(let dto):
+        case let .refreshToken(dto):
             let response = try await apiClient.refreshToken(requestDTO: dto)
             return response as! T
         case .logout:
@@ -216,29 +216,29 @@ final class APIService: ObservableObject {
         case .getCurrentUser:
             let response = try await apiClient.getCurrentUser()
             return response as! T
-        case .resendVerificationEmail(let email):
+        case let .resendVerificationEmail(email):
             let response = try await apiClient.resendVerificationEmail(email: email)
             return response as! T
         }
     }
-    
+
     private func handleHealthEndpoint<T>(_ endpoint: HealthDataEndpoint) async throws -> T {
         throw APIError.notImplemented
     }
-    
+
     private func handleInsightEndpoint<T>(_ endpoint: InsightEndpoint) async throws -> T {
         throw APIError.notImplemented
     }
-    
+
     private func handlePATEndpoint<T>(_ endpoint: PATEndpoint) async throws -> T {
         switch endpoint {
-        case .analyzeStepData(let dto):
+        case let .analyzeStepData(dto):
             let response = try await apiClient.analyzeStepData(requestDTO: dto)
             return response as! T
-        case .analyzeActigraphy(let dto):
+        case let .analyzeActigraphy(dto):
             let response = try await apiClient.analyzeActigraphy(requestDTO: dto)
             return response as! T
-        case .getAnalysis(let id):
+        case let .getAnalysis(id):
             let response = try await apiClient.getPATAnalysis(id: id)
             return response as! T
         case .getServiceHealth:
@@ -246,15 +246,15 @@ final class APIService: ObservableObject {
             return response as! T
         }
     }
-    
+
     private func shouldRetry(error: Error, policy: RetryPolicy) -> Bool {
         guard policy != .none else { return false }
-        
+
         if let apiError = error as? APIError {
             switch apiError {
             case .networkError:
                 return true
-            case .serverError(let code, _) where code >= 500:
+            case let .serverError(code, _) where code >= 500:
                 return true
             case .unauthorized where policy == .includeAuth:
                 return true
@@ -262,58 +262,58 @@ final class APIService: ObservableObject {
                 return false
             }
         }
-        
+
         return false
     }
-    
+
     // MARK: - Caching
-    
+
     private func setupCachePolicy() {
         responseCache.countLimit = 100
         responseCache.totalCostLimit = 50 * 1024 * 1024 // 50MB
     }
-    
+
     private func getCachedResponse<T: Decodable>(
         for endpoint: APIEndpoint,
         policy: CachePolicy
     ) -> T? {
         guard policy != .networkOnly else { return nil }
-        
+
         let key = cacheKey(for: endpoint)
         guard let cached = responseCache.object(forKey: key as NSString) else { return nil }
-        
+
         // Check expiration
-        if cached.expirationDate < Date() && policy != .cacheOnly {
+        if cached.expirationDate < Date(), policy != .cacheOnly {
             responseCache.removeObject(forKey: key as NSString)
             return nil
         }
-        
+
         return try? JSONDecoder().decode(T.self, from: cached.data)
     }
-    
-    private func cacheResponse<T: Encodable>(_ response: T, for endpoint: APIEndpoint) {
+
+    private func cacheResponse(_ response: some Encodable, for endpoint: APIEndpoint) {
         guard endpoint.method == "GET" else { return } // Only cache GET requests
-        
+
         do {
             let data = try JSONEncoder().encode(response)
             let cached = CachedResponse(
                 data: data,
                 expirationDate: Date().addingTimeInterval(cacheExpirationInterval)
             )
-            
+
             let key = cacheKey(for: endpoint)
             responseCache.setObject(cached, forKey: key as NSString)
         } catch {
             print("Failed to cache response: \(error)")
         }
     }
-    
+
     private func cacheKey(for endpoint: APIEndpoint) -> String {
         "\(endpoint.method):\(endpoint.path)"
     }
-    
+
     // MARK: - Network Monitoring
-    
+
     private func observeNetworkChanges() {
         // TODO: Implement network reachability monitoring
         // When network becomes available, process offline queue
@@ -323,22 +323,22 @@ final class APIService: ObservableObject {
 // MARK: - Supporting Types
 
 enum CachePolicy {
-    case networkFirst   // Try network, fallback to cache
-    case cacheFirst     // Try cache, fallback to network
-    case networkOnly    // Always use network
-    case cacheOnly      // Only use cache
+    case networkFirst // Try network, fallback to cache
+    case cacheFirst // Try cache, fallback to network
+    case networkOnly // Always use network
+    case cacheOnly // Only use cache
 }
 
 enum RetryPolicy {
     case none
-    case standard       // Retry network and 5xx errors
-    case includeAuth    // Also retry 401 errors
+    case standard // Retry network and 5xx errors
+    case includeAuth // Also retry 401 errors
 }
 
 private class CachedResponse: NSObject {
     let data: Data
     let expirationDate: Date
-    
+
     init(data: Data, expirationDate: Date) {
         self.data = data
         self.expirationDate = expirationDate

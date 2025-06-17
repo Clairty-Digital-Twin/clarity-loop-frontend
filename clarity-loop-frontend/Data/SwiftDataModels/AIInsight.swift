@@ -4,52 +4,52 @@ import SwiftData
 @Model
 final class AIInsight {
     // MARK: - Properties
-    
+
     @Attribute(.unique) var insightID: UUID
     var remoteID: String?
-    
+
     // Content
     var content: String
     var summary: String?
     var title: String?
-    
+
     // Metadata
     var timestamp: Date
     var category: InsightCategory
     var priority: InsightPriority
     var type: AIInsightType
-    
+
     // Context
     var contextData: [String: String]?
     var relatedMetrics: [HealthMetricType]?
     var dateRange: InsightDateRange?
-    
+
     // AI metadata
     var modelVersion: String?
     var confidenceScore: Double?
     var generationTime: Double? // Seconds
-    
+
     // User interaction
     var isRead: Bool
     var isFavorite: Bool
     var userRating: Int? // 1-5 stars
     var userFeedback: String?
-    
+
     // Chat context
     var conversationID: UUID?
     var messageRole: MessageRole
     var parentMessageID: UUID?
-    
+
     // Sync tracking
     var syncStatus: SyncStatus
     var lastSyncedAt: Date?
-    
+
     // Relationships
     var userProfile: UserProfileModel?
     var patAnalysis: PATAnalysis?
-    
+
     // MARK: - Initialization
-    
+
     init(
         content: String,
         category: InsightCategory,
@@ -72,86 +72,86 @@ final class AIInsight {
 // MARK: - Supporting Types
 
 enum InsightCategory: String, Codable, CaseIterable {
-    case general = "general"
-    case sleep = "sleep"
-    case activity = "activity"
+    case general
+    case sleep
+    case activity
     case heartHealth = "heart_health"
-    case nutrition = "nutrition"
+    case nutrition
     case mentalHealth = "mental_health"
-    case medication = "medication"
-    case vitals = "vitals"
-    
+    case medication
+    case vitals
+
     var displayName: String {
         switch self {
-        case .general: return "General"
-        case .sleep: return "Sleep"
-        case .activity: return "Activity"
-        case .heartHealth: return "Heart Health"
-        case .nutrition: return "Nutrition"
-        case .mentalHealth: return "Mental Health"
-        case .medication: return "Medication"
-        case .vitals: return "Vitals"
+        case .general: "General"
+        case .sleep: "Sleep"
+        case .activity: "Activity"
+        case .heartHealth: "Heart Health"
+        case .nutrition: "Nutrition"
+        case .mentalHealth: "Mental Health"
+        case .medication: "Medication"
+        case .vitals: "Vitals"
         }
     }
-    
+
     var icon: String {
         switch self {
-        case .general: return "sparkles"
-        case .sleep: return "moon.fill"
-        case .activity: return "figure.walk"
-        case .heartHealth: return "heart.fill"
-        case .nutrition: return "fork.knife"
-        case .mentalHealth: return "brain.head.profile"
-        case .medication: return "pills.fill"
-        case .vitals: return "waveform.path.ecg"
+        case .general: "sparkles"
+        case .sleep: "moon.fill"
+        case .activity: "figure.walk"
+        case .heartHealth: "heart.fill"
+        case .nutrition: "fork.knife"
+        case .mentalHealth: "brain.head.profile"
+        case .medication: "pills.fill"
+        case .vitals: "waveform.path.ecg"
         }
     }
 }
 
 enum InsightPriority: String, Codable {
-    case high = "high"
-    case medium = "medium"
-    case low = "low"
-    
+    case high
+    case medium
+    case low
+
     var sortOrder: Int {
         switch self {
-        case .high: return 0
-        case .medium: return 1
-        case .low: return 2
+        case .high: 0
+        case .medium: 1
+        case .low: 2
         }
     }
 }
 
 enum AIInsightType: String, Codable {
-    case alert = "alert"
-    case suggestion = "suggestion"
-    case observation = "observation"
-    case achievement = "achievement"
-    case trend = "trend"
-    case chat = "chat"
-    
+    case alert
+    case suggestion
+    case observation
+    case achievement
+    case trend
+    case chat
+
     var icon: String {
         switch self {
-        case .alert: return "exclamationmark.triangle.fill"
-        case .suggestion: return "lightbulb.fill"
-        case .observation: return "eye.fill"
-        case .achievement: return "star.fill"
-        case .trend: return "chart.line.uptrend.xyaxis"
-        case .chat: return "message.fill"
+        case .alert: "exclamationmark.triangle.fill"
+        case .suggestion: "lightbulb.fill"
+        case .observation: "eye.fill"
+        case .achievement: "star.fill"
+        case .trend: "chart.line.uptrend.xyaxis"
+        case .chat: "message.fill"
         }
     }
 }
 
 enum MessageRole: String, Codable {
-    case user = "user"
-    case assistant = "assistant"
-    case system = "system"
+    case user
+    case assistant
+    case system
 }
 
 struct InsightDateRange: Codable {
     let startDate: Date
     let endDate: Date
-    
+
     var duration: TimeInterval {
         endDate.timeIntervalSince(startDate)
     }
@@ -170,7 +170,7 @@ extension AIInsight {
         message.conversationID = UUID()
         return message
     }
-    
+
     static func createAssistantMessage(
         content: String,
         category: InsightCategory,

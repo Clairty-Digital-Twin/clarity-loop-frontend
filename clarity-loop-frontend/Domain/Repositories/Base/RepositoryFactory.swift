@@ -4,45 +4,44 @@ import SwiftData
 // MARK: - Repository Factory
 
 final class RepositoryFactory {
-    
     // MARK: - Properties
-    
+
     private let modelContainer: ModelContainer
-    
+
     // MARK: - Initialization
-    
+
     init(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
     }
-    
+
     // MARK: - Factory Methods
-    
+
     @MainActor
     func makeHealthRepository() -> any HealthRepositoryProtocol {
         HealthRepository(modelContext: modelContainer.mainContext)
     }
-    
+
     @MainActor
     func makeUserProfileRepository() -> any UserProfileRepositoryProtocol {
         UserProfileRepository(modelContext: modelContainer.mainContext)
     }
-    
+
     @MainActor
     func makePATAnalysisRepository() -> any PATAnalysisRepositoryProtocol {
         PATAnalysisRepository(modelContext: modelContainer.mainContext)
     }
-    
+
     @MainActor
     func makeAIInsightRepository() -> any AIInsightRepositoryProtocol {
         AIInsightRepository(modelContext: modelContainer.mainContext)
     }
-    
+
     // MARK: - Background Context
-    
+
     func makeBackgroundContext() -> ModelContext {
         ModelContext(modelContainer)
     }
-    
+
     func makeHealthRepositoryBackground() -> any HealthRepositoryProtocol {
         let context = makeBackgroundContext()
         return HealthRepository(modelContext: context)

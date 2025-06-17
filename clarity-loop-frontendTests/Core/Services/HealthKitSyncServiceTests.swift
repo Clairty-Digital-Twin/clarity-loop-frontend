@@ -11,7 +11,7 @@ final class HealthKitSyncServiceTests: XCTestCase {
     private var syncService: HealthKitSyncService!
     private var mockHealthKitService: MockHealthKitService!
     private var mockHealthRepository: MockHealthRepository!
-    private var mockAPIClient: CorrectMockAPIClient!
+    private var mockAPIClient: MockAPIClient!
     private var mockBackgroundTaskManager: MockBackgroundTaskManager!
     private var cancellables = Set<AnyCancellable>()
     
@@ -23,7 +23,7 @@ final class HealthKitSyncServiceTests: XCTestCase {
         // TODO: Setup test dependencies
         // mockHealthKitService = MockHealthKitService()
         // mockHealthRepository = MockHealthRepository(modelContext: createTestModelContext())
-        // mockAPIClient = CorrectMockAPIClient()
+        // mockAPIClient = MockAPIClient()
         // mockBackgroundTaskManager = MockBackgroundTaskManager()
         // syncService = HealthKitSyncService(
         //     healthKitService: mockHealthKitService,
@@ -214,16 +214,3 @@ final class HealthKitSyncServiceTests: XCTestCase {
 
 // MARK: - Mock Background Task Manager
 
-private class MockBackgroundTaskManager: BackgroundTaskManager {
-    var registeredTasks: [String: () async -> Void] = [:]
-    
-    override func registerTask(identifier: String, handler: @escaping () async -> Void) {
-        registeredTasks[identifier] = handler
-    }
-    
-    func executeTask(identifier: String) async {
-        if let handler = registeredTasks[identifier] {
-            await handler()
-        }
-    }
-}

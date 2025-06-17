@@ -198,4 +198,3 @@ struct PATAnalysisResult: Equatable {
         status == "processing"
     }
 }
-

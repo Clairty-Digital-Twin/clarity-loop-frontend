@@ -69,18 +69,18 @@ enum APIError: Error, LocalizedError {
             "Email verification required"
         }
     }
-    
+
     /// Provides user-friendly messages for UI display
     public var userFriendlyMessage: String {
         switch self {
         case .invalidURL:
             return "We encountered a technical issue. Please try again."
-        case .networkError(let error):
+        case let .networkError(error):
             if error.code == .notConnectedToInternet || error.code == .dataNotAllowed {
                 return "No internet connection. Please check your network settings."
             }
             return "Network connection issue. Please try again."
-        case .serverError(let statusCode, let message):
+        case let .serverError(statusCode, message):
             if statusCode >= 500 {
                 return "Our servers are experiencing issues. Please try again later."
             }
@@ -93,9 +93,9 @@ enum APIError: Error, LocalizedError {
             return "An unexpected error occurred. Please try again."
         case .notImplemented:
             return "This feature is coming soon!"
-        case .validationError(let message):
+        case let .validationError(message):
             return message
-        case .httpError(let statusCode, _):
+        case let .httpError(statusCode, _):
             if statusCode >= 500 {
                 return "Server error. Please try again later."
             } else if statusCode == 404 {

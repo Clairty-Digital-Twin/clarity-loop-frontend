@@ -37,7 +37,6 @@ struct MainTabView: View {
                 Text("Settings")
             }
             .tag(2)
-
         }
         .accentColor(.red)
     }

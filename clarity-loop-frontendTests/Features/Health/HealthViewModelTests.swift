@@ -163,27 +163,3 @@ final class HealthViewModelTests: XCTestCase {
 
 // MARK: - Mock Health Repository
 
-private class MockHealthRepository: HealthRepository {
-    var shouldFail = false
-    var metricsToReturn: [HealthMetric] = []
-    var syncCalled = false
-    
-    override func fetchMetrics(for type: HealthMetricType, since date: Date) async throws -> [HealthMetric] {
-        if shouldFail {
-            throw HealthError.fetchFailed
-        }
-        return metricsToReturn
-    }
-    
-    override func sync() async throws {
-        syncCalled = true
-        if shouldFail {
-            throw HealthError.syncFailed
-        }
-    }
-}
-
-enum HealthError: Error {
-    case fetchFailed
-    case syncFailed
-}

@@ -1,6 +1,6 @@
 import Charts
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 // MARK: - Feature Definition
 
@@ -484,7 +484,8 @@ enum SleepStage: String, CaseIterable {
 // MARK: - Preview
 
 #Preview {
-    if let previewAPIClient = APIClient(
+    if
+        let previewAPIClient = APIClient(
             baseURLString: AppConfig.previewAPIBaseURL,
             tokenProvider: { nil }
         ) {

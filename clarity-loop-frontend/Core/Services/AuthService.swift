@@ -109,7 +109,7 @@ final class AuthService: AuthServiceProtocol {
     /// An async stream that emits the current user whenever the auth state changes.
     lazy var authState: AsyncStream<AuthUser?> = AsyncStream { continuation in
         self.authStateContinuation = continuation
-        
+
         // Listen to Amplify Auth events
         self.authStateTask = Task { [weak self] in
             await self?.listenToAuthEvents()
@@ -117,80 +117,84 @@ final class AuthService: AuthServiceProtocol {
     }
 
     private var _currentUser: AuthUser?
-    
+
     /// Detects if running in test environment using comprehensive checks
     private var isRunningInTestEnvironment: Bool {
         // Check for TESTING compiler flag first (most reliable)
         #if TESTING
-        return true
+            return true
         #endif
-        
+
         // Check 1: Direct test environment flags (works for unit tests)
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             return true
         }
-        
+
         // Check 2: Test class availability (works for unit tests)
         if NSClassFromString("XCTestCase") != nil {
             return true
         }
-        
+
         // Check 3: Bundle name contains test indicators (works for unit tests)
         if Bundle.main.bundlePath.hasSuffix(".xctest") {
             return true
         }
-        
+
         // Check 4: Process name contains test indicators (works for both unit and UI tests)
         let processName = ProcessInfo.processInfo.processName
         if processName.contains("Test") || processName.contains("-Runner") {
             return true
         }
-        
+
         // Check 5: Look for UI test environment indicators
-        if ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
-           ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
+        if
+            ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
+            ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
             return true
         }
-        
+
         // Check 6: Arguments contain test indicators (works for UI tests)
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains(where: { $0.contains("XCTest") || $0.contains("UITest") }) {
             return true
         }
-        
+
         // Check 7: Special case for simulator launched by test runner
-        if ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil &&
-           arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
+        if
+            ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil,
+            arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
             return true
         }
-        
+
         // Check 8: UI Test specific - check for test bundle injection
         if ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"]?.contains("XCTestBundleInject") == true {
             return true
         }
-        
+
         // Check 9: UI Test specific - check for test session identifier
         if ProcessInfo.processInfo.environment["XCTestSessionIdentifier"] != nil {
             return true
         }
-        
+
         // Check 10: UI Test specific - check for XCTest frameworks in bundle
-        if Bundle.allBundles.contains(where: { bundle in
-            let bundlePath = bundle.bundlePath
-            return bundlePath.contains("XCTAutomationSupport") || 
-                   bundlePath.contains("XCTestSupport") ||
-                   bundlePath.contains("xctest")
-        }) {
+        if
+            Bundle.allBundles.contains(where: { bundle in
+                let bundlePath = bundle.bundlePath
+                return bundlePath.contains("XCTAutomationSupport") ||
+                    bundlePath.contains("XCTestSupport") ||
+                    bundlePath.contains("xctest")
+            }) {
             return true
         }
-        
+
         // Check 11: UI Test specific - check for Simulator + XCTest combination
-        if ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil &&
-           (ProcessInfo.processInfo.arguments.contains("XCTest") || 
-            ProcessInfo.processInfo.processName.contains("xctest")) {
+        if
+            ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil,
+            ProcessInfo.processInfo.arguments.contains("XCTest") ||
+            ProcessInfo.processInfo.processName.contains("xctest") {
             return true
         }
-        
+
         return false
     }
 
@@ -198,18 +202,20 @@ final class AuthService: AuthServiceProtocol {
         get async {
             // Skip Amplify calls during tests to prevent crashes
             if isRunningInTestEnvironment {
-                print("🧪 AUTH: Skipping Amplify in test environment, returning cached user: \(_currentUser?.email ?? "nil")")
+                print(
+                    "🧪 AUTH: Skipping Amplify in test environment, returning cached user: \(_currentUser?.email ?? "nil")"
+                )
                 return _currentUser
             }
-            
+
             print("🔍 AUTH: Getting current user from Amplify")
             // Get current user from Amplify
             do {
                 let user = try await Amplify.Auth.getCurrentUser()
                 let attributes = try await Amplify.Auth.fetchUserAttributes()
-                
+
                 var email: String?
-                
+
                 for attribute in attributes {
                     switch attribute.key {
                     case .email:
@@ -218,7 +224,7 @@ final class AuthService: AuthServiceProtocol {
                         break
                     }
                 }
-                
+
                 return AuthUser(
                     id: user.userId,
                     email: email ?? "",
@@ -238,19 +244,19 @@ final class AuthService: AuthServiceProtocol {
     }
 
     // MARK: - Private Methods
-    
+
     private func listenToAuthEvents() async {
         // Skip Amplify Hub events during tests
         if isRunningInTestEnvironment {
             print("🧪 AUTH: Skipping Amplify Hub events in test environment")
             return
         }
-        
+
         // Listen to Amplify Auth Hub events
         _ = Amplify.Hub.listen(to: .auth, listener: { [weak self] event in
             Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                
+                guard let self else { return }
+
                 switch event.eventName {
                 case HubPayload.EventName.Auth.signedIn:
                     if let user = await self.currentUser {
@@ -266,7 +272,7 @@ final class AuthService: AuthServiceProtocol {
             }
         })
     }
-    
+
     private func syncUserWithBackend(email: String) async throws -> UserSessionResponseDTO {
         // After successful Amplify sign-in, sync with backend
         let deviceInfo = DeviceInfoHelper.generateDeviceInfo()
@@ -276,7 +282,7 @@ final class AuthService: AuthServiceProtocol {
             rememberMe: true,
             deviceInfo: deviceInfo
         )
-        
+
         // This will create/update user in backend and return user data
         let response = try await apiClient.login(requestDTO: loginDTO)
         return response.user
@@ -288,15 +294,15 @@ final class AuthService: AuthServiceProtocol {
         // Skip Amplify Auth during tests and return mock success
         if isRunningInTestEnvironment {
             print("🧪 AUTH: Skipping Amplify signIn in test environment - returning mock success")
-            
+
             // Create mock user session for tests
             let mockUser = AuthUser(
-                id: "test-user-id", 
+                id: "test-user-id",
                 email: email,
                 fullName: "Test User",
                 isEmailVerified: true
             )
-            
+
             let mockResponse = UserSessionResponseDTO(
                 id: "test-user-id",
                 email: email,
@@ -318,30 +324,30 @@ final class AuthService: AuthServiceProtocol {
                     updatedAt: Date()
                 )
             )
-            
+
             // Update auth state
             _currentUser = mockUser
             authStateContinuation?.yield(mockUser)
-            
+
             return mockResponse
         }
-        
+
         do {
             // Sign in with Amplify
             let signInResult = try await Amplify.Auth.signIn(
                 username: email,
                 password: password
             )
-            
+
             if signInResult.isSignedIn {
                 // Sync with backend to get user data
                 let response = try await syncUserWithBackend(email: email)
-                
+
                 // Update auth state
                 let user = response.authUser
                 _currentUser = user
                 authStateContinuation?.yield(user)
-                
+
                 return response
             } else {
                 // Check what additional step is required
@@ -380,31 +386,31 @@ final class AuthService: AuthServiceProtocol {
         // Skip Amplify Auth during tests and return mock response
         if isRunningInTestEnvironment {
             print("🧪 AUTH: Skipping Amplify register in test environment - returning mock success")
-            
+
             // Store email for verification
             pendingEmailForVerification = email
-            
+
             // Simulate email verification required
             throw APIError.emailVerificationRequired
         }
-        
+
         do {
             // Register with Amplify
             let userAttributes = [
                 AuthUserAttribute(.email, value: email),
-                AuthUserAttribute(.name, value: "\(details.firstName) \(details.lastName)")
+                AuthUserAttribute(.name, value: "\(details.firstName) \(details.lastName)"),
             ]
-            
+
             let options = AuthSignUpRequest.Options(userAttributes: userAttributes)
             let signUpResult = try await Amplify.Auth.signUp(
                 username: email,
                 password: password,
                 options: options
             )
-            
+
             // Store email for verification
             pendingEmailForVerification = email
-            
+
             // Check if we need email verification
             if case .confirmUser = signUpResult.nextStep {
                 // Email verification required
@@ -426,16 +432,16 @@ final class AuthService: AuthServiceProtocol {
         // Skip Amplify Auth during tests
         if isRunningInTestEnvironment {
             print("🧪 AUTH: Skipping Amplify signOut in test environment")
-            
+
             // Clear user state
             _currentUser = nil
             authStateContinuation?.yield(nil)
             return
         }
-        
+
         do {
             _ = await Amplify.Auth.signOut()
-            
+
             // Clear user state
             _currentUser = nil
             authStateContinuation?.yield(nil)
@@ -448,7 +454,7 @@ final class AuthService: AuthServiceProtocol {
             print("🧪 AUTH: Skipping Amplify sendPasswordReset in test environment - returning success")
             return
         }
-        
+
         do {
             _ = try await Amplify.Auth.resetPassword(for: email)
         } catch let error as AuthError {
@@ -464,14 +470,14 @@ final class AuthService: AuthServiceProtocol {
 
         do {
             let session = try await Amplify.Auth.fetchAuthSession()
-            
+
             guard let cognitoTokenProvider = session as? AuthCognitoTokensProvider else {
                 throw AuthenticationError.unknown("Could not get Cognito tokens")
             }
-            
+
             let tokens = try cognitoTokenProvider.getCognitoTokens().get()
             let token = tokens.accessToken
-            
+
             return token
         } catch {
             throw AuthenticationError.unknown("Failed to get access token: \(error)")
@@ -482,7 +488,7 @@ final class AuthService: AuthServiceProtocol {
         // Skip Amplify Auth during tests and return mock success
         if isRunningInTestEnvironment {
             print("🧪 AUTH: Skipping Amplify verifyEmail in test environment - returning mock success")
-            
+
             return LoginResponseDTO(
                 user: UserSessionResponseDTO(
                     id: "test-user-id",
@@ -513,14 +519,14 @@ final class AuthService: AuthServiceProtocol {
                 )
             )
         }
-        
+
         do {
             // Confirm sign-up with Amplify
             let confirmResult = try await Amplify.Auth.confirmSignUp(
                 for: email,
                 confirmationCode: code
             )
-            
+
             if confirmResult.isSignUpComplete {
                 // Email verified successfully
                 // Return a dummy response since the actual login will happen separately
@@ -570,7 +576,7 @@ final class AuthService: AuthServiceProtocol {
             print("🧪 AUTH: Skipping Amplify resendVerificationEmail in test environment - returning success")
             return
         }
-        
+
         do {
             _ = try await Amplify.Auth.resendSignUpCode(for: email)
         } catch let error as AuthError {
@@ -584,15 +590,15 @@ final class AuthService: AuthServiceProtocol {
         guard let authError = error as? AuthError else {
             return AuthenticationError.unknown(error.localizedDescription)
         }
-        
+
         switch authError {
-        case .service(let message, _, _):
+        case let .service(message, _, _):
             // Parse service errors
             if message.contains("UsernameExistsException") {
                 return AuthenticationError.emailAlreadyInUse
             } else if message.contains("InvalidPasswordException") {
                 return AuthenticationError.weakPassword
-            } else if message.contains("InvalidParameterException") && message.contains("email") {
+            } else if message.contains("InvalidParameterException"), message.contains("email") {
                 return AuthenticationError.invalidEmail
             } else if message.contains("UserNotConfirmedException") {
                 return AuthenticationError.emailNotVerified
@@ -604,13 +610,13 @@ final class AuthService: AuthServiceProtocol {
                 return AuthenticationError.unknown("Invalid email or password")
             }
             return AuthenticationError.unknown(message)
-            
+
         case .notAuthorized:
             return AuthenticationError.unknown("Invalid email or password")
-            
+
         case .invalidState:
             return AuthenticationError.configurationError
-            
+
         default:
             return AuthenticationError.unknown(error.localizedDescription)
         }

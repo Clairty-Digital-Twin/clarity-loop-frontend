@@ -105,7 +105,7 @@ final class BackendContractAdapter: BackendContractAdapterProtocol {
     // MARK: - User Info Adaptation
 
     func adaptUserInfoResponse(_ backendResponse: BackendUserInfoResponse) -> UserSessionResponseDTO {
-        return UserSessionResponseDTO(
+        UserSessionResponseDTO(
             id: backendResponse.userId,
             email: backendResponse.email ?? "",
             displayName: backendResponse.displayName ?? "",

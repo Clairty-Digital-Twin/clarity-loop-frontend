@@ -7,52 +7,53 @@ import SwiftUI
 @MainActor
 final class AIInsightViewModel: BaseViewModel {
     // MARK: - Properties
-    
+
     private(set) var insightsState: ViewState<[AIInsight]> = .idle
     private(set) var generationState: ViewState<AIInsight> = .idle
     private(set) var selectedTimeframe: InsightTimeframe = .week
     private(set) var selectedCategory: InsightCategoryFilter?
-    
+
     // MARK: - Dependencies
-    
+
     private let insightRepository: AIInsightRepository
     private let insightsRepo: InsightsRepositoryProtocol
     private let healthRepository: HealthRepository
     private let authService: AuthServiceProtocol
-    
+
     // MARK: - Computed Properties
-    
+
     var insights: [AIInsight] {
         insightsState.value ?? []
     }
-    
+
     var filteredInsights: [AIInsight] {
         var filtered = insights
-        
+
         // Filter by category
         if let categoryFilter = selectedCategory {
             // Map filter to actual category
             let category = mapFilterToCategory(categoryFilter)
             filtered = filtered.filter { $0.category == category }
         }
-        
+
         // Filter by timeframe
         let cutoffDate = selectedTimeframe.cutoffDate
         filtered = filtered.filter { $0.timestamp >= cutoffDate }
-        
+
         return filtered
     }
-    
+
     var hasUnreadInsights: Bool {
         insights.contains { !$0.isRead }
     }
-    
+
     var insightStats: InsightStats {
         let total = insights.count
         let unread = insights.filter { !$0.isRead }.count
         let highPriority = insights.filter { $0.priority == .high }.count
-        let averageConfidence = insights.isEmpty ? 0 : insights.compactMap { $0.confidenceScore }.reduce(0, +) / Double(insights.count)
-        
+        let averageConfidence = insights.isEmpty ? 0 : insights.compactMap(\.confidenceScore)
+            .reduce(0, +) / Double(insights.count)
+
         return InsightStats(
             totalInsights: total,
             unreadInsights: unread,
@@ -60,9 +61,9 @@ final class AIInsightViewModel: BaseViewModel {
             averageConfidence: averageConfidence
         )
     }
-    
+
     // MARK: - Initialization
-    
+
     init(
         modelContext: ModelContext,
         insightRepository: AIInsightRepository,
@@ -76,23 +77,23 @@ final class AIInsightViewModel: BaseViewModel {
         self.authService = authService
         super.init(modelContext: modelContext)
     }
-    
+
     // MARK: - Public Methods
-    
+
     func loadInsights() async {
         insightsState = .loading
-        
+
         do {
             // Load local insights
             let localInsights = try await insightRepository.fetchAll()
-            
+
             if !localInsights.isEmpty {
                 insightsState = .loaded(localInsights)
             }
-            
+
             // Sync with backend
             await syncInsights()
-            
+
             // Reload after sync
             let updatedInsights = try await insightRepository.fetchAll()
             insightsState = updatedInsights.isEmpty ? .empty : .loaded(updatedInsights)
@@ -101,22 +102,22 @@ final class AIInsightViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     func generateNewInsight() async {
         generationState = .loading
-        
+
         do {
             // Check if we have recent health data
             let hasData = await checkRecentHealthData()
             guard hasData else {
                 throw InsightError.insufficientData
             }
-            
+
             // Get user ID
             guard await authService.currentUser?.id != nil else {
                 throw InsightError.notAuthenticated
             }
-            
+
             // Request insight generation
             let requestDTO = InsightGenerationRequestDTO(
                 analysisResults: [:],
@@ -126,7 +127,7 @@ final class AIInsightViewModel: BaseViewModel {
                 language: "en"
             )
             let response = try await insightsRepo.generateInsight(requestDTO: requestDTO)
-            
+
             // Create local AIInsight model
             let insight = AIInsight(
                 content: response.data.narrative,
@@ -137,12 +138,12 @@ final class AIInsightViewModel: BaseViewModel {
             insight.priority = determinePriority(response.data)
             insight.timestamp = response.data.generatedAt
             insight.confidenceScore = response.data.confidenceScore
-            
+
             // Save locally
             try await insightRepository.create(insight)
-            
+
             generationState = .loaded(insight)
-            
+
             // Reload insights list
             await loadInsights()
         } catch {
@@ -150,27 +151,27 @@ final class AIInsightViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     func markAsRead(_ insight: AIInsight) async {
         insight.isRead = true
-        
+
         do {
             try await insightRepository.update(insight)
         } catch {
             handle(error: error)
         }
     }
-    
+
     func toggleBookmark(_ insight: AIInsight) async {
         insight.isFavorite.toggle()
-        
+
         do {
             try await insightRepository.update(insight)
         } catch {
             handle(error: error)
         }
     }
-    
+
     func deleteInsight(_ insight: AIInsight) async {
         do {
             try await insightRepository.delete(insight)
@@ -179,33 +180,33 @@ final class AIInsightViewModel: BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     func selectTimeframe(_ timeframe: InsightTimeframe) {
         selectedTimeframe = timeframe
     }
-    
+
     func selectCategory(_ category: InsightCategoryFilter?) {
         selectedCategory = category
     }
-    
+
     func exportInsights() async -> URL? {
         // TODO: Implement export when AIInsight conforms to Codable
-        return nil
+        nil
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func syncInsights() async {
         do {
             guard let userId = await authService.currentUser?.id else { return }
-            
+
             // Fetch latest insights from backend
             let response = try await insightsRepo.getInsightHistory(
                 userId: userId,
                 limit: 50,
                 offset: 0
             )
-            
+
             // Convert and save new insights
             for insightDTO in response.data.insights {
                 // Check if we already have this insight
@@ -216,7 +217,7 @@ final class AIInsightViewModel: BaseViewModel {
                     }
                 )
                 let existingInsights = try await insightRepository.fetch(descriptor: descriptor)
-                
+
                 if existingInsights.isEmpty {
                     // Create new insight from DTO
                     let insight = AIInsight(
@@ -228,23 +229,23 @@ final class AIInsightViewModel: BaseViewModel {
                     insight.priority = determinePriority(insightDTO)
                     insight.timestamp = insightDTO.generatedAt
                     insight.confidenceScore = insightDTO.confidenceScore
-                    
+
                     try await insightRepository.create(insight)
                 }
             }
-            
+
             // Mark repository as synced
             try await insightRepository.sync()
         } catch {
             print("Insight sync error: \(error)")
         }
     }
-    
+
     private func checkRecentHealthData() async -> Bool {
         do {
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -3, to: endDate)!
-            
+
             // Check for any recent metrics
             var hasMetrics = false
             for type in HealthMetricType.allCases {
@@ -254,27 +255,27 @@ final class AIInsightViewModel: BaseViewModel {
                     break
                 }
             }
-            
+
             return hasMetrics
         } catch {
             return false
         }
     }
-    
+
     private func mapFilterToCategory(_ filter: InsightCategoryFilter) -> InsightCategory {
         switch filter {
-        case .general: return .general
-        case .sleep: return .sleep
-        case .activity: return .activity
-        case .cardiovascular: return .heartHealth
-        case .nutrition: return .nutrition
-        case .mentalHealth: return .mentalHealth
+        case .general: .general
+        case .sleep: .sleep
+        case .activity: .activity
+        case .cardiovascular: .heartHealth
+        case .nutrition: .nutrition
+        case .mentalHealth: .mentalHealth
         }
     }
-    
+
     private func categorizeInsight(_ narrative: String) -> InsightCategory {
         let lowercased = narrative.lowercased()
-        
+
         if lowercased.contains("sleep") || lowercased.contains("rest") {
             return .sleep
         } else if lowercased.contains("heart") || lowercased.contains("cardiovascular") {
@@ -289,26 +290,26 @@ final class AIInsightViewModel: BaseViewModel {
             return .general
         }
     }
-    
+
     private func determinePriority(_ insight: HealthInsightDTO) -> InsightPriority {
         // High priority if confidence is high and has many recommendations
-        if insight.confidenceScore > 0.8 && insight.recommendations.count > 2 {
-            return .high
+        if insight.confidenceScore > 0.8, insight.recommendations.count > 2 {
+            .high
         } else if insight.confidenceScore > 0.6 {
-            return .medium
+            .medium
         } else {
-            return .low
+            .low
         }
     }
-    
+
     private func determinePriority(_ insight: InsightPreviewDTO) -> InsightPriority {
         // High priority if confidence is high and has many recommendations
-        if insight.confidenceScore > 0.8 && insight.recommendationsCount > 2 {
-            return .high
+        if insight.confidenceScore > 0.8, insight.recommendationsCount > 2 {
+            .high
         } else if insight.confidenceScore > 0.6 {
-            return .medium
+            .medium
         } else {
-            return .low
+            .low
         }
     }
 }
@@ -320,7 +321,7 @@ enum InsightTimeframe: String, CaseIterable {
     case week = "This Week"
     case month = "This Month"
     case all = "All Time"
-    
+
     var cutoffDate: Date {
         let calendar = Calendar.current
         switch self {
@@ -343,26 +344,26 @@ enum InsightCategoryFilter: String, CaseIterable {
     case cardiovascular = "Heart Health"
     case nutrition = "Nutrition"
     case mentalHealth = "Mental Health"
-    
+
     var icon: String {
         switch self {
-        case .general: return "sparkles"
-        case .sleep: return "moon.fill"
-        case .activity: return "figure.walk"
-        case .cardiovascular: return "heart.fill"
-        case .nutrition: return "leaf.fill"
-        case .mentalHealth: return "brain.head.profile"
+        case .general: "sparkles"
+        case .sleep: "moon.fill"
+        case .activity: "figure.walk"
+        case .cardiovascular: "heart.fill"
+        case .nutrition: "leaf.fill"
+        case .mentalHealth: "brain.head.profile"
         }
     }
-    
+
     var color: Color {
         switch self {
-        case .general: return .purple
-        case .sleep: return .indigo
-        case .activity: return .orange
-        case .cardiovascular: return .red
-        case .nutrition: return .green
-        case .mentalHealth: return .blue
+        case .general: .purple
+        case .sleep: .indigo
+        case .activity: .orange
+        case .cardiovascular: .red
+        case .nutrition: .green
+        case .mentalHealth: .blue
         }
     }
 }
@@ -371,12 +372,12 @@ enum InsightPriorityLevel: String, CaseIterable {
     case high = "High"
     case medium = "Medium"
     case low = "Low"
-    
+
     var color: Color {
         switch self {
-        case .high: return .red
-        case .medium: return .orange
-        case .low: return .green
+        case .high: .red
+        case .medium: .orange
+        case .low: .green
         }
     }
 }
@@ -392,15 +393,15 @@ enum InsightError: LocalizedError {
     case insufficientData
     case notAuthenticated
     case generationFailed
-    
+
     var errorDescription: String? {
         switch self {
         case .insufficientData:
-            return "Not enough health data to generate insights. Please sync more data."
+            "Not enough health data to generate insights. Please sync more data."
         case .notAuthenticated:
-            return "You must be signed in to generate insights"
+            "You must be signed in to generate insights"
         case .generationFailed:
-            return "Failed to generate insight. Please try again."
+            "Failed to generate insight. Please try again."
         }
     }
 }

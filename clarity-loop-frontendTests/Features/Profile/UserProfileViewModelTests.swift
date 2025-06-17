@@ -12,7 +12,7 @@ final class UserProfileViewModelTests: XCTestCase {
     private var modelContext: ModelContext!
     private var mockUserProfileRepository: MockUserProfileRepository!
     private var mockAuthService: MockAuthService!
-    private var mockAPIClient: CorrectMockAPIClient!
+    private var mockAPIClient: MockAPIClient!
     
     // MARK: - Setup & Teardown
     
@@ -23,7 +23,7 @@ final class UserProfileViewModelTests: XCTestCase {
         // modelContext = createTestModelContext()
         // mockUserProfileRepository = MockUserProfileRepository(modelContext: modelContext)
         // mockAuthService = MockAuthService()
-        // mockAPIClient = CorrectMockAPIClient()
+        // mockAPIClient = MockAPIClient()
         // viewModel = UserProfileViewModel(
         //     modelContext: modelContext,
         //     userProfileRepository: mockUserProfileRepository,
@@ -153,45 +153,3 @@ final class UserProfileViewModelTests: XCTestCase {
 
 // MARK: - Mock User Profile Repository
 
-private class MockUserProfileRepository: UserProfileRepository {
-    var shouldFail = false
-    var profileToReturn: UserProfileModel?
-    var createCalled = false
-    var updateCalled = false
-    var deleteCalled = false
-    
-    override func fetchByUserId(_ userId: String) async throws -> UserProfileModel? {
-        if shouldFail {
-            throw ProfileError.fetchFailed
-        }
-        return profileToReturn
-    }
-    
-    override func create(_ profile: UserProfileModel) async throws {
-        createCalled = true
-        if shouldFail {
-            throw ProfileError.createFailed
-        }
-    }
-    
-    override func update(_ profile: UserProfileModel) async throws {
-        updateCalled = true
-        if shouldFail {
-            throw ProfileError.updateFailed
-        }
-    }
-    
-    override func delete(_ profile: UserProfileModel) async throws {
-        deleteCalled = true
-        if shouldFail {
-            throw ProfileError.deleteFailed
-        }
-    }
-}
-
-enum ProfileError: Error {
-    case fetchFailed
-    case createFailed
-    case updateFailed
-    case deleteFailed
-}

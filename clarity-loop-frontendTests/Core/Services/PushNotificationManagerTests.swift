@@ -9,7 +9,7 @@ final class PushNotificationManagerTests: XCTestCase {
     
     private var notificationManager: PushNotificationManager!
     private var mockNotificationCenter: MockUNUserNotificationCenter!
-    private var mockAPIClient: CorrectMockAPIClient!
+    private var mockAPIClient: MockAPIClient!
     
     // MARK: - Setup & Teardown
     

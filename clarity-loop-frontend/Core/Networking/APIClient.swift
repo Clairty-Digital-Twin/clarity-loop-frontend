@@ -226,7 +226,7 @@ final class APIClient: APIClientProtocol {
             guard let token = await tokenProvider() else {
                 throw APIError.unauthorized
             }
-            
+
             authorizedRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 

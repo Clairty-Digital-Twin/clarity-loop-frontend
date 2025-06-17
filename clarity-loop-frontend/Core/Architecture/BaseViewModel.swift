@@ -6,43 +6,43 @@ import SwiftData
 @Observable
 open class BaseViewModel {
     // MARK: - Properties
-    
+
     /// Indicates if any async operation is in progress
     public var isLoading = false
-    
+
     /// Current error if any operation failed
     public var currentError: Error?
-    
+
     /// ModelContext for SwiftData operations
     public let modelContext: ModelContext
-    
+
     // MARK: - Initialization
-    
+
     public init(modelContext: ModelContext) {
         self.modelContext = modelContext
     }
-    
+
     // MARK: - Error Handling
-    
+
     /// Handles errors in a consistent way across all view models
     public func handle(error: Error) {
         currentError = error
         isLoading = false
-        
+
         // Log error for debugging
         print("[BaseViewModel] Error: \(error)")
-        
+
         // Additional error handling can be added here
         // e.g., analytics, crash reporting
     }
-    
+
     /// Clears the current error
     public func clearError() {
         currentError = nil
     }
-    
+
     // MARK: - Loading State Management
-    
+
     /// Executes an async operation with automatic loading state management
     public func performOperation<T>(
         operation: () async throws -> T,
@@ -51,7 +51,7 @@ open class BaseViewModel {
     ) async {
         isLoading = true
         clearError()
-        
+
         do {
             let result = try await operation()
             await MainActor.run {
@@ -65,14 +65,14 @@ open class BaseViewModel {
             }
         }
     }
-    
+
     /// Executes an async operation that updates ViewState
     func performStateOperation<T: Equatable>(
         currentState: ViewState<T>,
         operation: () async throws -> T
     ) async -> ViewState<T> {
         clearError()
-        
+
         do {
             let result = try await operation()
             return result is any Collection && (result as! any Collection).isEmpty ? .empty : .loaded(result)
@@ -81,16 +81,16 @@ open class BaseViewModel {
             return .error(error)
         }
     }
-    
+
     // MARK: - SwiftData Helpers
-    
+
     /// Saves the model context with error handling
     public func saveContext() throws {
         if modelContext.hasChanges {
             try modelContext.save()
         }
     }
-    
+
     /// Performs a SwiftData operation with error handling
     public func performDataOperation(
         operation: () throws -> Void
@@ -102,9 +102,9 @@ open class BaseViewModel {
             handle(error: error)
         }
     }
-    
+
     // MARK: - Retry Logic
-    
+
     /// Retries an operation with exponential backoff
     public func retryOperation<T>(
         maxAttempts: Int = 3,
@@ -112,7 +112,7 @@ open class BaseViewModel {
         operation: () async throws -> T
     ) async throws -> T {
         var lastError: Error?
-        
+
         for attempt in 0..<maxAttempts {
             do {
                 return try await operation()
@@ -124,8 +124,12 @@ open class BaseViewModel {
                 }
             }
         }
-        
-        throw lastError ?? NSError(domain: "BaseViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "Unknown error"])
+
+        throw lastError ?? NSError(
+            domain: "BaseViewModel",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "Unknown error"]
+        )
     }
 }
 
@@ -133,8 +137,8 @@ open class BaseViewModel {
 
 extension BaseViewModel {
     /// Syncs data using a repository with loading state management
-    func syncWithRepository<T: BaseRepository>(
-        repository: T,
+    func syncWithRepository(
+        repository: some BaseRepository,
         onCompletion: (() -> Void)? = nil
     ) async {
         await performOperation(
@@ -146,7 +150,7 @@ extension BaseViewModel {
             }
         )
     }
-    
+
     /// Fetches data from repository with automatic state management
     func fetchFromRepository<T: BaseRepository, Model>(
         repository: T,
@@ -160,4 +164,3 @@ extension BaseViewModel {
         }
     }
 }
-
