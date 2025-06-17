@@ -4,10 +4,6 @@ import XCTest
 @MainActor
 final class HealthRepositoryTests: XCTestCase {
     
-    // MARK: - Properties
-    
-    private var repository: MockHealthRepository!
-    
     // MARK: - Setup & Teardown
     
     override func setUp() async throws {
@@ -17,8 +13,6 @@ final class HealthRepositoryTests: XCTestCase {
     }
     
     override func tearDown() async throws {
-        repository?.reset()
-        repository = nil
         try await super.tearDown()
     }
     
