@@ -1,139 +1,246 @@
-# CLAUDE.md - Project State Documentation
+# Claude Code Configuration
 
-## Current State (Last Updated: 2025-06-16)
+## Build Commands
+- `npm run build`: Build the project
+- `npm run test`: Run the full test suite
+- `npm run lint`: Run ESLint and format checks
+- `npm run typecheck`: Run TypeScript type checking
+- `./claude-flow --help`: Show all available commands
 
-### Overview
-The CLARITY Loop Frontend is an iOS app built with SwiftUI that provides health tracking and insights. The project has been updated to use AWS Amplify for authentication instead of manual JWT/Keychain management.
+## Claude-Flow Complete Command Reference
 
-### Recent Work Completed
+### Core System Commands
+- `./claude-flow start [--ui] [--port 3000] [--host localhost]`: Start orchestration system with optional web UI
+- `./claude-flow status`: Show comprehensive system status
+- `./claude-flow monitor`: Real-time system monitoring dashboard
+- `./claude-flow config <subcommand>`: Configuration management (show, get, set, init, validate)
 
-#### AWS Amplify Authentication Integration
-- Integrated AWS Amplify Swift SDK (version 2.48.1) for authentication
-- Created `AmplifyConfigurator.swift` for centralized Amplify initialization
-- Added `amplifyconfiguration.json` with actual AWS Cognito configuration:
-  - User Pool ID: `us-east-1_efXaR5EcP`
-  - App Client ID: `7sm7ckrkovg78b03n1595euc71`
-  - Region: `us-east-1`
-- Completely refactored `AuthService.swift` to use Amplify Auth instead of manual JWT handling
-- Updated `clarity_loop_frontendApp.swift` to initialize Amplify on app launch
-- Modified token provider to use Amplify's secure token management
-- Updated all DTOs to match new backend contract structure:
-  - `UserSessionResponseDTO` now uses new structure with `id`, `displayName`, `preferences`, and `metadata`
-  - Updated `BackendContractAdapter` to handle new DTO structure
-  - Fixed `UserProfile` model to work with new DTOs
-- Updated test mocks (`MockAuthService`, `CorrectMockAPIClient`) to use new DTO structure
+### Agent Management
+- `./claude-flow agent spawn <type> [--name <name>]`: Create AI agents (researcher, coder, analyst, etc.)
+- `./claude-flow agent list`: List all active agents
+- `./claude-flow spawn <type>`: Quick agent spawning (alias for agent spawn)
 
-#### Build and Test Status
-- **Build**: ✅ Successfully builds with no warnings
-- **Tests**: ⚠️ Tests build but crash during runtime due to Amplify initialization in test environment
-- **SwiftFormat**: ✅ No formatting issues
-- **SwiftLint**: ✅ No linting issues
+### Task Orchestration
+- `./claude-flow task create <type> [description]`: Create and manage tasks
+- `./claude-flow task list`: View active task queue
+- `./claude-flow workflow <file>`: Execute workflow automation files
 
-### Key Commands for Development
+### Memory Management
+- `./claude-flow memory store <key> <data>`: Store persistent data across sessions
+- `./claude-flow memory get <key>`: Retrieve stored information
+- `./claude-flow memory list`: List all memory keys
+- `./claude-flow memory export <file>`: Export memory to file
+- `./claude-flow memory import <file>`: Import memory from file
+- `./claude-flow memory stats`: Memory usage statistics
+- `./claude-flow memory cleanup`: Clean unused memory entries
+
+### SPARC Development Modes
+- `./claude-flow sparc "<task>"`: Run orchestrator mode (default)
+- `./claude-flow sparc run <mode> "<task>"`: Run specific SPARC mode
+- `./claude-flow sparc tdd "<feature>"`: Test-driven development mode
+- `./claude-flow sparc modes`: List all 17 available SPARC modes
+
+Available SPARC modes: orchestrator, coder, researcher, tdd, architect, reviewer, debugger, tester, analyzer, optimizer, documenter, designer, innovator, swarm-coordinator, memory-manager, batch-executor, workflow-manager
+
+### Swarm Coordination
+- `./claude-flow swarm "<objective>" [options]`: Multi-agent swarm coordination
+- `--strategy`: research, development, analysis, testing, optimization, maintenance
+- `--mode`: centralized, distributed, hierarchical, mesh, hybrid
+- `--max-agents <n>`: Maximum number of agents (default: 5)
+- `--parallel`: Enable parallel execution
+- `--monitor`: Real-time monitoring
+- `--output <format>`: json, sqlite, csv, html
+
+### MCP Server Integration
+- `./claude-flow mcp start [--port 3000] [--host localhost]`: Start MCP server
+- `./claude-flow mcp status`: Show MCP server status
+- `./claude-flow mcp tools`: List available MCP tools
+
+### Claude Integration
+- `./claude-flow claude auth`: Authenticate with Claude API
+- `./claude-flow claude models`: List available Claude models
+- `./claude-flow claude chat`: Interactive chat mode
+
+### Session Management
+- `./claude-flow session`: Manage terminal sessions
+- `./claude-flow repl`: Start interactive REPL mode
+
+### Enterprise Features
+- `./claude-flow project <subcommand>`: Project management (Enterprise)
+- `./claude-flow deploy <subcommand>`: Deployment operations (Enterprise)
+- `./claude-flow cloud <subcommand>`: Cloud infrastructure management (Enterprise)
+- `./claude-flow security <subcommand>`: Security and compliance tools (Enterprise)
+- `./claude-flow analytics <subcommand>`: Analytics and insights (Enterprise)
+
+### Project Initialization
+- `./claude-flow init`: Initialize Claude-Flow project
+- `./claude-flow init --sparc`: Initialize with full SPARC development environment
+
+## Quick Start Workflows
+
+### Research Workflow
+```bash
+# Start a research swarm with distributed coordination
+./claude-flow swarm "Research modern web frameworks" --strategy research --mode distributed --parallel --monitor
+
+# Or use SPARC researcher mode for focused research
+./claude-flow sparc run researcher "Analyze React vs Vue vs Angular performance characteristics"
+
+# Store findings in memory for later use
+./claude-flow memory store "research_findings" "Key insights from framework analysis"
+```
+
+### Development Workflow
+```bash
+# Start orchestration system with web UI
+./claude-flow start --ui --port 3000
+
+# Run TDD workflow for new feature
+./claude-flow sparc tdd "User authentication system with JWT tokens"
+
+# Development swarm for complex projects
+./claude-flow swarm "Build e-commerce API with payment integration" --strategy development --mode hierarchical --max-agents 8 --monitor
+
+# Check system status
+./claude-flow status
+```
+
+### Analysis Workflow
+```bash
+# Analyze codebase performance
+./claude-flow sparc run analyzer "Identify performance bottlenecks in current codebase"
+
+# Data analysis swarm
+./claude-flow swarm "Analyze user behavior patterns from logs" --strategy analysis --mode mesh --parallel --output sqlite
+
+# Store analysis results
+./claude-flow memory store "performance_analysis" "Bottlenecks identified in database queries"
+```
+
+### Maintenance Workflow
+```bash
+# System maintenance with safety controls
+./claude-flow swarm "Update dependencies and security patches" --strategy maintenance --mode centralized --monitor
+
+# Security review
+./claude-flow sparc run reviewer "Security audit of authentication system"
+
+# Export maintenance logs
+./claude-flow memory export maintenance_log.json
+```
+
+## Integration Patterns
+
+### Memory-Driven Coordination
+Use Memory to coordinate information across multiple SPARC modes and swarm operations:
 
 ```bash
-# Build the app (using project file now, not workspace)
-xcodebuild -project clarity-loop-frontend.xcodeproj -scheme clarity-loop-frontend -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16' build
+# Store architecture decisions
+./claude-flow memory store "system_architecture" "Microservices with API Gateway pattern"
 
-# Run tests (currently failing due to Amplify initialization)
-xcodebuild -project clarity-loop-frontend.xcodeproj -scheme clarity-loop-frontend -destination 'platform=iOS Simulator,name=iPhone 16' test
-
-# Format code
-mint run swiftformat@0.51.15 .
-
-# Lint code
-mint run swiftlint
-
-# Clear derived data (if build cache issues)
-rm -rf ~/Library/Developer/Xcode/DerivedData/clarity-loop-frontend-*
+# All subsequent operations can reference this decision
+./claude-flow sparc run coder "Implement user service based on system_architecture in memory"
+./claude-flow sparc run tester "Create integration tests for microservices architecture"
 ```
 
-### Project Structure
+### Multi-Stage Development
+Coordinate complex development through staged execution:
 
-```
-clarity-loop-frontend/
-├── Resources/
-│   └── amplifyconfiguration.json (AWS Cognito configuration)
-├── Core/
-│   ├── Architecture/
-│   │   └── EnvironmentKeys.swift (contains DummyAuthService with Amplify compatibility)
-│   ├── Services/
-│   │   ├── AmplifyConfigurator.swift (new - Amplify initialization)
-│   │   └── AuthService.swift (refactored to use Amplify Auth)
-│   └── Adapters/
-│       └── BackendContractAdapter.swift (updated for new DTOs)
-├── Data/
-│   ├── DTOs/
-│   │   ├── AuthLoginDTOs.swift (updated with new response structure)
-│   │   └── UserSessionResponseDTO+AuthUser.swift (updated mapping)
-│   └── Models/
-│       └── UserProfile.swift (updated to work with new DTOs)
-├── Features/
-│   └── Authentication/
-│       ├── EmailVerificationView.swift
-│       ├── EmailVerificationViewModel.swift (uses Amplify Auth for verification)
-│       ├── RegistrationView.swift
-│       └── RegistrationViewModel.swift
-└── Tests/
-    └── Mocks/
-        ├── MockAuthService.swift (updated with new DTO structure)
-        └── CorrectMockAPIClient.swift (updated with new DTO structure)
+```bash
+# Stage 1: Research and planning
+./claude-flow sparc run researcher "Research authentication best practices"
+./claude-flow sparc run architect "Design authentication system architecture"
+
+# Stage 2: Implementation
+./claude-flow sparc tdd "User registration and login functionality"
+./claude-flow sparc run coder "Implement JWT token management"
+
+# Stage 3: Testing and deployment
+./claude-flow sparc run tester "Comprehensive security testing"
+./claude-flow swarm "Deploy authentication system" --strategy maintenance --mode centralized
 ```
 
-### Dependency Management
+### Enterprise Integration
+For enterprise environments with additional tooling:
 
-**Package Dependencies** (via Swift Package Manager):
-- AWS Amplify: 2.48.1
-- AWS SDK Swift: 1.2.59
-- AWS CRT Swift: 0.48.0
-- SQLite.swift: 0.15.3
-- Smithy Swift: 0.125.0
-- Swift Log: 1.6.3
+```bash
+# Project management integration
+./claude-flow project create "authentication-system"
+./claude-flow project switch "authentication-system"
 
-**Tool Dependencies** (via Mint):
-- SwiftFormat: 0.51.15 (pinned version)
-- SwiftLint: latest
+# Security compliance
+./claude-flow security scan
+./claude-flow security audit
 
-### AWS Amplify Configuration
+# Analytics and monitoring
+./claude-flow analytics dashboard
+./claude-flow deploy production --monitor
+```
 
-The app now uses AWS Amplify for authentication with the following configuration:
-- **Authentication Flow**: USER_SRP_AUTH
-- **Username Attributes**: Email
-- **Sign-up Attributes**: Email
-- **Password Policy**: Minimum 8 characters
+## Advanced Batch Tool Patterns
 
-### Key Changes from Previous Implementation
+### TodoWrite Coordination
+Always use TodoWrite for complex task coordination:
 
-1. **Token Management**: No longer using `TokenManager` or Keychain directly - Amplify handles secure token storage
-2. **Authentication Flow**: Using Amplify's built-in authentication methods instead of direct API calls
-3. **Session Management**: Amplify Hub events are used to monitor auth state changes
-4. **Email Verification**: Integrated with Amplify's `confirmSignUp` method
+```javascript
+TodoWrite([
+  {
+    id: "architecture_design",
+    content: "Design system architecture and component interfaces",
+    status: "pending",
+    priority: "high",
+    dependencies: [],
+    estimatedTime: "60min",
+    assignedAgent: "architect"
+  },
+  {
+    id: "frontend_development", 
+    content: "Develop React components and user interface",
+    status: "pending",
+    priority: "medium",
+    dependencies: ["architecture_design"],
+    estimatedTime: "120min",
+    assignedAgent: "frontend_team"
+  }
+]);
+```
 
-### Known Issues and Next Steps
+### Task and Memory Integration
+Launch coordinated agents with shared memory:
 
-1. **Test Environment**: Tests crash because Amplify tries to initialize during test runs. Need to:
-   - Add test-specific configuration
-   - Mock Amplify services for unit tests
-   - Consider using a test-specific `amplifyconfiguration.json`
+```javascript
+// Store architecture in memory
+Task("System Architect", "Design architecture and store specs in Memory");
 
-2. **Backend Sync**: The `syncUserWithBackend` method in AuthService needs the backend to handle Cognito-authenticated users properly
+// Other agents use memory for coordination
+Task("Frontend Team", "Develop UI using Memory architecture specs");
+Task("Backend Team", "Implement APIs according to Memory specifications");
+```
 
-3. **Error Handling**: Some Amplify-specific errors need better mapping to user-friendly messages
+## Code Style Preferences
+- Use ES modules (import/export) syntax
+- Destructure imports when possible
+- Use TypeScript for all new code
+- Follow existing naming conventions
+- Add JSDoc comments for public APIs
+- Use async/await instead of Promise chains
+- Prefer const/let over var
 
-### Testing Authentication Flow
+## Workflow Guidelines
+- Always run typecheck after making code changes
+- Run tests before committing changes
+- Use meaningful commit messages
+- Create feature branches for new functionality
+- Ensure all tests pass before merging
 
-To test the Amplify authentication flow:
-1. Build and run the app in simulator
-2. Navigate to registration
-3. Register with a valid email - Amplify will handle sending verification email via Cognito
-4. Check email for verification code
-5. Enter code in the email verification view
-6. Upon successful verification, user is automatically signed in
+## Important Notes
+- **Use TodoWrite extensively** for all complex task coordination
+- **Leverage Task tool** for parallel agent execution on independent work
+- **Store all important information in Memory** for cross-agent coordination
+- **Use batch file operations** whenever reading/writing multiple files
+- **Check .claude/commands/** for detailed command documentation
+- **All swarm operations include automatic batch tool coordination**
+- **Monitor progress** with TodoRead during long-running operations
+- **Enable parallel execution** with --parallel flags for maximum efficiency
 
-### Notes for Future Development
-
-- Amplify configuration is loaded from `amplifyconfiguration.json` in the app bundle
-- The app uses Amplify's secure token storage - no manual keychain access needed
-- Hub events are used to monitor authentication state changes
-- All authentication operations are now async/await based
-- The backend should validate Cognito tokens instead of managing its own JWT tokens
+This configuration ensures optimal use of Claude Code's batch tools for swarm orchestration and parallel task execution with full Claude-Flow capabilities.
