@@ -61,7 +61,7 @@ final class DashboardViewModel {
                 viewState = .loaded(data)
             }
         } catch {
-            viewState = .error(error.localizedDescription)
+            viewState = .error(error)
         }
     }
 

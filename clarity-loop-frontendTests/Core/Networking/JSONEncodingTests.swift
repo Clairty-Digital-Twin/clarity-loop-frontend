@@ -5,8 +5,8 @@ final class JSONEncodingTests: XCTestCase {
     var encoder: JSONEncoder!
     var decoder: JSONDecoder!
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         // Match the configuration in APIClient
         encoder = JSONEncoder()

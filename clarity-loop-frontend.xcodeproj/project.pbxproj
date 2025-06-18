@@ -48,10 +48,12 @@
 				ContentView.swift = (ios, );
 				Core/Adapters/BackendContract.swift = (ios, );
 				Core/Adapters/BackendContractAdapter.swift = (ios, );
+				Core/Architecture/BaseViewModel.swift = (ios, );
 				Core/Architecture/EnvironmentKeys.swift = (ios, );
 				Core/Architecture/ViewState.swift = (ios, );
 				Core/Networking/APIClient.swift = (ios, );
 				Core/Networking/APIError.swift = (ios, );
+				Core/Networking/APIService.swift = (ios, );
 				Core/Networking/AuthEndpoint.swift = (ios, );
 				Core/Networking/BackendAPIClient.swift = (ios, );
 				Core/Networking/BackendHealthDataEndpoint.swift = (ios, );
@@ -64,15 +66,21 @@
 				Core/Services/AuthService.swift = (ios, );
 				Core/Services/BackgroundTaskManager.swift = (ios, );
 				Core/Services/BiometricAuthService.swift = (ios, );
+				Core/Services/CloudKitSyncManager.swift = (ios, );
 				Core/Services/CognitoAuthService.swift.disabled = (ios, );
 				Core/Services/CognitoConfiguration.swift.disabled = (ios, );
+				Core/Services/EnhancedOfflineQueueManager.swift = (ios, );
 				Core/Services/HealthKitService.swift = (ios, );
 				Core/Services/HealthKitServiceProtocol.swift = (ios, );
+				Core/Services/HealthKitSyncService.swift = (ios, );
 				Core/Services/InsightAIService.swift = (ios, );
 				Core/Services/OfflineQueueManager.swift = (ios, );
+				Core/Services/PushNotificationManager.swift = (ios, );
 				Core/Services/SessionTimeoutService.swift = (ios, );
+				Core/Services/SwiftDataConfigurator.swift = (ios, );
 				Core/Services/TokenManagementService.swift = (ios, );
 				Core/Services/TokenManager.swift = (ios, );
+				Core/Services/WebSocketManager.swift = (ios, );
 				Core/Utilities/AppConfig.swift = (ios, );
 				Core/Utilities/DeviceInfoHelper.swift = (ios, );
 				Data/DTOs/AnyCodable.swift = (ios, );
@@ -92,10 +100,20 @@
 				Data/Repositories/RemoteHealthDataRepository.swift = (ios, );
 				Data/Repositories/RemoteInsightsRepository.swift = (ios, );
 				Data/Repositories/RemoteUserRepository.swift = (ios, );
+				Data/SwiftDataModels/AIInsight.swift = (ios, );
+				Data/SwiftDataModels/HealthMetric.swift = (ios, );
+				Data/SwiftDataModels/PATAnalysis.swift = (ios, );
+				Data/SwiftDataModels/UserProfileModel.swift = (ios, );
 				Domain/Models/AuthUser.swift = (ios, );
 				Domain/Models/HealthKitDomainModels.swift = (ios, );
+				Domain/Repositories/AIInsightRepository.swift = (ios, );
+				Domain/Repositories/Base/BaseRepository.swift = (ios, );
+				Domain/Repositories/Base/RepositoryFactory.swift = (ios, );
 				Domain/Repositories/HealthDataRepositoryProtocol.swift = (ios, );
+				Domain/Repositories/HealthRepository.swift = (ios, );
 				Domain/Repositories/InsightsRepositoryProtocol.swift = (ios, );
+				Domain/Repositories/PATAnalysisRepository.swift = (ios, );
+				Domain/Repositories/UserProfileRepository.swift = (ios, );
 				Domain/Repositories/UserRepositoryProtocol.swift = (ios, );
 				Domain/UseCases/AnalyzePATDataUseCase.swift = (ios, );
 				Domain/UseCases/FetchDailyHealthSummaryUseCase.swift = (ios, );
@@ -114,12 +132,13 @@
 				Features/Authentication/RegistrationViewModel.swift = (ios, );
 				Features/Dashboard/DashboardView.swift = (ios, );
 				Features/Dashboard/DashboardViewModel.swift = (ios, );
+				Features/Health/HealthViewModel.swift = (ios, );
+				Features/Insights/AIInsightViewModel.swift = (ios, );
 				Features/Insights/ChatView.swift = (ios, );
 				Features/Insights/ChatViewModel.swift = (ios, );
-				Features/Insights/DebugAPIView.swift = (ios, );
 				Features/Insights/InsightsListView.swift = (ios, );
 				Features/Insights/InsightsListViewModel.swift = (ios, );
-				Features/Insights/TokenDebugView.swift = (ios, );
+				Features/Profile/UserProfileViewModel.swift = (ios, );
 				Features/Settings/DataManagementView.swift = (ios, );
 				Features/Settings/DataManagementViewModel.swift = (ios, );
 				Features/Settings/SettingsView.swift = (ios, );
@@ -149,15 +168,26 @@
 		71EC91292DF481EE00226717 /* Exceptions for "clarity-loop-frontendTests" folder in "clarity-loop-frontendTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			platformFiltersByRelativePath = {
+				Core/Architecture/BaseViewModelTests.swift = (ios, );
 				Core/Architecture/ViewStateTests.swift = (ios, );
 				Core/Networking/APIClientTests.swift = (ios, );
 				Core/Networking/JSONEncodingTests.swift = (ios, );
+				Core/Repositories/AIInsightRepositoryTests.swift = (ios, );
+				Core/Repositories/HealthRepositoryTests.swift = (ios, );
+				Core/Repositories/PATAnalysisRepositoryTests.swift = (ios, );
+				Core/Repositories/UserProfileRepositoryTests.swift = (ios, );
+				Core/Services/APIServiceTests.swift = (ios, );
 				Core/Services/AppSecurityServiceTests.swift = (ios, );
 				Core/Services/AuthServiceTests.swift = (ios, );
 				Core/Services/BiometricAuthServiceTests.swift = (ios, );
+				Core/Services/CloudKitSyncManagerTests.swift = (ios, );
+				Core/Services/EnhancedOfflineQueueManagerTests.swift = (ios, );
 				Core/Services/HealthKitServiceTests.swift = (ios, );
+				Core/Services/HealthKitSyncServiceTests.swift = (ios, );
 				Core/Services/InsightAIServiceTests.swift = (ios, );
+				Core/Services/PushNotificationManagerTests.swift = (ios, );
 				Core/Services/SessionTimeoutServiceTests.swift = (ios, );
+				Core/Services/WebSocketManagerTests.swift = (ios, );
 				Data/DTOs/DTOValidationTests.swift = (ios, );
 				Data/Repositories/RemoteHealthDataRepositoryTests.swift = (ios, );
 				Data/Repositories/RemoteInsightsRepositoryTests.swift = (ios, );
@@ -170,6 +200,9 @@
 				E2E/BackendMockServer.swift = (ios, );
 				Features/Authentication/LoginViewModelTests.swift = (ios, );
 				Features/Authentication/RegistrationViewModelTests.swift = (ios, );
+				Features/Health/HealthViewModelTests.swift = (ios, );
+				Features/Insights/AIInsightViewModelTests.swift = (ios, );
+				Features/Profile/UserProfileViewModelTests.swift = (ios, );
 				Integration/AuthenticationIntegrationTests.swift = (ios, );
 				Integration/BackendContractValidationTests.swift = (ios, );
 				Integration/BackendIntegrationTests.swift = (ios, );
@@ -212,11 +245,6 @@
 				7171570C2DF3DE8600F8B4D7 /* Exceptions for "clarity-loop-frontendUITests" folder in "clarity-loop-frontendUITests" target */,
 			);
 			path = "clarity-loop-frontendUITests";
-			sourceTree = "<group>";
-		};
-		71B2A9072DF36F9800F2784F /* docs */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = docs;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -266,7 +294,6 @@
 		71B2A8C22DF35EB800F2784F = {
 			isa = PBXGroup;
 			children = (
-				71B2A9072DF36F9800F2784F /* docs */,
 				71B2A8CD2DF35EB800F2784F /* clarity-loop-frontend */,
 				71B2A8DD2DF35EBB00F2784F /* clarity-loop-frontendTests */,
 				71B2A8E72DF35EBB00F2784F /* clarity-loop-frontendUITests */,
@@ -302,7 +329,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				71B2A8CD2DF35EB800F2784F /* clarity-loop-frontend */,
-				71B2A9072DF36F9800F2784F /* docs */,
 			);
 			name = "clarity-loop-frontend";
 			packageProductDependencies = (

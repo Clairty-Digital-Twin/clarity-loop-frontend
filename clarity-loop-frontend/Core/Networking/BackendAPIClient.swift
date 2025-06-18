@@ -1,3 +1,4 @@
+import Amplify
 import Foundation
 
 // MARK: - Backend API Client
@@ -168,38 +169,6 @@ final class BackendAPIClient: APIClientProtocol {
             }
         }
 
-        // Log request for debugging
-        #if DEBUG
-            print("🌐 API Request: \(endpoint.method.rawValue) \(url.absoluteString)")
-            if let body = request.httpBody {
-                // Enhanced logging to catch escape sequence issues
-                if let jsonString = String(data: body, encoding: .utf8) {
-                    print("📤 Raw JSON String: \(jsonString)")
-
-                    // Check for problematic escape sequences
-                    if jsonString.contains("\\\\") {
-                        print("⚠️ WARNING: Double backslash detected in JSON!")
-                    }
-                    if jsonString.contains("\\'") || jsonString.contains("\\\"") {
-                        print("⚠️ WARNING: Escaped quotes detected in JSON!")
-                    }
-
-                    // Log hex representation to see exact bytes
-                    let hexBytes = body.map { String(format: "%02x", $0) }.joined(separator: " ")
-                    print("📤 Hex bytes (first 200): \(String(hexBytes.prefix(200)))")
-                }
-
-                // Additional JSON debugging
-                if let json = try? JSONSerialization.jsonObject(with: body, options: []) {
-                    print("🚀 Parsed JSON →", json)
-                }
-            }
-            print("📋 Request Headers:")
-            request.allHTTPHeaderFields?.forEach { key, value in
-                print("   \(key): \(value)")
-            }
-        #endif
-
         // Perform request
         do {
             let (data, response) = try await session.data(for: request)
@@ -208,17 +177,10 @@ final class BackendAPIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            #if DEBUG
-                print("📥 Response Status: \(httpResponse.statusCode)")
-                print("📥 Response Body: \(String(data: data, encoding: .utf8) ?? "Invalid UTF-8")")
-            #endif
-
             // Handle errors
             if httpResponse.statusCode >= 400 {
                 // Handle 401 Unauthorized with token refresh
                 if httpResponse.statusCode == 401, requiresAuth {
-                    print("⚠️ BackendAPIClient: Received 401, attempting token refresh...")
-
                     // Try to refresh token once
                     if let refreshedResponse: Response = await retryWithRefreshedToken(request) {
                         return refreshedResponse
@@ -238,9 +200,6 @@ final class BackendAPIClient: APIClientProtocol {
             return try decoder.decode(Response.self, from: data)
 
         } catch {
-            #if DEBUG
-                print("❌ API Error: \(error)")
-            #endif
             throw error
         }
     }
@@ -248,33 +207,16 @@ final class BackendAPIClient: APIClientProtocol {
     // MARK: - Token Refresh Helper
 
     private func retryWithRefreshedToken<Response: Decodable>(_ originalRequest: URLRequest) async -> Response? {
-        print("🔄 BackendAPIClient: Attempting to refresh token...")
-
-        // Get refresh token from TokenManager
-        guard let refreshToken = await TokenManager.shared.getRefreshToken() else {
-            print("❌ BackendAPIClient: No refresh token available")
+        // Amplify automatically refreshes tokens when needed
+        // Just get a fresh token and retry
+        guard let freshToken = await tokenProvider() else {
             return nil
         }
 
+        var retryRequest = originalRequest
+        retryRequest.setValue("Bearer \(freshToken)", forHTTPHeaderField: "Authorization")
+
         do {
-            // Call refresh endpoint
-            let refreshDTO = RefreshTokenRequestDTO(refreshToken: refreshToken)
-            let tokenResponse = try await self.refreshToken(requestDTO: refreshDTO)
-
-            // Store new tokens
-            await TokenManager.shared.store(
-                accessToken: tokenResponse.accessToken,
-                refreshToken: tokenResponse.refreshToken,
-                expiresIn: tokenResponse.expiresIn
-            )
-
-            print("✅ BackendAPIClient: Token refreshed successfully")
-
-            // Retry original request with new token
-            var retryRequest = originalRequest
-            retryRequest.setValue("Bearer \(tokenResponse.accessToken)", forHTTPHeaderField: "Authorization")
-
-            // Perform retry request
             let (data, response) = try await session.data(for: retryRequest)
 
             guard let httpResponse = response as? HTTPURLResponse else {
@@ -284,9 +226,8 @@ final class BackendAPIClient: APIClientProtocol {
             if (200...299).contains(httpResponse.statusCode) {
                 return try decoder.decode(Response.self, from: data)
             }
-
         } catch {
-            print("❌ BackendAPIClient: Token refresh failed: \(error)")
+            return nil
         }
 
         return nil

@@ -60,9 +60,9 @@ struct InsightsContentView: View {
                 InsightsScrollView(viewModel: viewModel, insights: insights)
             }
 
-        case let .error(message):
+        case .error:
             ErrorView(
-                message: message,
+                message: viewModel.viewState.errorMessage ?? "An error occurred",
                 systemImage: "exclamationmark.triangle",
                 retryAction: {
                     Task { await viewModel.loadInsights() }

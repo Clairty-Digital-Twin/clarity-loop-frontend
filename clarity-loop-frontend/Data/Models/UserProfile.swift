@@ -76,7 +76,7 @@ final class UserProfile {
         let nameParts = dto.displayName.split(separator: " ", maxSplits: 1)
         let firstName = nameParts.first.map(String.init) ?? ""
         let lastName = nameParts.count > 1 ? String(nameParts[1]) : ""
-        
+
         self.init(
             id: dto.userId ?? UUID(), // Use computed property that converts from string
             email: dto.email,

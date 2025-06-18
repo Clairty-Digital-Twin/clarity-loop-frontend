@@ -53,7 +53,7 @@ final class EmailVerificationViewModel: ObservableObject {
         do {
             // First verify the email with Amplify
             _ = try await authService.verifyEmail(email: email, code: otpCode)
-            
+
             // Since Amplify's email verification doesn't automatically sign in,
             // we need to sign in the user with their stored credentials
             _ = try await authService.signIn(withEmail: email, password: password)

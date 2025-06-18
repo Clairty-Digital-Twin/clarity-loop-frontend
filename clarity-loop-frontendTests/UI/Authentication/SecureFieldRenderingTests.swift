@@ -279,7 +279,7 @@ final class SecureFieldRenderingTests: XCTestCase {
                     }
                 }
                 .onChange(of: password) { _, newValue in
-                    if newValue.count > 0, newValue.count < 8 {
+                    if !newValue.isEmpty, newValue.count < 8 {
                         errorMessage = "Password must be at least 8 characters"
                     } else {
                         errorMessage = nil

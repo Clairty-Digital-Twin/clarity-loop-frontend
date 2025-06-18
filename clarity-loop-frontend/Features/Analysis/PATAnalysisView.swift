@@ -1,5 +1,15 @@
 import Charts
+import SwiftData
 import SwiftUI
+
+// MARK: - Feature Definition
+
+private struct FeatureDefinition {
+    let key: String
+    let title: String
+    let unit: String
+    let icon: String
+}
 
 struct PATAnalysisView: View {
     @State private var viewModel: PATAnalysisViewModel
@@ -20,8 +30,8 @@ struct PATAnalysisView: View {
                     LoadingAnalysisView()
                 case let .loaded(result):
                     CompletedAnalysisView(result: result)
-                case let .error(message):
-                    ErrorAnalysisView(message: message, onRetry: {
+                case .error:
+                    ErrorAnalysisView(message: viewModel.analysisState.errorMessage ?? "Analysis failed", onRetry: {
                         Task {
                             await viewModel.retryAnalysis()
                         }
@@ -266,14 +276,14 @@ private struct PATFeaturesView: View {
         }
     }
 
-    private var relevantFeatures: [(key: String, title: String, unit: String, icon: String)] {
+    private var relevantFeatures: [FeatureDefinition] {
         [
-            ("sleep_efficiency", "Sleep Efficiency", "%", "bed.double.fill"),
-            ("total_sleep_time", "Total Sleep", "hrs", "moon.fill"),
-            ("wake_after_sleep_onset", "WASO", "min", "eye.fill"),
-            ("sleep_latency", "Sleep Latency", "min", "timer"),
-            ("rem_percentage", "REM Sleep", "%", "brain.head.profile"),
-            ("deep_sleep_percentage", "Deep Sleep", "%", "zzz"),
+            FeatureDefinition(key: "sleep_efficiency", title: "Sleep Efficiency", unit: "%", icon: "bed.double.fill"),
+            FeatureDefinition(key: "total_sleep_time", title: "Total Sleep", unit: "hrs", icon: "moon.fill"),
+            FeatureDefinition(key: "wake_after_sleep_onset", title: "WASO", unit: "min", icon: "eye.fill"),
+            FeatureDefinition(key: "sleep_latency", title: "Sleep Latency", unit: "min", icon: "timer"),
+            FeatureDefinition(key: "rem_percentage", title: "REM Sleep", unit: "%", icon: "brain.head.profile"),
+            FeatureDefinition(key: "deep_sleep_percentage", title: "Deep Sleep", unit: "%", icon: "zzz"),
         ]
     }
 
@@ -474,25 +484,30 @@ enum SleepStage: String, CaseIterable {
 // MARK: - Preview
 
 #Preview {
-    guard
+    if
         let previewAPIClient = APIClient(
             baseURLString: AppConfig.previewAPIBaseURL,
             tokenProvider: { nil }
-        ) else {
-        return Text("Failed to create preview client")
-    }
+        ) {
+        let previewAuthService = AuthService(apiClient: previewAPIClient)
 
-    let previewAuthService = AuthService(apiClient: previewAPIClient)
-
-    return PATAnalysisView(
-        analysisId: nil,
-        viewModel: PATAnalysisViewModel(
-            analyzePATDataUseCase: AnalyzePATDataUseCase(
+        let container = try! ModelContainer(for: PATAnalysis.self, HealthMetric.self)
+        let modelContext = container.mainContext
+        PATAnalysisView(
+            analysisId: nil,
+            viewModel: PATAnalysisViewModel(
+                modelContext: modelContext,
+                analyzePATDataUseCase: AnalyzePATDataUseCase(
+                    apiClient: previewAPIClient,
+                    healthKitService: HealthKitService(apiClient: previewAPIClient),
+                    authService: previewAuthService
+                ),
                 apiClient: previewAPIClient,
-                healthKitService: HealthKitService(apiClient: previewAPIClient),
-                authService: previewAuthService
-            ),
-            apiClient: previewAPIClient
+                patRepository: PATAnalysisRepository(modelContext: modelContext),
+                healthRepository: HealthRepository(modelContext: modelContext)
+            )
         )
-    )
+    } else {
+        Text("Failed to create preview client")
+    }
 }

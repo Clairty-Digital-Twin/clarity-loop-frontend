@@ -36,32 +36,40 @@ struct UserSessionResponseDTO: Codable {
     let isEmailVerified: Bool
     let preferences: UserPreferencesResponseDTO?
     let metadata: UserMetadataResponseDTO?
-    
+
     // Legacy properties for backward compatibility
     var userId: UUID? {
         UUID(uuidString: id)
     }
+
     var firstName: String {
         displayName.components(separatedBy: " ").first ?? ""
     }
+
     var lastName: String {
         displayName.components(separatedBy: " ").dropFirst().joined(separator: " ")
     }
+
     var permissions: [String] {
         []
     }
+
     var status: String {
         isActive ? "active" : "inactive"
     }
+
     var mfaEnabled: Bool {
         false
     }
+
     var emailVerified: Bool {
         isEmailVerified
     }
+
     var createdAt: Date {
         metadata?.createdAt ?? Date()
     }
+
     var lastLogin: Date? {
         metadata?.lastLogin
     }
@@ -88,7 +96,7 @@ struct AuthTokensResponseDTO: Codable {
     let refreshToken: String
     let tokenType: String
     let expiresIn: Int
-    
+
     enum CodingKeys: String, CodingKey {
         case accessToken = "access_token"
         case refreshToken = "refresh_token"

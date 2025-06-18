@@ -93,7 +93,7 @@ struct DashboardView: View {
                             #endif
                         }
                         .padding()
-                    case let .error(errorMessage):
+                    case .error:
                         VStack(spacing: 16) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.system(size: 50))
@@ -102,7 +102,7 @@ struct DashboardView: View {
                             Text("Oops, something went wrong.")
                                 .font(.headline)
 
-                            Text(errorMessage)
+                            Text(viewModel.viewState.errorMessage ?? "An unexpected error occurred")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)

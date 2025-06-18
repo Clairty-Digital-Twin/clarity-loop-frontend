@@ -11,63 +11,67 @@ import SwiftUI
 @main
 struct ClarityPulseApp: App {
     // MARK: - Properties
-    
+
+    let modelContainer: ModelContainer
+
     /// Detects if running in test environment using comprehensive checks
     private static var isRunningInTestEnvironment: Bool {
         // Check for TESTING compiler flag first (most reliable)
         #if TESTING
-        return true
+            return true
         #endif
-        
+
         // Check 1: Direct test environment flags (works for unit tests)
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             return true
         }
-        
+
         // Check 2: Test class availability (works for unit tests)
         if NSClassFromString("XCTestCase") != nil {
             return true
         }
-        
+
         // Check 3: Bundle name contains test indicators (works for unit tests)
         if Bundle.main.bundlePath.hasSuffix(".xctest") {
             return true
         }
-        
+
         // Check 4: Process name contains test indicators (works for both unit and UI tests)
         let processName = ProcessInfo.processInfo.processName
         if processName.contains("Test") || processName.contains("-Runner") {
             return true
         }
-        
+
         // Check 5: Look for UI test environment indicators
-        if ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
-           ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
+        if
+            ProcessInfo.processInfo.environment["XCUITestMode"] != nil ||
+            ProcessInfo.processInfo.environment["XCTEST_SESSION_ID"] != nil {
             return true
         }
-        
+
         // Check 6: Arguments contain test indicators (works for UI tests)
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains(where: { $0.contains("XCTest") || $0.contains("UITest") }) {
             return true
         }
-        
+
         // Check 7: Special case for simulator launched by test runner
-        if ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil &&
-           arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
+        if
+            ProcessInfo.processInfo.environment["SIMULATOR_UDID"] != nil,
+            arguments.contains(where: { $0.contains("-XCTest") || $0.contains("-UITest") }) {
             return true
         }
-        
+
         // Check 8: UI Test specific - check for test bundle injection
         if ProcessInfo.processInfo.environment["DYLD_INSERT_LIBRARIES"]?.contains("XCTestBundleInject") == true {
             return true
         }
-        
+
         // Check 9: UI Test specific - check for test session identifier
         if ProcessInfo.processInfo.environment["XCTestSessionIdentifier"] != nil {
             return true
         }
-        
+
         return false
     }
 
@@ -87,67 +91,82 @@ struct ClarityPulseApp: App {
     // MARK: - Initializer
 
     init() {
-        // Debug logging to understand the environment
-        let isTest = Self.isRunningInTestEnvironment
-        print("🔍 APP INIT: isRunningInTestEnvironment = \(isTest)")
-        print("🔍 APP INIT: processName = \(ProcessInfo.processInfo.processName)")
-        print("🔍 APP INIT: arguments = \(ProcessInfo.processInfo.arguments)")
-        print("🔍 APP INIT: XCTestConfigurationFilePath = \(ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] ?? "nil")")
-        
         // Configure Amplify, but skip during test execution to prevent crashes
+        let isTest = Self.isRunningInTestEnvironment
         if !isTest {
-            print("🚀 APP INIT: Configuring Amplify")
             AmplifyConfigurator.configure()
-        } else {
-            print("🧪 APP INIT: Skipping Amplify configuration (test environment detected)")
         }
-        
+
+        // Initialize SwiftData ModelContainer
+        do {
+            if isTest {
+                // For tests, use the test container which should be simpler
+                self.modelContainer = try SwiftDataConfigurator.shared.createTestContainer()
+                print("✅ Created test ModelContainer")
+            } else {
+                // Production container with full schema
+                self.modelContainer = try SwiftDataConfigurator.shared.createModelContainer()
+                print("✅ Created production ModelContainer")
+            }
+        } catch {
+            // For tests only, provide a more detailed error and continue with a dummy container
+            if isTest {
+                print("❌ Test ModelContainer creation failed: \(error)")
+                print("❌ This is expected if models aren't included in test target")
+                
+                // Create a dummy container that won't be used but satisfies the property requirement
+                // This is a workaround for test execution
+                let dummySchema = Schema([])
+                let dummyConfig = ModelConfiguration(
+                    schema: dummySchema,
+                    isStoredInMemoryOnly: true,
+                    allowsSave: false
+                )
+                
+                do {
+                    self.modelContainer = try ModelContainer(
+                        for: dummySchema,
+                        configurations: [dummyConfig]
+                    )
+                    print("✅ Created dummy ModelContainer for tests")
+                } catch {
+                    print("⚠️ Cannot create even dummy ModelContainer: \(error)")
+                    print("⚠️ Tests will run without SwiftData support")
+                    // As absolute last resort, create container with TestOnlyModel
+                    self.modelContainer = try! ModelContainer(for: TestOnlyModel.self)
+                }
+            } else {
+                fatalError("Failed to create production ModelContainer: \(error)")
+            }
+        }
+
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
         let client: APIClientProtocol
         if
             let backendClient = BackendAPIClient(tokenProvider: {
-                print("🔍 APP: Token provider called")
-
                 // Skip Amplify Auth during tests to prevent crashes
                 if Self.isRunningInTestEnvironment {
-                    print("🧪 APP: Running in test mode - returning mock token")
                     return "mock-test-token"
                 }
 
                 // Use Amplify Auth to get token
                 do {
                     let authSession = try await Amplify.Auth.fetchAuthSession()
-                    
+
                     if let cognitoTokenProvider = authSession as? AuthCognitoTokensProvider {
                         let tokens = try cognitoTokenProvider.getCognitoTokens().get()
                         let token = tokens.accessToken
-                        
-                        print("✅ APP: Token obtained from Amplify Auth")
-                        print("   - Length: \(token.count)")
-
-                        #if DEBUG
-                            // Print the full JWT so we can copy from the console
-                            print("🧪 FULL_ACCESS_TOKEN → \(token)")
-
-                            // Copy to clipboard for CLI use
-                            #if canImport(UIKit)
-                                UIPasteboard.general.string = token
-                                print("📋 Token copied to clipboard")
-                            #endif
-                        #endif
-                        
                         return token
                     }
                 } catch {
-                    print("⚠️ APP: Failed to get token from Amplify: \(error)")
+                    // Silently fail - Amplify will handle retry
                 }
-                
+
                 return nil
             }) {
             client = backendClient
         } else {
-            print("⚠️ APP: Failed to initialize BackendAPIClient, using fallback DummyAPIClient")
             // Fallback to dummy client instead of crashing
             client = DummyAPIClient()
         }
@@ -183,7 +202,7 @@ struct ClarityPulseApp: App {
 
         // Initialize offline queue manager
         let queueManager = OfflineQueueManager(
-            modelContext: PersistenceController.shared.container.mainContext,
+            modelContext: modelContainer.mainContext,
             healthDataRepository: healthDataRepository,
             insightsRepository: insightsRepository
         )
@@ -211,7 +230,7 @@ struct ClarityPulseApp: App {
                 print("🔥 APP ROOT APPEARED")
                 print("🔥 ENVIRONMENT AVAILABLE: AuthService type = \(type(of: authService))")
             }
-            .modelContainer(PersistenceController.shared.container)
+            .modelContainer(modelContainer)
             .environment(authViewModel)
             .environment(\.authService, authService)
             .environment(\.healthKitService, healthKitService)

@@ -32,7 +32,7 @@ final class SyncHealthDataUseCase {
         endDate: Date = Date()
     ) async throws -> SyncResult {
         guard healthKitService.isHealthDataAvailable() else {
-            throw SyncError.healthKitNotAvailable
+            throw SyncUseCaseError.healthKitNotAvailable
         }
 
         var syncResult = SyncResult()
@@ -131,7 +131,7 @@ final class SyncHealthDataUseCase {
 
         // Get current user ID from auth service - now properly awaited
         guard let currentUser = await authService.currentUser else {
-            throw SyncError.userNotAuthenticated
+            throw SyncUseCaseError.userNotAuthenticated
         }
 
         return HealthKitUploadRequestDTO(
@@ -182,7 +182,7 @@ struct SyncResult {
     }
 }
 
-enum SyncError: LocalizedError {
+enum SyncUseCaseError: LocalizedError {
     case healthKitNotAvailable
     case noDataToSync
     case uploadFailed(String)
