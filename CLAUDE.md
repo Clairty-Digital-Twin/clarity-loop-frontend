@@ -1,246 +1,152 @@
-# Claude Code Configuration
+# CLARITY Pulse iOS Health App - Claude Guidelines
 
-## Build Commands
-- `npm run build`: Build the project
-- `npm run test`: Run the full test suite
-- `npm run lint`: Run ESLint and format checks
-- `npm run typecheck`: Run TypeScript type checking
-- `./claude-flow --help`: Show all available commands
+## Project Overview
+CLARITY Pulse is a HIPAA-compliant iOS health tracking application built with SwiftUI, following MVVM + Clean Architecture principles. The app integrates with HealthKit, AWS Amplify + Cognito, and provides secure biometric authentication for sensitive health data management.
 
-## Claude-Flow Complete Command Reference
+## Architecture Requirements
 
-### Core System Commands
-- `./claude-flow start [--ui] [--port 3000] [--host localhost]`: Start orchestration system with optional web UI
-- `./claude-flow status`: Show comprehensive system status
-- `./claude-flow monitor`: Real-time system monitoring dashboard
-- `./claude-flow config <subcommand>`: Configuration management (show, get, set, init, validate)
+### Design Patterns
+- **MVVM + Clean Architecture** with Protocol-Oriented Design
+- **SwiftUI + iOS 17's @Observable** for reactive UI
+- **Environment-based Dependency Injection** for lightweight IoC
+- **Repository Pattern** for data abstraction
+- **ViewState<T>** pattern for async operation handling
 
-### Agent Management
-- `./claude-flow agent spawn <type> [--name <name>]`: Create AI agents (researcher, coder, analyst, etc.)
-- `./claude-flow agent list`: List all active agents
-- `./claude-flow spawn <type>`: Quick agent spawning (alias for agent spawn)
-
-### Task Orchestration
-- `./claude-flow task create <type> [description]`: Create and manage tasks
-- `./claude-flow task list`: View active task queue
-- `./claude-flow workflow <file>`: Execute workflow automation files
-
-### Memory Management
-- `./claude-flow memory store <key> <data>`: Store persistent data across sessions
-- `./claude-flow memory get <key>`: Retrieve stored information
-- `./claude-flow memory list`: List all memory keys
-- `./claude-flow memory export <file>`: Export memory to file
-- `./claude-flow memory import <file>`: Import memory from file
-- `./claude-flow memory stats`: Memory usage statistics
-- `./claude-flow memory cleanup`: Clean unused memory entries
-
-### SPARC Development Modes
-- `./claude-flow sparc "<task>"`: Run orchestrator mode (default)
-- `./claude-flow sparc run <mode> "<task>"`: Run specific SPARC mode
-- `./claude-flow sparc tdd "<feature>"`: Test-driven development mode
-- `./claude-flow sparc modes`: List all 17 available SPARC modes
-
-Available SPARC modes: orchestrator, coder, researcher, tdd, architect, reviewer, debugger, tester, analyzer, optimizer, documenter, designer, innovator, swarm-coordinator, memory-manager, batch-executor, workflow-manager
-
-### Swarm Coordination
-- `./claude-flow swarm "<objective>" [options]`: Multi-agent swarm coordination
-- `--strategy`: research, development, analysis, testing, optimization, maintenance
-- `--mode`: centralized, distributed, hierarchical, mesh, hybrid
-- `--max-agents <n>`: Maximum number of agents (default: 5)
-- `--parallel`: Enable parallel execution
-- `--monitor`: Real-time monitoring
-- `--output <format>`: json, sqlite, csv, html
-
-### MCP Server Integration
-- `./claude-flow mcp start [--port 3000] [--host localhost]`: Start MCP server
-- `./claude-flow mcp status`: Show MCP server status
-- `./claude-flow mcp tools`: List available MCP tools
-
-### Claude Integration
-- `./claude-flow claude auth`: Authenticate with Claude API
-- `./claude-flow claude models`: List available Claude models
-- `./claude-flow claude chat`: Interactive chat mode
-
-### Session Management
-- `./claude-flow session`: Manage terminal sessions
-- `./claude-flow repl`: Start interactive REPL mode
-
-### Enterprise Features
-- `./claude-flow project <subcommand>`: Project management (Enterprise)
-- `./claude-flow deploy <subcommand>`: Deployment operations (Enterprise)
-- `./claude-flow cloud <subcommand>`: Cloud infrastructure management (Enterprise)
-- `./claude-flow security <subcommand>`: Security and compliance tools (Enterprise)
-- `./claude-flow analytics <subcommand>`: Analytics and insights (Enterprise)
-
-### Project Initialization
-- `./claude-flow init`: Initialize Claude-Flow project
-- `./claude-flow init --sparc`: Initialize with full SPARC development environment
-
-## Quick Start Workflows
-
-### Research Workflow
-```bash
-# Start a research swarm with distributed coordination
-./claude-flow swarm "Research modern web frameworks" --strategy research --mode distributed --parallel --monitor
-
-# Or use SPARC researcher mode for focused research
-./claude-flow sparc run researcher "Analyze React vs Vue vs Angular performance characteristics"
-
-# Store findings in memory for later use
-./claude-flow memory store "research_findings" "Key insights from framework analysis"
+### Layer Structure
+```
+UI Layer         → SwiftUI Views + ViewModels
+Domain Layer     → Use Cases + Domain Models + Repository Protocols  
+Data Layer       → Repositories + Services + DTOs
+Core Layer       → Networking + Persistence + Utilities
 ```
 
-### Development Workflow
-```bash
-# Start orchestration system with web UI
-./claude-flow start --ui --port 3000
+## Code Standards
 
-# Run TDD workflow for new feature
-./claude-flow sparc tdd "User authentication system with JWT tokens"
+### Access Control (CRITICAL)
+- **PRIVATE by default**: All implementation details should be `private`
+- **INTERNAL**: Module-internal access for shared components
+- **PUBLIC**: Only for protocols and essential interfaces
+- **NO public classes/structs** unless absolutely necessary for external access
 
-# Development swarm for complex projects
-./claude-flow swarm "Build e-commerce API with payment integration" --strategy development --mode hierarchical --max-agents 8 --monitor
+### Security & HIPAA Compliance
+- No logging of sensitive health information
+- All health data handling must maintain HIPAA compliance
+- Secure data transmission only (HTTPS)
+- User consent required for all HealthKit access
+- Biometric authentication for sensitive operations
 
-# Check system status
-./claude-flow status
+### SwiftUI Best Practices
+- Use `@Observable` for ViewModels (iOS 17+)
+- Environment injection over singletons
+- Prefer composition over inheritance
+- Keep Views lightweight - logic in ViewModels
+- Use `ViewState<T>` for async operations
+
+### Testing Standards
+- Protocol-based mocks for all major services
+- Mock all external dependencies (AWS Amplify, HealthKit, API)
+- Use Environment injection for test doubles
+- Test ViewModels in isolation
+- Integration tests for critical health data flows
+- **Current Status**: 489 tests passing (98.9% success rate)
+
+### Naming Conventions
+- **ViewModels**: `[Feature]ViewModel` (e.g., `AuthViewModel`)
+- **Services**: `[Purpose]Service` (e.g., `HealthKitService`)
+- **Repositories**: `[Domain]Repository` (e.g., `RemoteHealthDataRepository`)
+- **DTOs**: Descriptive names ending in `DTO`
+
+### File Organization
+```
+clarity-loop-frontend/
+├── Application/         # App lifecycle
+├── Core/               # Infrastructure layer
+├── Data/               # Data layer (DTOs, Models, Repositories)
+├── Domain/             # Business logic layer
+├── Features/           # Feature modules (MVVM)
+└── UI/                 # Shared UI components
 ```
 
-### Analysis Workflow
-```bash
-# Analyze codebase performance
-./claude-flow sparc run analyzer "Identify performance bottlenecks in current codebase"
+## Framework Integration
 
-# Data analysis swarm
-./claude-flow swarm "Analyze user behavior patterns from logs" --strategy analysis --mode mesh --parallel --output sqlite
+### AWS Amplify
+- Authentication handled by AWS Cognito via Amplify
+- JWT tokens auto-refreshed by Amplify SDK
+- API calls use Bearer token authentication
+- Configuration in `amplifyconfiguration.json`
 
-# Store analysis results
-./claude-flow memory store "performance_analysis" "Bottlenecks identified in database queries"
-```
+### HealthKit
+- All HealthKit operations must be async and properly handled
+- User consent required for all data access
+- Error handling for denied permissions
+- Background sync capabilities
 
-### Maintenance Workflow
-```bash
-# System maintenance with safety controls
-./claude-flow swarm "Update dependencies and security patches" --strategy maintenance --mode centralized --monitor
+### SwiftData
+- Primary persistence layer (iOS 17+)
+- Use with iOS file protection for security
+- Proper entity relationships and constraints
 
-# Security review
-./claude-flow sparc run reviewer "Security audit of authentication system"
+## When Creating PRs
 
-# Export maintenance logs
-./claude-flow memory export maintenance_log.json
-```
+### Implementation Requirements
+1. Follow MVVM + Clean Architecture patterns
+2. Implement proper error handling with ViewState<T>
+3. Add comprehensive unit tests for new functionality
+4. Ensure HIPAA compliance for health data operations
+5. Use proper access control (private by default)
+6. Follow SwiftUI performance best practices
 
-## Integration Patterns
+### Security Checklist
+- [ ] No sensitive data in logs
+- [ ] Proper error handling without exposing internals
+- [ ] Biometric authentication for sensitive operations
+- [ ] HTTPS-only data transmission
+- [ ] Proper HealthKit permission handling
 
-### Memory-Driven Coordination
-Use Memory to coordinate information across multiple SPARC modes and swarm operations:
+### Testing Checklist
+- [ ] Unit tests for ViewModels
+- [ ] Mock implementations for external services
+- [ ] Integration tests for critical flows
+- [ ] UI tests for key user journeys
+- [ ] Performance tests for memory leaks
+
+## Common Issues to Avoid
+
+1. **Memory Leaks**: Always use weak references in closures
+2. **UI on Background Thread**: Ensure UI updates on main thread
+3. **Force Unwrapping**: Use proper optional handling
+4. **Hardcoded Strings**: Use localized strings
+5. **Missing Error Handling**: Every async operation needs error handling
+
+## Review Focus Areas
+
+When reviewing code, prioritize:
+1. HIPAA compliance and security
+2. Architecture adherence
+3. Memory management
+4. Test coverage
+5. Performance implications
+6. Accessibility compliance
+
+## Build & Test Commands
 
 ```bash
-# Store architecture decisions
-./claude-flow memory store "system_architecture" "Microservices with API Gateway pattern"
+# Build
+xcodebuild -project clarity-loop-frontend.xcodeproj -scheme clarity-loop-frontend -destination 'platform=iOS Simulator,name=iPhone 16' build
 
-# All subsequent operations can reference this decision
-./claude-flow sparc run coder "Implement user service based on system_architecture in memory"
-./claude-flow sparc run tester "Create integration tests for microservices architecture"
+# Test
+xcodebuild test -project clarity-loop-frontend.xcodeproj -scheme clarity-loop-frontendTests -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-### Multi-Stage Development
-Coordinate complex development through staged execution:
+## Current Status
+- ✅ Build: Successful
+- ✅ Tests: 489 passing (98.9% success rate)
+- ✅ Architecture: MVVM + Clean Architecture implemented
+- ✅ AWS Integration: Configured and working
+- ⚠️ Simulator: SpringBoard crash issues (being addressed)
 
-```bash
-# Stage 1: Research and planning
-./claude-flow sparc run researcher "Research authentication best practices"
-./claude-flow sparc run architect "Design authentication system architecture"
+Remember: This is a production health application handling sensitive user data. Always prioritize security, privacy, and HIPAA compliance in all development decisions.
 
-# Stage 2: Implementation
-./claude-flow sparc tdd "User registration and login functionality"
-./claude-flow sparc run coder "Implement JWT token management"
+---
 
-# Stage 3: Testing and deployment
-./claude-flow sparc run tester "Comprehensive security testing"
-./claude-flow swarm "Deploy authentication system" --strategy maintenance --mode centralized
-```
-
-### Enterprise Integration
-For enterprise environments with additional tooling:
-
-```bash
-# Project management integration
-./claude-flow project create "authentication-system"
-./claude-flow project switch "authentication-system"
-
-# Security compliance
-./claude-flow security scan
-./claude-flow security audit
-
-# Analytics and monitoring
-./claude-flow analytics dashboard
-./claude-flow deploy production --monitor
-```
-
-## Advanced Batch Tool Patterns
-
-### TodoWrite Coordination
-Always use TodoWrite for complex task coordination:
-
-```javascript
-TodoWrite([
-  {
-    id: "architecture_design",
-    content: "Design system architecture and component interfaces",
-    status: "pending",
-    priority: "high",
-    dependencies: [],
-    estimatedTime: "60min",
-    assignedAgent: "architect"
-  },
-  {
-    id: "frontend_development", 
-    content: "Develop React components and user interface",
-    status: "pending",
-    priority: "medium",
-    dependencies: ["architecture_design"],
-    estimatedTime: "120min",
-    assignedAgent: "frontend_team"
-  }
-]);
-```
-
-### Task and Memory Integration
-Launch coordinated agents with shared memory:
-
-```javascript
-// Store architecture in memory
-Task("System Architect", "Design architecture and store specs in Memory");
-
-// Other agents use memory for coordination
-Task("Frontend Team", "Develop UI using Memory architecture specs");
-Task("Backend Team", "Implement APIs according to Memory specifications");
-```
-
-## Code Style Preferences
-- Use ES modules (import/export) syntax
-- Destructure imports when possible
-- Use TypeScript for all new code
-- Follow existing naming conventions
-- Add JSDoc comments for public APIs
-- Use async/await instead of Promise chains
-- Prefer const/let over var
-
-## Workflow Guidelines
-- Always run typecheck after making code changes
-- Run tests before committing changes
-- Use meaningful commit messages
-- Create feature branches for new functionality
-- Ensure all tests pass before merging
-
-## Important Notes
-- **Use TodoWrite extensively** for all complex task coordination
-- **Leverage Task tool** for parallel agent execution on independent work
-- **Store all important information in Memory** for cross-agent coordination
-- **Use batch file operations** whenever reading/writing multiple files
-- **Check .claude/commands/** for detailed command documentation
-- **All swarm operations include automatic batch tool coordination**
-- **Monitor progress** with TodoRead during long-running operations
-- **Enable parallel execution** with --parallel flags for maximum efficiency
-
-This configuration ensures optimal use of Claude Code's batch tools for swarm orchestration and parallel task execution with full Claude-Flow capabilities.
+*Last updated: 2025-06-17*
