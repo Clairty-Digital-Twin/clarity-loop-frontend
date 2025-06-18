@@ -40,27 +40,40 @@ final class DashboardViewModel {
         viewState = .loading
 
         do {
-            // Request HealthKit authorization before fetching data.
-            try await healthKitService.requestAuthorization()
-
-            // Fetch health metrics and insights in parallel
-            async let metrics = healthKitService.fetchAllDailyMetrics(for: Date())
-            let userId = await authService.currentUser?.id ?? "unknown"
-            async let insightsResponse = insightsRepo.getInsightHistory(userId: userId, limit: 1, offset: 0)
-
-            let (dailyMetrics, insights) = try await (metrics, insightsResponse)
-
-            let data = DashboardData(metrics: dailyMetrics, insightOfTheDay: insights.data.insights.first)
-
-            // The view is considered "empty" only if both metrics and insights are empty.
-            let hasMetrics = data.metrics.stepCount > 0 || data.metrics.restingHeartRate != nil || data.metrics
-                .sleepData != nil
-            if !hasMetrics, data.insightOfTheDay == nil {
-                viewState = .empty
-            } else {
-                viewState = .loaded(data)
+            // Try to request HealthKit authorization, but don't fail if denied
+            var dailyMetrics: DailyHealthMetrics
+            do {
+                try await healthKitService.requestAuthorization()
+                dailyMetrics = try await healthKitService.fetchAllDailyMetrics(for: Date())
+            } catch {
+                print("HealthKit access failed, using default metrics: \(error)")
+                // Fallback to empty metrics if HealthKit fails
+                dailyMetrics = DailyHealthMetrics(
+                    date: Date(),
+                    stepCount: 0,
+                    restingHeartRate: nil,
+                    sleepData: nil
+                )
             }
+
+            // Try to fetch insights, but don't fail if API is down
+            var insightOfTheDay: InsightPreviewDTO?
+            do {
+                let userId = await authService.currentUser?.id ?? "unknown"
+                let insightsResponse = try await insightsRepo.getInsightHistory(userId: userId, limit: 1, offset: 0)
+                insightOfTheDay = insightsResponse.data.insights.first
+            } catch {
+                print("Insights API failed, continuing without insights: \(error)")
+                insightOfTheDay = nil
+            }
+
+            let data = DashboardData(metrics: dailyMetrics, insightOfTheDay: insightOfTheDay)
+
+            // Show the dashboard even if we only have partial data
+            viewState = .loaded(data)
+            
         } catch {
+            // Only fail if something truly unexpected happens
             viewState = .error(error)
         }
     }
