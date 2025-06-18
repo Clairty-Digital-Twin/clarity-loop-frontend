@@ -16,9 +16,9 @@ final class AIInsight {
 
     // Metadata - FIXED: Added defaults for CloudKit
     var timestamp: Date = Date()
-    var category: InsightCategory = .general
-    var priority: InsightPriority = .medium
-    var type: AIInsightType = .suggestion
+    var category: InsightCategory = InsightCategory.general
+    var priority: InsightPriority = InsightPriority.medium
+    var type: AIInsightType = AIInsightType.suggestion
 
     // Context
     var contextData: [String: String]?
@@ -38,11 +38,11 @@ final class AIInsight {
 
     // Chat context
     var conversationID: UUID?
-    var messageRole: MessageRole = .assistant
+    var messageRole: MessageRole = MessageRole.assistant
     var parentMessageID: UUID?
 
     // Sync tracking - FIXED: Added defaults for CloudKit
-    var syncStatus: SyncStatus = .pending
+    var syncStatus: SyncStatus = SyncStatus.pending
     var lastSyncedAt: Date?
 
     // Relationships - FIXED: Added inverse relationship for CloudKit

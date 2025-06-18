@@ -5,39 +5,40 @@ import SwiftData
 final class PATAnalysis {
     // MARK: - Properties
 
-    @Attribute(.unique) var analysisID: UUID
+    // FIXED: Removed @Attribute(.unique) for CloudKit compatibility
+    var analysisID: UUID = UUID()
     var remoteID: String?
 
-    // Analysis metadata
-    var startDate: Date
-    var endDate: Date
-    var analysisDate: Date
-    var analysisType: PATAnalysisType
+    // Analysis metadata - FIXED: Added defaults for CloudKit
+    var startDate: Date = Date()
+    var endDate: Date = Date()
+    var analysisDate: Date = Date()
+    var analysisType: PATAnalysisType = .overnight
 
-    // Sleep stages data
-    var sleepStages: [PATSleepStage]
-    var totalSleepMinutes: Int
-    var sleepEfficiency: Double
-    var sleepLatency: Int // Minutes to fall asleep
-    var wakeAfterSleepOnset: Int // WASO in minutes
+    // Sleep stages data - FIXED: Added defaults for CloudKit
+    var sleepStages: [PATSleepStage] = []
+    var totalSleepMinutes: Int = 0
+    var sleepEfficiency: Double = 0.0
+    var sleepLatency: Int = 0 // Minutes to fall asleep
+    var wakeAfterSleepOnset: Int = 0 // WASO in minutes
 
-    // Sleep quality metrics
-    var remSleepMinutes: Int
-    var deepSleepMinutes: Int
-    var lightSleepMinutes: Int
-    var awakeMinutes: Int
+    // Sleep quality metrics - FIXED: Added defaults for CloudKit
+    var remSleepMinutes: Int = 0
+    var deepSleepMinutes: Int = 0
+    var lightSleepMinutes: Int = 0
+    var awakeMinutes: Int = 0
 
-    // Analysis scores
-    var overallScore: Double
-    var confidenceScore: Double
-    var qualityMetrics: SleepQualityMetrics
+    // Analysis scores - FIXED: Added defaults for CloudKit
+    var overallScore: Double = 0.0
+    var confidenceScore: Double = 0.0
+    var qualityMetrics: SleepQualityMetrics = SleepQualityMetrics()
 
     // Actigraphy data
     var actigraphyData: [ActigraphyDataPoint]?
     var movementIntensity: [Double]?
 
-    // Sync tracking
-    var syncStatus: SyncStatus
+    // Sync tracking - FIXED: Added defaults for CloudKit
+    var syncStatus: SyncStatus = .pending
     var lastSyncedAt: Date?
 
     // Relationships

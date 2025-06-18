@@ -503,13 +503,14 @@ struct OperationResult {
 
 @Model
 final class PersistedOfflineOperation {
-    @Attribute(.unique) var id: UUID
-    var type: String
-    var payloadData: Data
-    var timestamp: Date
-    var priority: Int
-    var status: String
-    var attempts: Int
+    // FIXED: Removed @Attribute(.unique) for CloudKit compatibility
+    var id: UUID = UUID()
+    var type: String = ""
+    var payloadData: Data = Data()
+    var timestamp: Date = Date()
+    var priority: Int = 0
+    var status: String = ""
+    var attempts: Int = 0
     var lastError: String?
     var lastAttemptDate: Date?
     var nextRetryDate: Date?
