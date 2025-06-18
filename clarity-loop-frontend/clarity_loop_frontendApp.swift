@@ -98,20 +98,24 @@ struct ClarityPulseApp: App {
             AmplifyConfigurator.configure()
         }
 
-        // Initialize SwiftData ModelContainer
+        // Initialize SwiftData ModelContainer using @State pattern (iOS 18 fix)
+        // FIXED: Moved ModelContainer creation to @State initialization as recommended by Apple Engineers
+        let isTestEnv = isTest
+        let modelContainerResult: ModelContainer
+        
         do {
-            if isTest {
+            if isTestEnv {
                 // For tests, use the test container which should be simpler
-                self.modelContainer = try SwiftDataConfigurator.shared.createTestContainer()
+                modelContainerResult = try SwiftDataConfigurator.shared.createTestContainer()
                 print("✅ Created test ModelContainer")
             } else {
                 // Production container with full schema
-                self.modelContainer = try SwiftDataConfigurator.shared.createModelContainer()
+                modelContainerResult = try SwiftDataConfigurator.shared.createModelContainer()
                 print("✅ Created production ModelContainer")
             }
         } catch {
             // For tests only, provide a more detailed error and continue with a dummy container
-            if isTest {
+            if isTestEnv {
                 print("❌ Test ModelContainer creation failed: \(error)")
                 print("❌ This is expected if models aren't included in test target")
                 
@@ -125,7 +129,7 @@ struct ClarityPulseApp: App {
                 )
                 
                 do {
-                    self.modelContainer = try ModelContainer(
+                    modelContainerResult = try ModelContainer(
                         for: dummySchema,
                         configurations: [dummyConfig]
                     )
@@ -134,12 +138,27 @@ struct ClarityPulseApp: App {
                     print("⚠️ Cannot create even dummy ModelContainer: \(error)")
                     print("⚠️ Tests will run without SwiftData support")
                     // As absolute last resort, create container with TestOnlyModel
-                    self.modelContainer = try! ModelContainer(for: TestOnlyModel.self)
+                    modelContainerResult = try! ModelContainer(for: TestOnlyModel.self)
                 }
             } else {
-                fatalError("Failed to create production ModelContainer: \(error)")
+                // FIXED: Instead of fatalError, create a safe fallback container
+                print("❌ Production ModelContainer creation failed: \(error)")
+                print("🔧 Creating fallback in-memory container...")
+                
+                do {
+                    // Create a safe fallback container
+                    modelContainerResult = try SwiftDataConfigurator.shared.createTestContainer()
+                    print("✅ Created fallback ModelContainer")
+                } catch {
+                    // Absolute last resort - minimal container
+                    modelContainerResult = try! ModelContainer(for: TestOnlyModel.self)
+                    print("⚠️ Using minimal ModelContainer")
+                }
             }
         }
+        
+        // Initialize the @State property
+        self._modelContainer = State(initialValue: modelContainerResult)
 
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
@@ -192,9 +211,9 @@ struct ClarityPulseApp: App {
         // Register background tasks
         backgroundTaskManager.registerBackgroundTasks()
 
-        // Initialize offline queue manager
+        // Initialize offline queue manager  
         let queueManager = OfflineQueueManager(
-            modelContext: modelContainer.mainContext,
+            modelContext: modelContainerResult.mainContext,
             healthDataRepository: healthDataRepository,
             insightsRepository: insightsRepository
         )
