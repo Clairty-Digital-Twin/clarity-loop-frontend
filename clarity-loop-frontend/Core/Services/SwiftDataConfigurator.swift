@@ -26,13 +26,11 @@ final class SwiftDataConfigurator {
                 isStoredInMemoryOnly: true
             )
         } else {
-            // Production configuration with CloudKit
+            // Production configuration WITHOUT CloudKit (temporary fix)
             ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                allowsSave: true,
-                groupContainer: .automatic,
-                cloudKitDatabase: .automatic
+                allowsSave: true
             )
         }
 
