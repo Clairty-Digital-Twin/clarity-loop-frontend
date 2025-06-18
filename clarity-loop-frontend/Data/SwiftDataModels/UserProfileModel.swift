@@ -17,7 +17,7 @@ final class UserProfileModel {
 
     // Sync tracking
     var lastSync: Date?
-    var syncStatus: SyncStatus = .pending
+    var syncStatus: SyncStatus = SyncStatus.pending
 
     // Health profile
     var dateOfBirth: Date?
@@ -27,8 +27,8 @@ final class UserProfileModel {
     var bloodType: String?
 
     // App settings - FIXED: Added defaults for CloudKit
-    var appTheme: AppTheme = .system
-    var measurementSystem: MeasurementSystem = .metric
+    var appTheme: AppTheme = AppTheme.system
+    var measurementSystem: MeasurementSystem = MeasurementSystem.metric
     var language: String = "en"
 
     // Relationships - FIXED: Added inverse relationships for CloudKit

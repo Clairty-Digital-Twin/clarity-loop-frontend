@@ -45,8 +45,8 @@ final class AIInsight {
     var syncStatus: SyncStatus = SyncStatus.pending
     var lastSyncedAt: Date?
 
-    // Relationships - FIXED: Added inverse relationship for CloudKit
-    @Relationship(inverse: \UserProfileModel.aiInsights) var userProfile: UserProfileModel?
+    // Relationships - FIXED: Removed inverse to avoid circular reference
+    var userProfile: UserProfileModel?
     var patAnalysis: PATAnalysis?
 
     // MARK: - Initialization

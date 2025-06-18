@@ -13,7 +13,7 @@ final class PATAnalysis {
     var startDate: Date = Date()
     var endDate: Date = Date()
     var analysisDate: Date = Date()
-    var analysisType: PATAnalysisType = .overnight
+    var analysisType: PATAnalysisType = PATAnalysisType.overnight
 
     // Sleep stages data - FIXED: Added defaults for CloudKit
     var sleepStages: [PATSleepStage] = []
@@ -38,7 +38,7 @@ final class PATAnalysis {
     var movementIntensity: [Double]?
 
     // Sync tracking - FIXED: Added defaults for CloudKit
-    var syncStatus: SyncStatus = .pending
+    var syncStatus: SyncStatus = SyncStatus.pending
     var lastSyncedAt: Date?
 
     // Relationships
