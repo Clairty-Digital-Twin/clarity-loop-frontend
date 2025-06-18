@@ -143,28 +143,19 @@ struct ClarityPulseApp: App {
         // Initialize the BackendAPIClient with proper token provider
         // Use safe fallback for background launch compatibility
         let client: APIClientProtocol
-        if
-            let backendClient = BackendAPIClient(tokenProvider: {
-                // Skip Amplify Auth during tests to prevent crashes
-                if Self.isRunningInTestEnvironment {
-                    return "mock-test-token"
+        if let backendClient = BackendAPIClient(tokenProvider: {
+            do {
+                if let session = try await Amplify.Auth.fetchAuthSession() as? AuthCognitoTokensProvider {
+                    let token = try session.getCognitoTokens().get()
+                    return token.accessToken
+                } else {
+                    return nil
                 }
-
-                // Use Amplify Auth to get token
-                do {
-                    let authSession = try await Amplify.Auth.fetchAuthSession()
-
-                    if let cognitoTokenProvider = authSession as? AuthCognitoTokensProvider {
-                        let tokens = try cognitoTokenProvider.getCognitoTokens().get()
-                        let token = tokens.accessToken
-                        return token
-                    }
-                } catch {
-                    // Silently fail - Amplify will handle retry
-                }
-
+            } catch {
+                // Silently fail - Amplify will handle retry
                 return nil
-            }) {
+            }
+        }) {
             client = backendClient
         } else {
             // Fallback to dummy client instead of crashing
