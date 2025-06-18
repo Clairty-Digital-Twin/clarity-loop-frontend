@@ -5,18 +5,19 @@ import SwiftData
 final class UserProfileModel {
     // MARK: - Properties
 
-    @Attribute(.unique) var userID: String
-    var email: String
-    var displayName: String
+    // FIXED: Removed @Attribute(.unique) for CloudKit compatibility
+    var userID: String = ""
+    var email: String = ""
+    var displayName: String = ""
 
-    // Preferences
-    var preferences: UserPreferences
-    var notificationSettings: NotificationSettings
-    var privacySettings: PrivacySettings
+    // Preferences - FIXED: Added defaults for CloudKit
+    var preferences: UserPreferences = UserPreferences()
+    var notificationSettings: NotificationSettings = NotificationSettings()
+    var privacySettings: PrivacySettings = PrivacySettings()
 
     // Sync tracking
     var lastSync: Date?
-    var syncStatus: SyncStatus
+    var syncStatus: SyncStatus = .pending
 
     // Health profile
     var dateOfBirth: Date?
@@ -25,15 +26,15 @@ final class UserProfileModel {
     var weightInKilograms: Double?
     var bloodType: String?
 
-    // App settings
-    var appTheme: AppTheme
-    var measurementSystem: MeasurementSystem
-    var language: String
+    // App settings - FIXED: Added defaults for CloudKit
+    var appTheme: AppTheme = .system
+    var measurementSystem: MeasurementSystem = .metric
+    var language: String = "en"
 
-    // Relationships
+    // Relationships - FIXED: Added inverse relationships for CloudKit
     @Relationship(deleteRule: .cascade) var healthMetrics: [HealthMetric]?
     @Relationship(deleteRule: .cascade) var patAnalyses: [PATAnalysis]?
-    @Relationship(deleteRule: .cascade) var aiInsights: [AIInsight]?
+    @Relationship(deleteRule: .cascade, inverse: \AIInsight.userProfile) var aiInsights: [AIInsight]?
 
     // MARK: - Initialization
 

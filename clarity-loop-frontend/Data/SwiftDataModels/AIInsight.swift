@@ -5,19 +5,20 @@ import SwiftData
 final class AIInsight {
     // MARK: - Properties
 
-    @Attribute(.unique) var insightID: UUID
+    // FIXED: Removed @Attribute(.unique) for CloudKit compatibility
+    var insightID: UUID = UUID()
     var remoteID: String?
 
-    // Content
-    var content: String
+    // Content - FIXED: Made optional or added defaults for CloudKit
+    var content: String = ""
     var summary: String?
     var title: String?
 
-    // Metadata
-    var timestamp: Date
-    var category: InsightCategory
-    var priority: InsightPriority
-    var type: AIInsightType
+    // Metadata - FIXED: Added defaults for CloudKit
+    var timestamp: Date = Date()
+    var category: InsightCategory = .general
+    var priority: InsightPriority = .medium
+    var type: AIInsightType = .suggestion
 
     // Context
     var contextData: [String: String]?
@@ -29,23 +30,23 @@ final class AIInsight {
     var confidenceScore: Double?
     var generationTime: Double? // Seconds
 
-    // User interaction
-    var isRead: Bool
-    var isFavorite: Bool
+    // User interaction - FIXED: Added defaults for CloudKit
+    var isRead: Bool = false
+    var isFavorite: Bool = false
     var userRating: Int? // 1-5 stars
     var userFeedback: String?
 
     // Chat context
     var conversationID: UUID?
-    var messageRole: MessageRole
+    var messageRole: MessageRole = .assistant
     var parentMessageID: UUID?
 
-    // Sync tracking
-    var syncStatus: SyncStatus
+    // Sync tracking - FIXED: Added defaults for CloudKit
+    var syncStatus: SyncStatus = .pending
     var lastSyncedAt: Date?
 
-    // Relationships
-    var userProfile: UserProfileModel?
+    // Relationships - FIXED: Added inverse relationship for CloudKit
+    @Relationship(inverse: \UserProfileModel.aiInsights) var userProfile: UserProfileModel?
     var patAnalysis: PATAnalysis?
 
     // MARK: - Initialization
