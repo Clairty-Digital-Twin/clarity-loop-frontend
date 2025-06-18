@@ -11,8 +11,9 @@ import SwiftUI
 @main
 struct ClarityPulseApp: App {
     // MARK: - Properties
-
-    let modelContainer: ModelContainer
+    
+    // FIXED: Using @State variable as recommended by Apple Engineers for iOS 18 SwiftData bug
+    @State private var modelContainer: ModelContainer
 
     /// Detects if running in test environment using comprehensive checks
     private static var isRunningInTestEnvironment: Bool {
