@@ -110,7 +110,11 @@ struct DashboardView: View {
 
                             Button("Try Again") {
                                 Task {
+                                    #if targetEnvironment(simulator)
+                                    await viewModel.loadSampleData()
+                                    #else
                                     await viewModel.loadDashboard()
+                                    #endif
                                 }
                             }
                             .buttonStyle(.borderedProminent)
@@ -140,7 +144,11 @@ struct DashboardView: View {
                 }
 
                 if let vm = viewModel, case .idle = vm.viewState {
+                    #if targetEnvironment(simulator)
+                    await vm.loadSampleData()
+                    #else
                     await vm.loadDashboard()
+                    #endif
                 }
             }
         }
