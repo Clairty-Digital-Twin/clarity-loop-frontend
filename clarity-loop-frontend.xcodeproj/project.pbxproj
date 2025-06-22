@@ -67,7 +67,6 @@
 				Core/Services/AuthService.swift = (ios, );
 				Core/Services/BackgroundTaskManager.swift = (ios, );
 				Core/Services/BiometricAuthService.swift = (ios, );
-				Core/Services/CloudKitSyncManager.swift = (ios, );
 				Core/Services/CognitoAuthService.swift.disabled = (ios, );
 				Core/Services/CognitoConfiguration.swift.disabled = (ios, );
 				Core/Services/EnhancedOfflineQueueManager.swift = (ios, );
@@ -191,7 +190,6 @@
 				Core/Services/AppSecurityServiceTests.swift = (ios, );
 				Core/Services/AuthServiceTests.swift = (ios, );
 				Core/Services/BiometricAuthServiceTests.swift = (ios, );
-				Core/Services/CloudKitSyncManagerTests.swift = (ios, );
 				Core/Services/EnhancedOfflineQueueManagerTests.swift = (ios, );
 				Core/Services/HealthKitServiceTests.swift = (ios, );
 				Core/Services/HealthKitSyncServiceTests.swift = (ios, );
