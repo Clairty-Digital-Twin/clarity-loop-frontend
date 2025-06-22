@@ -136,7 +136,34 @@ struct ClarityPulseApp: App {
                     self.modelContainer = try! ModelContainer(for: TestOnlyModel.self)
                 }
             } else {
-                fatalError("Failed to create production ModelContainer: \(error)")
+                print("❌ Production ModelContainer creation failed: \(error)")
+                print("🔄 Creating fallback in-memory container...")
+                
+                // 🔥 CRITICAL FIX: Create fallback in-memory container instead of crashing
+                let fallbackSchema = Schema([
+                    HealthMetric.self,
+                    UserProfileModel.self,
+                    PATAnalysis.self,
+                    AIInsight.self
+                ])
+                
+                let fallbackConfig = ModelConfiguration(
+                    schema: fallbackSchema,
+                    isStoredInMemoryOnly: true,
+                    allowsSave: true
+                )
+                
+                do {
+                    self.modelContainer = try ModelContainer(
+                        for: fallbackSchema,
+                        configurations: [fallbackConfig]
+                    )
+                    print("✅ Created fallback in-memory ModelContainer")
+                } catch {
+                    print("🚨 Even fallback failed, using minimal container")
+                    // Last resort - minimal container
+                    self.modelContainer = try! ModelContainer(for: TestOnlyModel.self)
+                }
             }
         }
 

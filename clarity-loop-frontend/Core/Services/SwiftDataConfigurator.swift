@@ -26,13 +26,13 @@ final class SwiftDataConfigurator {
                 isStoredInMemoryOnly: true
             )
         } else {
-            // Production configuration with CloudKit
+            // 🔥 CRITICAL FIX: Disable CloudKit to prevent crashes
+            // Production configuration WITHOUT CloudKit (for now)
             ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                allowsSave: true,
-                groupContainer: .automatic,
-                cloudKitDatabase: .automatic
+                allowsSave: true
+                // cloudKitDatabase: .automatic  // DISABLED - causing crashes
             )
         }
 

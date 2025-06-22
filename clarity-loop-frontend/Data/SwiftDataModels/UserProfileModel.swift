@@ -5,42 +5,48 @@ import SwiftData
 final class UserProfileModel {
     // MARK: - Properties
 
-    @Attribute(.unique) var userID: String
-    var email: String
-    var displayName: String
+    // CloudKit compliant - no @Attribute(.unique) allowed
+    var userID: String?
+    var email: String?
+    var displayName: String?
 
-    // Preferences
-    var preferences: UserPreferences
-    var notificationSettings: NotificationSettings
-    var privacySettings: PrivacySettings
+    // Preferences - all optional with defaults
+    var preferences: UserPreferences?
+    var notificationSettings: NotificationSettings?
+    var privacySettings: PrivacySettings?
 
-    // Sync tracking
+    // Sync tracking - optional
     var lastSync: Date?
-    var syncStatus: SyncStatus
+    var syncStatus: SyncStatus?
 
-    // Health profile
+    // Health profile - optional
     var dateOfBirth: Date?
     var biologicalSex: String?
     var heightInCentimeters: Double?
     var weightInKilograms: Double?
     var bloodType: String?
 
-    // App settings
-    var appTheme: AppTheme
-    var measurementSystem: MeasurementSystem
-    var language: String
+    // App settings - optional with defaults
+    var appTheme: AppTheme?
+    var measurementSystem: MeasurementSystem?
+    var language: String?
 
-    // Relationships
-    @Relationship(deleteRule: .cascade) var healthMetrics: [HealthMetric]?
-    @Relationship(deleteRule: .cascade) var patAnalyses: [PATAnalysis]?
-    @Relationship(deleteRule: .cascade) var aiInsights: [AIInsight]?
+    // CloudKit compliant relationships (no inverse needed on this side)
+    @Relationship(deleteRule: .cascade) 
+    var healthMetrics: [HealthMetric]?
+    
+    @Relationship(deleteRule: .cascade) 
+    var patAnalyses: [PATAnalysis]?
+    
+    @Relationship(deleteRule: .cascade) 
+    var aiInsights: [AIInsight]?
 
     // MARK: - Initialization
 
     init(
-        userID: String,
-        email: String,
-        displayName: String
+        userID: String = "",
+        email: String = "",
+        displayName: String = ""
     ) {
         self.userID = userID
         self.email = email

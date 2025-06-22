@@ -503,13 +503,14 @@ struct OperationResult {
 
 @Model
 final class PersistedOfflineOperation {
-    @Attribute(.unique) var id: UUID
-    var type: String
-    var payloadData: Data
-    var timestamp: Date
-    var priority: Int
-    var status: String
-    var attempts: Int
+    // CloudKit compliant - no @Attribute(.unique) allowed
+    var id: UUID?
+    var type: String?
+    var payloadData: Data?
+    var timestamp: Date?
+    var priority: Int?
+    var status: String?
+    var attempts: Int?
     var lastError: String?
     var lastAttemptDate: Date?
     var nextRetryDate: Date?
@@ -529,14 +530,19 @@ final class PersistedOfflineOperation {
 
     func toOfflineOperation() -> OfflineOperation? {
         guard
-            let type = OperationType(rawValue: type),
+            let id = id,
+            let type = type,
+            let payloadData = payloadData,
+            let priority = priority,
+            let operationType = OperationType(rawValue: type),
             let payload = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
-            let priority = OperationPriority(rawValue: priority) else {
+            let operationPriority = OperationPriority(rawValue: priority) else {
             return nil
         }
 
-        let operation = OfflineOperation(type: type, payload: payload, priority: priority)
-        operation.attempts = attempts
+        let operation = OfflineOperation(type: operationType, payload: payload, priority: operationPriority)
+        operation.id = id
+        operation.attempts = attempts ?? 0
         operation.lastError = lastError
         operation.lastAttemptDate = lastAttemptDate
         operation.nextRetryDate = nextRetryDate

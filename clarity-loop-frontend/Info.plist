@@ -71,8 +71,10 @@
 	<!-- Background Modes -->
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>fetch</string>
-		<string>processing</string>
+		<string>background-fetch</string>
+		<string>background-processing</string>
+		<string>healthkit</string>
+		<string>remote-notification</string>
 	</array>
 	
 	<!-- Background Task Identifiers -->

@@ -5,24 +5,27 @@ import SwiftData
 final class HealthMetric {
     // MARK: - Properties
     
-    @Attribute(.unique) var localID: UUID
+    // CloudKit compliant - no @Attribute(.unique) allowed
+    var localID: UUID?
     var remoteID: String?
     
-    var timestamp: Date
-    var value: Double
-    var type: HealthMetricType
-    var unit: String
+    // All optional with defaults for CloudKit
+    var timestamp: Date?
+    var value: Double?
+    var type: HealthMetricType?
+    var unit: String?
     
-    // Sync tracking
-    var syncStatus: SyncStatus
+    // Sync tracking - all optional
+    var syncStatus: SyncStatus?
     var lastSyncedAt: Date?
     var syncError: String?
     
-    // Metadata
-    var source: String // e.g., "HealthKit", "Manual", "Device"
+    // Metadata - optional
+    var source: String? // e.g., "HealthKit", "Manual", "Device"
     var metadata: [String: String]?
     
-    // Relationships
+    // CloudKit compliant relationship with inverse
+    @Relationship(inverse: \UserProfileModel.healthMetrics) 
     var userProfile: UserProfileModel?
     
     // MARK: - Initialization
@@ -30,10 +33,10 @@ final class HealthMetric {
     init(
         localID: UUID = UUID(),
         remoteID: String? = nil,
-        timestamp: Date,
-        value: Double,
-        type: HealthMetricType,
-        unit: String,
+        timestamp: Date = Date(),
+        value: Double = 0.0,
+        type: HealthMetricType = .heartRate,
+        unit: String = "count",
         syncStatus: SyncStatus = .pending,
         lastSyncedAt: Date? = nil,
         syncError: String? = nil,

@@ -5,53 +5,58 @@ import SwiftData
 final class PATAnalysis {
     // MARK: - Properties
 
-    @Attribute(.unique) var analysisID: UUID
+    // CloudKit compliant - no @Attribute(.unique) allowed
+    var analysisID: UUID?
     var remoteID: String?
 
-    // Analysis metadata
-    var startDate: Date
-    var endDate: Date
-    var analysisDate: Date
-    var analysisType: PATAnalysisType
+    // Analysis metadata - all optional with defaults
+    var startDate: Date?
+    var endDate: Date?
+    var analysisDate: Date?
+    var analysisType: PATAnalysisType?
 
-    // Sleep stages data
-    var sleepStages: [PATSleepStage]
-    var totalSleepMinutes: Int
-    var sleepEfficiency: Double
-    var sleepLatency: Int // Minutes to fall asleep
-    var wakeAfterSleepOnset: Int // WASO in minutes
+    // Sleep stages data - all optional with defaults
+    var sleepStages: [PATSleepStage]?
+    var totalSleepMinutes: Int?
+    var sleepEfficiency: Double?
+    var sleepLatency: Int? // Minutes to fall asleep
+    var wakeAfterSleepOnset: Int? // WASO in minutes
 
-    // Sleep quality metrics
-    var remSleepMinutes: Int
-    var deepSleepMinutes: Int
-    var lightSleepMinutes: Int
-    var awakeMinutes: Int
+    // Sleep quality metrics - all optional with defaults
+    var remSleepMinutes: Int?
+    var deepSleepMinutes: Int?
+    var lightSleepMinutes: Int?
+    var awakeMinutes: Int?
 
-    // Analysis scores
-    var overallScore: Double
-    var confidenceScore: Double
-    var qualityMetrics: SleepQualityMetrics
+    // Analysis scores - all optional with defaults
+    var overallScore: Double?
+    var confidenceScore: Double?
+    var qualityMetrics: SleepQualityMetrics?
 
-    // Actigraphy data
+    // Actigraphy data - optional
     var actigraphyData: [ActigraphyDataPoint]?
     var movementIntensity: [Double]?
 
-    // Sync tracking
-    var syncStatus: SyncStatus
+    // Sync tracking - optional
+    var syncStatus: SyncStatus?
     var lastSyncedAt: Date?
 
-    // Relationships
+    // CloudKit compliant relationships with inverses
+    @Relationship(inverse: \UserProfileModel.patAnalyses) 
     var userProfile: UserProfileModel?
-    @Relationship(deleteRule: .cascade) var relatedInsights: [AIInsight]?
+    
+    @Relationship(deleteRule: .cascade, inverse: \AIInsight.patAnalysis) 
+    var relatedInsights: [AIInsight]?
 
     // MARK: - Initialization
 
     init(
-        startDate: Date,
-        endDate: Date,
+        analysisID: UUID = UUID(),
+        startDate: Date = Date(),
+        endDate: Date = Date(),
         analysisType: PATAnalysisType = .overnight
     ) {
-        self.analysisID = UUID()
+        self.analysisID = analysisID
         self.startDate = startDate
         self.endDate = endDate
         self.analysisDate = Date()
@@ -126,14 +131,20 @@ struct SleepQualityMetrics: Codable {
 
 extension PATAnalysis {
     var hypnogramData: [(Date, PATSleepStage.SleepStageType)] {
-        sleepStages.map { ($0.timestamp, $0.stage) }
+        sleepStages?.map { ($0.timestamp, $0.stage) } ?? []
     }
 
     var sleepSummary: String {
-        """
-        Total Sleep: \(totalSleepMinutes / 60)h \(totalSleepMinutes % 60)m
-        Efficiency: \(Int(sleepEfficiency * 100))%
-        REM: \(remSleepMinutes)m | Deep: \(deepSleepMinutes)m | Light: \(lightSleepMinutes)m
+        let totalMinutes = totalSleepMinutes ?? 0
+        let efficiency = sleepEfficiency ?? 0
+        let rem = remSleepMinutes ?? 0
+        let deep = deepSleepMinutes ?? 0
+        let light = lightSleepMinutes ?? 0
+        
+        return """
+        Total Sleep: \(totalMinutes / 60)h \(totalMinutes % 60)m
+        Efficiency: \(Int(efficiency * 100))%
+        REM: \(rem)m | Deep: \(deep)m | Light: \(light)m
         """
     }
 }

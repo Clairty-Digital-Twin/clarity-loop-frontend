@@ -5,19 +5,19 @@ import SwiftData
 final class AIInsight {
     // MARK: - Properties
 
-    @Attribute(.unique) var insightID: UUID
+    var insightID: UUID?
     var remoteID: String?
 
-    // Content
-    var content: String
+    // Content - All optional with defaults for CloudKit
+    var content: String?
     var summary: String?
     var title: String?
 
-    // Metadata
-    var timestamp: Date
-    var category: InsightCategory
-    var priority: InsightPriority
-    var type: AIInsightType
+    // Metadata - All optional with defaults for CloudKit
+    var timestamp: Date?
+    var category: InsightCategory?
+    var priority: InsightPriority?
+    var type: AIInsightType?
 
     // Context
     var contextData: [String: String]?
@@ -29,40 +29,46 @@ final class AIInsight {
     var confidenceScore: Double?
     var generationTime: Double? // Seconds
 
-    // User interaction
-    var isRead: Bool
-    var isFavorite: Bool
+    // User interaction - All optional with defaults for CloudKit
+    var isRead: Bool?
+    var isFavorite: Bool?
     var userRating: Int? // 1-5 stars
     var userFeedback: String?
 
     // Chat context
     var conversationID: UUID?
-    var messageRole: MessageRole
+    var messageRole: MessageRole?
     var parentMessageID: UUID?
 
-    // Sync tracking
-    var syncStatus: SyncStatus
+    // Sync tracking - All optional with defaults for CloudKit
+    var syncStatus: SyncStatus?
     var lastSyncedAt: Date?
 
-    // Relationships
+    // CloudKit compliant relationships with inverses
+    @Relationship(inverse: \\UserProfileModel.aiInsights) 
     var userProfile: UserProfileModel?
+    
+    // New relationship to fix PATAnalysis inverse
     var patAnalysis: PATAnalysis?
+    
+    // Additional relationships
+    var relatedMetrics: [HealthMetric]?
 
     // MARK: - Initialization
 
     init(
-        content: String,
-        category: InsightCategory,
-        type: AIInsightType = .suggestion,
-        messageRole: MessageRole = .assistant
+        content: String? = nil,
+        category: InsightCategory? = .general,
+        type: AIInsightType? = .suggestion,
+        messageRole: MessageRole? = .assistant
     ) {
         self.insightID = UUID()
         self.content = content
         self.timestamp = Date()
-        self.category = category
+        self.category = category ?? .general
         self.priority = .medium
-        self.type = type
-        self.messageRole = messageRole
+        self.type = type ?? .suggestion
+        self.messageRole = messageRole ?? .assistant
         self.isRead = false
         self.isFavorite = false
         self.syncStatus = .pending
