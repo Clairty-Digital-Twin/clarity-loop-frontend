@@ -191,9 +191,19 @@ final class APIService: ObservableObject {
     }
 
     private func performRequest<T>(_ endpoint: APIEndpoint) async throws -> T {
-        // Since endpoints are specific enums, we need to handle them differently
-        // For now, just throw not implemented
-        throw APIError.notImplemented
+        // Route to appropriate backend client based on endpoint type
+        switch endpoint {
+        case let authEndpoint as AuthEndpoint:
+            return try await handleAuthEndpoint(authEndpoint)
+        case let healthEndpoint as HealthEndpoint:
+            return try await handleHealthEndpoint(healthEndpoint)
+        case let insightEndpoint as InsightEndpoint:
+            return try await handleInsightEndpoint(insightEndpoint)
+        case let patEndpoint as PATEndpoint:
+            return try await handlePATEndpoint(patEndpoint)
+        default:
+            throw APIError.invalidRequest
+        }
     }
 
     private func handleAuthEndpoint<T>(_ endpoint: AuthEndpoint) async throws -> T {
