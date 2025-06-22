@@ -124,6 +124,12 @@ final class SettingsViewModel {
             try await healthKitService.requestAuthorization()
             healthKitAuthorizationStatus = "Authorized"
             successMessage = "HealthKit authorization granted"
+            
+            // 🔥 CRITICAL FIX: Setup background delivery immediately after authorization
+            try await healthKitService.enableBackgroundDelivery()
+            healthKitService.setupObserverQueries()
+            print("✅ HealthKit background sync enabled from Settings")
+            
         } catch {
             errorMessage = "Failed to authorize HealthKit: \(error.localizedDescription)"
         }

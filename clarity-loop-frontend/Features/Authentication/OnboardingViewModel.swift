@@ -106,6 +106,12 @@ final class OnboardingViewModel {
         do {
             try await healthKitService.requestAuthorization()
             healthKitAuthorized = true
+            
+            // 🔥 CRITICAL FIX: Setup background delivery immediately after authorization
+            try await healthKitService.enableBackgroundDelivery()
+            healthKitService.setupObserverQueries()
+            print("✅ HealthKit background sync enabled during onboarding")
+            
         } catch {
             errorMessage = "HealthKit authorization failed: \(error.localizedDescription)"
             healthKitAuthorized = false

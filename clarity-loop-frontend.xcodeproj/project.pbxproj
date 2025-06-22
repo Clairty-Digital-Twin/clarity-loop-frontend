@@ -42,6 +42,7 @@
 		716D97602DF4DFFA0068C70F /* Exceptions for "clarity-loop-frontend" folder in "clarity-loop-frontend" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"clarity-loop-frontendTests/E2E/HealthKitEndToEndTest.swift",
 				Info.plist,
 			);
 			platformFiltersByRelativePath = {
@@ -165,6 +166,16 @@
 			};
 			target = 71B2A8E32DF35EBB00F2784F /* clarity-loop-frontendUITests */;
 		};
+		718FE5DA2E0787FD0064FC60 /* Exceptions for "clarity-loop-frontend" folder in "clarity-loop-frontendTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"clarity-loop-frontendTests/E2E/HealthKitEndToEndTest.swift",
+			);
+			platformFiltersByRelativePath = {
+				"clarity-loop-frontendTests/E2E/HealthKitEndToEndTest.swift" = (ios, );
+			};
+			target = 71B2A8D92DF35EBB00F2784F /* clarity-loop-frontendTests */;
+		};
 		71EC91292DF481EE00226717 /* Exceptions for "clarity-loop-frontendTests" folder in "clarity-loop-frontendTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			platformFiltersByRelativePath = {
@@ -227,6 +238,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				716D97602DF4DFFA0068C70F /* Exceptions for "clarity-loop-frontend" folder in "clarity-loop-frontend" target */,
+				718FE5DA2E0787FD0064FC60 /* Exceptions for "clarity-loop-frontend" folder in "clarity-loop-frontendTests" target */,
 			);
 			path = "clarity-loop-frontend";
 			sourceTree = "<group>";

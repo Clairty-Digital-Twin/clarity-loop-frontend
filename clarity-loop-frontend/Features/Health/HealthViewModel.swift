@@ -92,6 +92,12 @@ final class HealthViewModel: BaseViewModel {
     func requestHealthKitAuthorization() async {
         do {
             try await healthKitService.requestAuthorization()
+            
+            // 🔥 CRITICAL FIX: Setup background delivery immediately after authorization
+            try await healthKitService.enableBackgroundDelivery()
+            healthKitService.setupObserverQueries()
+            print("✅ HealthKit background sync enabled from Health screen")
+            
             await syncHealthData()
         } catch {
             handle(error: error)

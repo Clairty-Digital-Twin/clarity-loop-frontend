@@ -262,11 +262,42 @@ private struct AppRootView: View {
                     Task {
                         if let currentUser = await authService.currentUser {
                             ServiceLocator.shared.currentUserId = currentUser.id
+                            
+                            // 🔥 CRITICAL FIX: Setup HealthKit background sync after login
+                            await setupHealthKitSyncAfterAuth()
                         }
                     }
                 } else {
                     ServiceLocator.shared.currentUserId = nil
                 }
             }
+    }
+    
+    // 🔥 NEW: Critical HealthKit setup function
+    @MainActor
+    private func setupHealthKitSyncAfterAuth() async {
+        guard let healthKitService = ServiceLocator.shared.healthKitService else {
+            print("❌ HealthKitService not available in ServiceLocator")
+            return
+        }
+        
+        // Only set up if HealthKit is available
+        guard healthKitService.isHealthDataAvailable() else {
+            print("⚠️ HealthKit not available on this device")
+            return
+        }
+        
+        do {
+            print("🚀 Setting up HealthKit background delivery...")
+            try await healthKitService.enableBackgroundDelivery()
+            print("✅ HealthKit background delivery enabled")
+            
+            print("🚀 Setting up HealthKit observer queries...")
+            healthKitService.setupObserverQueries()
+            print("✅ HealthKit observer queries set up")
+            
+        } catch {
+            print("❌ Failed to setup HealthKit background sync: \(error)")
+        }
     }
 }
