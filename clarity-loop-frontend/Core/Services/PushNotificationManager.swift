@@ -239,7 +239,7 @@ final class PushNotificationManager: NSObject, ObservableObject {
         guard let userId = await authService.currentUser?.id else { return }
 
         do {
-            let request = DeviceTokenRegistrationRequest(
+            let _ = DeviceTokenRegistrationRequest(
                 userId: userId,
                 token: token,
                 platform: "iOS",
@@ -248,13 +248,11 @@ final class PushNotificationManager: NSObject, ObservableObject {
 
             // TODO: Implement when backend endpoint is available
             // try await apiClient.registerDeviceToken(request)
-        } catch {
-            print("Failed to register device token: \(error)")
         }
     }
 
     private func updateBackendPreferences(userId: String, preferences: NotificationPreferences) async throws {
-        let request = NotificationPreferencesRequest(
+        let _ = NotificationPreferencesRequest(
             userId: userId,
             preferences: preferences
         )

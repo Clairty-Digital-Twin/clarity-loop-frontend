@@ -106,7 +106,7 @@ final class UserProfileViewModel: BaseViewModel {
         healthGoals: String? = nil,
         medicalConditions: String? = nil
     ) async {
-        guard var profile else { return }
+        guard let profile else { return }
 
         updateState = .loading
 

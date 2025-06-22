@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class HealthMetric {
+final class HealthMetric: @unchecked Sendable {
     // MARK: - Properties
     
     // CloudKit compliant - no @Attribute(.unique) allowed

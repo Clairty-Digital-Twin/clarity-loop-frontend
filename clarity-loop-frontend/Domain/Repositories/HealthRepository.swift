@@ -203,31 +203,37 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
     func calculateMetricTrend(
         type: HealthMetricType,
         days: Int
-    ) async throws -> HealthMetricTrend {
-        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-        let metrics = try await fetchMetrics(for: type, since: startDate)
-
-        guard metrics.count >= 2 else {
-            return HealthMetricTrend(trend: .stable, percentageChange: 0)
+    ) async throws -> TrendDirection? {
+        let endDate = Date()
+        guard let startDate = Calendar.current.date(byAdding: .day, value: -days, to: endDate) else {
+            return nil
         }
 
-        // Calculate trend using simple linear regression
-        let sortedMetrics = metrics.sorted { ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) }
-        let firstValue = sortedMetrics.first?.value ?? 0.0
-        let lastValue = sortedMetrics.last?.value ?? 0.0
+        let metrics = try await fetchMetricsByDateRange(
+            type: type,
+            startDate: startDate,
+            endDate: endDate
+        )
 
-        let percentageChange = ((lastValue - firstValue) / firstValue) * 100
+        guard metrics.count >= 2 else { return nil }
 
-        let trend: HealthMetricTrend.Direction
-        if abs(percentageChange) < 5 {
-            trend = .stable
-        } else if percentageChange > 0 {
-            trend = .increasing
+        let halfPoint = metrics.count / 2
+        let firstHalf = metrics.prefix(halfPoint)
+        let secondHalf = metrics.suffix(halfPoint)
+
+        let firstAverage = firstHalf.reduce(0) { $0 + ($1.value ?? 0.0) } / Double(firstHalf.count)
+        let secondAverage = secondHalf.reduce(0) { $0 + ($1.value ?? 0.0) } / Double(secondHalf.count)
+
+        let changeThreshold = 0.05 // 5% change threshold
+        let percentChange = abs(secondAverage - firstAverage) / firstAverage
+
+        if percentChange < changeThreshold {
+            return .stable
+        } else if secondAverage > firstAverage {
+            return .increasing
         } else {
-            trend = .decreasing
+            return .decreasing
         }
-
-        return HealthMetricTrend(trend: trend, percentageChange: percentageChange)
     }
 
     // MARK: - Cleanup
@@ -237,20 +243,16 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
     }
 }
 
-// MARK: - Health Metric Trend
+// MARK: - Supporting Types
 
-struct HealthMetricTrend {
-    enum Direction {
-        case increasing
-        case decreasing
-        case stable
-    }
-
-    let trend: Direction
-    let percentageChange: Double
+enum TrendDirection {
+    case increasing
+    case decreasing
+    case stable
 }
 
 // MARK: - Array Extension for Chunking
+// Note: chunked(into:) is defined in EnhancedOfflineQueueManager.swift
 
 // MARK: - Mock Health Data Generator (for development/testing)
 

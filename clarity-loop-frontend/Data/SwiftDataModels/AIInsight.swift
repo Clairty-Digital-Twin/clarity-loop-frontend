@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class AIInsight {
+final class AIInsight: @unchecked Sendable {
     // MARK: - Properties
 
     var insightID: UUID?

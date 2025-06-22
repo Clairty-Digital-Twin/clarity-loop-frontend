@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class PATAnalysis {
+final class PATAnalysis: @unchecked Sendable {
     // MARK: - Properties
 
     // CloudKit compliant - no @Attribute(.unique) allowed

@@ -12,7 +12,7 @@ final class HealthKitEndToEndTest: XCTestCase {
     override func setUp() {
         super.setUp()
         // Create mock API client for testing
-        let mockAPIClient = BackendAPIClient()
+        let mockAPIClient = BackendAPIClient(tokenProvider: { "test-token" })
         healthKitService = HealthKitService(apiClient: mockAPIClient)
         mockHealthStore = HKHealthStore()
     }
@@ -50,7 +50,7 @@ final class HealthKitEndToEndTest: XCTestCase {
         print("✅ Observer queries setup completed")
         
         // Step 4: Test data fetching (using the actual available method)
-        let metrics = await healthKitService.syncAllHealthData()
+        await healthKitService.fetchLatestHealthData()
         print("✅ Health data sync completed")
         
         // Step 5: Validate critical health types are monitored
@@ -103,7 +103,7 @@ final class HealthKitEndToEndTest: XCTestCase {
         
         // This would test the actual API call to backend
         // For now, we'll simulate the flow by creating sample data
-        let sampleData = [
+        let sampleData: [String: Any] = [
             "type": "step_count",
             "value": 10000,
             "unit": "count",

@@ -44,7 +44,7 @@ final class UserProfileRepository: ObservableBaseRepository<UserProfileModel>, U
 
     override func syncBatch(_ models: [UserProfileModel]) async throws {
         // User profiles are typically synced individually
-        for model in models {
+        for _ in models {
             try await sync()
         }
     }

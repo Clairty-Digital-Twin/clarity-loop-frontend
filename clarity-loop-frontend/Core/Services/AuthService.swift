@@ -364,6 +364,12 @@ final class AuthService: AuthServiceProtocol {
                     throw AuthenticationError.newPasswordRequired
                 case .confirmSignInWithCustomChallenge:
                     throw AuthenticationError.customChallengeRequired
+                case .confirmSignInWithOTP:
+                    throw AuthenticationError.mfaRequired
+                case .continueSignInWithMFASelection, .continueSignInWithTOTPSetup, .continueSignInWithFirstFactorSelection:
+                    throw AuthenticationError.mfaRequired
+                case .continueSignInWithEmailMFASetup:
+                    throw AuthenticationError.mfaRequired
                 case .done:
                     // Should not reach here if isSignedIn is false
                     throw AuthenticationError.unknown("Sign-in incomplete despite done status")

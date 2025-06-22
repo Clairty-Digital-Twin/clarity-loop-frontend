@@ -584,7 +584,7 @@ final class WebSocketEventProcessor {
             let analyses = try? await patRepository.fetch(descriptor: descriptor),
             let analysis = analyses.first {
             // Update progress if provided
-            let progress = update.progress
+            let _ = update.progress
             // Store progress in metadata or similar field
             analysis.endDate = Date()
 

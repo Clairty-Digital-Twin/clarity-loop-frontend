@@ -204,7 +204,7 @@ final class PATAnalysisViewModel: BaseViewModel {
         analysis.syncStatus = result.isCompleted ? .synced : .pending
 
         // TODO: Parse patFeatures to extract actual sleep stage data
-        if let features = result.patFeatures {
+        if let _ = result.patFeatures {
             // This would parse the features dictionary to extract sleep metrics
             // For now, using placeholder values
             analysis.totalSleepMinutes = 420 // 7 hours
