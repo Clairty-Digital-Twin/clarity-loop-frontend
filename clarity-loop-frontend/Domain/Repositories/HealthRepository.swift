@@ -14,27 +14,27 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
     // MARK: - Query Operations
 
     func fetchMetrics(for type: HealthMetricType, since date: Date) async throws -> [HealthMetric] {
-        let predicate = #Predicate<HealthMetric> { metric in
-            metric.type == type && metric.timestamp >= date
+        // Use simpler approach to avoid predicate macro issues
+        let allMetrics = try await fetchAll()
+        
+        let filtered = allMetrics.filter { metric in
+            metric.type == type && (metric.timestamp ?? Date.distantPast) >= date
         }
-
-        var descriptor = FetchDescriptor<HealthMetric>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-
-        return try await fetch(descriptor: descriptor)
+        
+        return filtered.sorted { 
+            ($0.timestamp ?? Date.distantPast) > ($1.timestamp ?? Date.distantPast) 
+        }
     }
 
     func fetchLatestMetric(for type: HealthMetricType) async throws -> HealthMetric? {
-        let predicate = #Predicate<HealthMetric> { metric in
-            metric.type == type
-        }
-
-        var descriptor = FetchDescriptor<HealthMetric>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-        descriptor.fetchLimit = 1
-
-        let results = try await fetch(descriptor: descriptor)
-        return results.first
+        let allMetrics = try await fetchAll()
+        
+        return allMetrics
+            .filter { $0.type == type }
+            .sorted { 
+                ($0.timestamp ?? Date.distantPast) > ($1.timestamp ?? Date.distantPast) 
+            }
+            .first
     }
 
     func fetchMetricsByDateRange(
@@ -42,31 +42,34 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
         startDate: Date,
         endDate: Date
     ) async throws -> [HealthMetric] {
-        let predicate = #Predicate<HealthMetric> { metric in
-            metric.type == type &&
-                metric.timestamp >= startDate &&
-                metric.timestamp <= endDate
+        let allMetrics = try await fetchAll()
+        
+        let filtered = allMetrics.filter { metric in
+            guard let timestamp = metric.timestamp else { return false }
+            return metric.type == type && 
+                   timestamp >= startDate && 
+                   timestamp <= endDate
         }
-
-        var descriptor = FetchDescriptor<HealthMetric>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.timestamp)]
-
-        return try await fetch(descriptor: descriptor)
+        
+        return filtered.sorted { 
+            ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) 
+        }
     }
 
     func fetchPendingSyncMetrics(limit: Int = 100) async throws -> [HealthMetric] {
         let pendingStatus = SyncStatus.pending.rawValue
         let failedStatus = SyncStatus.failed.rawValue
 
-        let predicate = #Predicate<HealthMetric> { metric in
-            metric.syncStatus.rawValue == pendingStatus || metric.syncStatus.rawValue == failedStatus
+        let allMetrics = try await fetchAll()
+        
+        let filtered = allMetrics.filter { metric in
+            let status = metric.syncStatus?.rawValue ?? ""
+            return status == pendingStatus || status == failedStatus
         }
-
-        var descriptor = FetchDescriptor<HealthMetric>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.timestamp)]
-        descriptor.fetchLimit = limit
-
-        return try await fetch(descriptor: descriptor)
+        
+        return Array(filtered
+            .sorted { ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) }
+            .prefix(limit))
     }
 
     func fetchMetricsNeedingSync() async throws -> [HealthMetric] {
