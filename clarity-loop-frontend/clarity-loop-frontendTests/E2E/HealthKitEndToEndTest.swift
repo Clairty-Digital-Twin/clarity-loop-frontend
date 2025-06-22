@@ -50,8 +50,8 @@ final class HealthKitEndToEndTest: XCTestCase {
         print("✅ Observer queries setup completed")
         
         // Step 4: Test data fetching (using the actual available method)
-        await healthKitService.fetchLatestHealthData()
-        print("✅ Health data sync completed")
+        let todayMetrics = try await healthKitService.fetchAllDailyMetrics(for: Date())
+        print("✅ Health data sync completed - Steps: \(todayMetrics.stepCount)")
         
         // Step 5: Validate critical health types are monitored
         let expectedTypes: [HKQuantityTypeIdentifier] = [
