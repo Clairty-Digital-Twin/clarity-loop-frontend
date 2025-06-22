@@ -9,14 +9,17 @@ final class PATAnalysisRepository: ObservableBaseRepository<PATAnalysis>, PATAna
     // MARK: - Query Operations
 
     func fetchAnalyses(between startDate: Date, and endDate: Date) async throws -> [PATAnalysis] {
-        let predicate = #Predicate<PATAnalysis> { analysis in
-            (analysis.startDate ?? Date.distantPast) >= startDate && (analysis.endDate ?? Date.distantFuture) <= endDate
+        // Use a simpler predicate that SwiftData can handle
+        let allAnalyses = try await fetchAll()
+        
+        let filtered = allAnalyses.filter { analysis in
+            guard let start = analysis.startDate, let end = analysis.endDate else { return false }
+            return start >= startDate && end <= endDate
         }
-
-        var descriptor = FetchDescriptor<PATAnalysis>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\PATAnalysis.startDate, order: .reverse)]
-
-        return try await fetch(descriptor: descriptor)
+        
+        return filtered.sorted { 
+            ($0.startDate ?? Date.distantPast) > ($1.startDate ?? Date.distantPast) 
+        }
     }
 
     func fetchLatestAnalysis() async throws -> PATAnalysis? {
