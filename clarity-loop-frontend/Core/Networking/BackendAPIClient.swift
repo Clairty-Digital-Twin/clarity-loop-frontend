@@ -246,59 +246,73 @@ final class BackendAPIClient: APIClientProtocol {
     }
 
     func getHealthData(page: Int, limit: Int) async throws -> PaginatedMetricsResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = HealthDataEndpoint.getMetrics(page: page, limit: limit)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func uploadHealthKitData(requestDTO: HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = HealthDataEndpoint.uploadHealthKit(dto: requestDTO)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func syncHealthKitData(requestDTO: HealthKitSyncRequestDTO) async throws -> HealthKitSyncResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = HealthDataEndpoint.syncHealthKit(dto: requestDTO)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getHealthKitSyncStatus(syncId: String) async throws -> HealthKitSyncStatusDTO {
-        throw APIError.notImplemented
+        let endpoint = HealthDataEndpoint.getSyncStatus(syncId: syncId)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getHealthKitUploadStatus(uploadId: String) async throws -> HealthKitUploadStatusDTO {
-        throw APIError.notImplemented
+        let endpoint = HealthDataEndpoint.getUploadStatus(uploadId: uploadId)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getProcessingStatus(id: UUID) async throws -> HealthDataProcessingStatusDTO {
-        throw APIError.notImplemented
+        let endpoint = HealthDataEndpoint.getProcessingStatus(id: id)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getInsightHistory(userId: String, limit: Int, offset: Int) async throws -> InsightHistoryResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = InsightEndpoint.getHistory(userId: userId, limit: limit, offset: offset)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> InsightGenerationResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = InsightEndpoint.generate(dto: requestDTO)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getInsight(id: String) async throws -> InsightGenerationResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = InsightEndpoint.getInsight(id: id)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getInsightsServiceStatus() async throws -> ServiceStatusResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = InsightEndpoint.getServiceStatus
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func analyzeStepData(requestDTO: StepDataRequestDTO) async throws -> StepAnalysisResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = PATEndpoint.analyzeStepData(dto: requestDTO)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func analyzeActigraphy(requestDTO: DirectActigraphyRequestDTO) async throws -> ActigraphyAnalysisResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = PATEndpoint.analyzeActigraphy(dto: requestDTO)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getPATAnalysis(id: String) async throws -> PATAnalysisResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = PATEndpoint.getAnalysis(id: id)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 
     func getPATServiceHealth() async throws -> ServiceStatusResponseDTO {
-        throw APIError.notImplemented
+        let endpoint = PATEndpoint.getServiceHealth
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
 }
 

@@ -3,6 +3,26 @@ import Foundation
 // Note: The `AnyCodable` type from the `AnyCodable.swift` file is used here
 // to handle dynamic JSON values in metadata fields.
 
+// MARK: - Processing Status (matching backend)
+
+enum ProcessingStatus: String, Codable {
+    case received = "received"
+    case processing = "processing"
+    case completed = "completed"
+    case failed = "failed"
+    case requiresReview = "requires_review"
+}
+
+// MARK: - Mood Scale (matching backend)
+
+enum MoodScale: String, Codable {
+    case veryLow = "very_low"
+    case low = "low"
+    case neutral = "neutral"
+    case good = "good"
+    case excellent = "excellent"
+}
+
 // MARK: - Main Health Metric DTO
 
 struct HealthMetricDTO: Codable, Identifiable {
