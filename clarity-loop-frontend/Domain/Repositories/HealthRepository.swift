@@ -196,7 +196,7 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
         let metrics = try await fetchMetrics(for: type, since: date)
         guard !metrics.isEmpty else { return nil }
 
-        let sum = metrics.reduce(0) { $0 + $1.value }
+        let sum = metrics.reduce(0) { $0 + ($1.value ?? 0.0) }
         return sum / Double(metrics.count)
     }
 
@@ -212,9 +212,9 @@ final class HealthRepository: ObservableBaseRepository<HealthMetric>, HealthRepo
         }
 
         // Calculate trend using simple linear regression
-        let sortedMetrics = metrics.sorted { $0.timestamp < $1.timestamp }
-        let firstValue = sortedMetrics.first!.value
-        let lastValue = sortedMetrics.last!.value
+        let sortedMetrics = metrics.sorted { ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) }
+        let firstValue = sortedMetrics.first?.value ?? 0.0
+        let lastValue = sortedMetrics.last?.value ?? 0.0
 
         let percentageChange = ((lastValue - firstValue) / firstValue) * 100
 
