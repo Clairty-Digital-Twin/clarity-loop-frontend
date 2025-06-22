@@ -199,9 +199,12 @@ struct ClarityPulseApp: App {
         }
 
         self.apiClient = client
+        
+        // Initialize user data service
+        let userDataService = UserDataService(modelContext: modelContainer.mainContext)
 
         // Initialize services with shared APIClient
-        let service = AuthService(apiClient: client)
+        let service = AuthService(apiClient: client, userDataService: userDataService)
         self.authService = service
 
         // TokenManagementService no longer needed - using Amplify Auth

@@ -53,14 +53,30 @@ struct SettingsContentView: View {
                             .disabled(viewModel.isLoading)
                         }
                     }
-                } else {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(viewModel.currentUser)
-                            .font(.headline)
-                        Text("Tap to edit profile")
-                            .font(.caption)
+                } else if viewModel.isLoadingUser {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Loading profile...")
                             .foregroundColor(.secondary)
                     }
+                    .padding(.vertical, 8)
+                } else {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(viewModel.userName)
+                                .font(.headline)
+                            Text(viewModel.userEmail)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "pencil.circle")
+                            .foregroundColor(.accentColor)
+                    }
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         Task {
                             await viewModel.startEditingProfile()

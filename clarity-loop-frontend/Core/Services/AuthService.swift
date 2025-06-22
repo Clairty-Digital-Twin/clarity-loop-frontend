@@ -102,6 +102,7 @@ final class AuthService: AuthServiceProtocol {
     private nonisolated let apiClient: APIClientProtocol
     private var authStateTask: Task<Void, Never>?
     private var pendingEmailForVerification: String?
+    private let userDataService: UserDataService?
 
     /// A continuation to drive the `authState` async stream.
     private var authStateContinuation: AsyncStream<AuthUser?>.Continuation?
@@ -213,34 +214,27 @@ final class AuthService: AuthServiceProtocol {
             do {
                 let user = try await Amplify.Auth.getCurrentUser()
                 let attributes = try await Amplify.Auth.fetchUserAttributes()
-
-                var email: String?
-
-                for attribute in attributes {
-                    switch attribute.key {
-                    case .email:
-                        email = attribute.value
-                    default:
-                        break
-                    }
-                }
-
+                
+                let authUser = createUserFromCognitoAttributes(attributes)
+                // Override with actual user ID from Cognito
                 return AuthUser(
                     id: user.userId,
-                    email: email ?? "",
-                    fullName: nil,
-                    isEmailVerified: true
+                    email: authUser.email,
+                    fullName: authUser.fullName,
+                    isEmailVerified: authUser.isEmailVerified
                 )
             } catch {
-                return nil
+                // Return cached user if available
+                return _currentUser
             }
         }
     }
 
     // MARK: - Initializer
 
-    init(apiClient: APIClientProtocol) {
+    init(apiClient: APIClientProtocol, userDataService: UserDataService? = nil) {
         self.apiClient = apiClient
+        self.userDataService = userDataService
     }
 
     // MARK: - Private Methods
@@ -273,19 +267,54 @@ final class AuthService: AuthServiceProtocol {
         })
     }
 
-    private func syncUserWithBackend(email: String) async throws -> UserSessionResponseDTO {
-        // After successful Amplify sign-in, sync with backend
-        let deviceInfo = DeviceInfoHelper.generateDeviceInfo()
-        let loginDTO = UserLoginRequestDTO(
+    private func createUserFromCognitoAttributes(_ attributes: [AuthUserAttribute]) -> AuthUser {
+        var email = ""
+        var name = ""
+        var userId = ""
+        
+        for attribute in attributes {
+            switch attribute.key {
+            case .email:
+                email = attribute.value
+            case .name:
+                name = attribute.value
+            case .sub:
+                userId = attribute.value
+            default:
+                break
+            }
+        }
+        
+        return AuthUser(
+            id: userId.isEmpty ? UUID().uuidString : userId,
             email: email,
-            password: "", // Backend won't validate password since user is already authenticated via Cognito
-            rememberMe: true,
-            deviceInfo: deviceInfo
+            fullName: name.isEmpty ? nil : name,
+            isEmailVerified: true
         )
-
-        // This will create/update user in backend and return user data
-        let response = try await apiClient.login(requestDTO: loginDTO)
-        return response.user
+    }
+    
+    private func createUserSessionResponse(from authUser: AuthUser) -> UserSessionResponseDTO {
+        UserSessionResponseDTO(
+            id: authUser.id,
+            email: authUser.email,
+            displayName: authUser.fullName ?? authUser.email,
+            avatarUrl: nil,
+            provider: "cognito",
+            role: "user",
+            isActive: true,
+            isEmailVerified: authUser.isEmailVerified,
+            preferences: UserPreferencesResponseDTO(
+                theme: "light",
+                notifications: true,
+                language: "en"
+            ),
+            metadata: UserMetadataResponseDTO(
+                lastLogin: Date(),
+                loginCount: 1,
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+        )
     }
 
     // MARK: - Public Methods
@@ -340,15 +369,21 @@ final class AuthService: AuthServiceProtocol {
             )
 
             if signInResult.isSignedIn {
-                // Sync with backend to get user data
-                let response = try await syncUserWithBackend(email: email)
-
+                // Get user attributes from Cognito
+                let attributes = try await Amplify.Auth.fetchUserAttributes()
+                let user = createUserFromCognitoAttributes(attributes)
+                
                 // Update auth state
-                let user = response.authUser
                 _currentUser = user
                 authStateContinuation?.yield(user)
-
-                return response
+                
+                // Save user data locally
+                if let userDataService {
+                    try? await userDataService.saveUser(user)
+                }
+                
+                // Return user session response
+                return createUserSessionResponse(from: user)
             } else {
                 // Check what additional step is required
                 switch signInResult.nextStep {
@@ -451,6 +486,11 @@ final class AuthService: AuthServiceProtocol {
             // Clear user state
             _currentUser = nil
             authStateContinuation?.yield(nil)
+            
+            // Clear persisted data
+            if let userDataService {
+                try? await userDataService.deleteAllUserData()
+            }
         }
     }
 

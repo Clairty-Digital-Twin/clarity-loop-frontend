@@ -32,14 +32,12 @@ final class SettingsViewModel {
     var healthKitAuthorizationStatus = "Unknown"
     var lastSyncDate: Date?
     var autoSyncEnabled = true
-
-    // MARK: - Computed Properties
-
-    var currentUser: String {
-        // Note: This now returns a placeholder since currentUser is async
-        // In UI, use async methods to get actual current user
-        "Loading user..."
-    }
+    
+    // User profile state
+    var currentUser = ""
+    var userName = ""
+    var userEmail = ""
+    var isLoadingUser = true
 
     var hasUnsavedChanges: Bool {
         // Check if any profile fields have been modified
@@ -61,10 +59,32 @@ final class SettingsViewModel {
     // MARK: - Profile Management
 
     func loadUserProfile() async {
-        // Load user profile data
+        isLoadingUser = true
+        
+        // Load user profile data from Cognito
         if let user = await authService.currentUser {
-            email = user.email
-            // In a real app, you'd fetch additional profile data from your backend
+            await MainActor.run {
+                self.currentUser = user.email
+                self.userName = user.fullName ?? user.email
+                self.userEmail = user.email
+                self.email = user.email
+                
+                // Parse name if available
+                if let fullName = user.fullName {
+                    let names = fullName.split(separator: " ")
+                    self.firstName = String(names.first ?? "")
+                    self.lastName = names.dropFirst().joined(separator: " ")
+                }
+                
+                self.isLoadingUser = false
+            }
+        } else {
+            await MainActor.run {
+                self.currentUser = "Not logged in"
+                self.userName = "Guest"
+                self.userEmail = ""
+                self.isLoadingUser = false
+            }
         }
     }
 
