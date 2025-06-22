@@ -57,7 +57,7 @@ final class PATAnalysisViewModel: BaseViewModel {
             let history = analysisHistory.value,
             let latest = history.first else { return false }
 
-        let daysSinceAnalysis = Calendar.current.dateComponents([.day], from: latest.analysisDate, to: Date()).day ?? 0
+        let daysSinceAnalysis = Calendar.current.dateComponents([.day], from: latest.analysisDate ?? Date(), to: Date()).day ?? 0
         return daysSinceAnalysis < 7
     }
 

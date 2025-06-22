@@ -41,9 +41,9 @@ final class AIInsightRepository: ObservableBaseRepository<AIInsight>, AIInsightR
         let lowercasedQuery = query.lowercased()
 
         let predicate = #Predicate<AIInsight> { insight in
-            insight.content.localizedStandardContains(lowercasedQuery) ||
-                (insight.title != nil && insight.title!.localizedStandardContains(lowercasedQuery)) ||
-                (insight.summary != nil && insight.summary!.localizedStandardContains(lowercasedQuery))
+            (insight.content?.localizedStandardContains(lowercasedQuery) ?? false) ||
+                (insight.title?.localizedStandardContains(lowercasedQuery) ?? false) ||
+                (insight.summary?.localizedStandardContains(lowercasedQuery) ?? false)
         }
 
         var descriptor = FetchDescriptor<AIInsight>(predicate: predicate)
@@ -140,14 +140,14 @@ final class AIInsightRepository: ObservableBaseRepository<AIInsight>, AIInsightR
 
     func fetchUnreadCount() async throws -> Int {
         let predicate = #Predicate<AIInsight> { insight in
-            !insight.isRead
+            !(insight.isRead ?? false)
         }
         return try await count(where: predicate)
     }
 
     func fetchFavoriteInsights() async throws -> [AIInsight] {
         let predicate = #Predicate<AIInsight> { insight in
-            insight.isFavorite
+            insight.isFavorite ?? false
         }
 
         var descriptor = FetchDescriptor<AIInsight>(predicate: predicate)
@@ -163,11 +163,11 @@ final class AIInsightRepository: ObservableBaseRepository<AIInsight>, AIInsightR
         let failedStatus = SyncStatus.failed.rawValue
 
         let predicate = #Predicate<AIInsight> { insight in
-            insight.syncStatus.rawValue == pendingStatus || insight.syncStatus.rawValue == failedStatus
+            (insight.syncStatus?.rawValue == pendingStatus) || (insight.syncStatus?.rawValue == failedStatus)
         }
 
         var descriptor = FetchDescriptor<AIInsight>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.timestamp)]
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
 
         return try await fetch(descriptor: descriptor)
     }

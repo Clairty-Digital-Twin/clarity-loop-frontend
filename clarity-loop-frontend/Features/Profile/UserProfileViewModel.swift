@@ -29,7 +29,7 @@ final class UserProfileViewModel: BaseViewModel {
 
     var isProfileComplete: Bool {
         guard let profile else { return false }
-        return !profile.displayName.isEmpty &&
+        return !(profile.displayName?.isEmpty ?? true) &&
             profile.dateOfBirth != nil &&
             profile.heightInCentimeters != nil &&
             profile.weightInKilograms != nil
@@ -41,11 +41,11 @@ final class UserProfileViewModel: BaseViewModel {
         var completedFields = 0
         let totalFields = 5
 
-        if !profile.displayName.isEmpty { completedFields += 1 }
+        if !(profile.displayName?.isEmpty ?? true) { completedFields += 1 }
         if profile.dateOfBirth != nil { completedFields += 1 }
         if profile.heightInCentimeters != nil { completedFields += 1 }
         if profile.weightInKilograms != nil { completedFields += 1 }
-        if profile.privacySettings.shareHealthData { completedFields += 1 }
+        if profile.privacySettings?.shareHealthData ?? false { completedFields += 1 }
 
         return Double(completedFields) / Double(totalFields)
     }

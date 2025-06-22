@@ -21,7 +21,6 @@ final class AIInsight {
 
     // Context
     var contextData: [String: String]?
-    var relatedMetrics: [HealthMetricType]?
     var dateRange: InsightDateRange?
 
     // AI metadata
@@ -45,13 +44,13 @@ final class AIInsight {
     var lastSyncedAt: Date?
 
     // CloudKit compliant relationships with inverses
-    @Relationship(inverse: \\UserProfileModel.aiInsights) 
+    @Relationship(inverse: \UserProfileModel.aiInsights) 
     var userProfile: UserProfileModel?
     
     // New relationship to fix PATAnalysis inverse
     var patAnalysis: PATAnalysis?
     
-    // Additional relationships
+    // Relationship to health metrics
     var relatedMetrics: [HealthMetric]?
 
     // MARK: - Initialization

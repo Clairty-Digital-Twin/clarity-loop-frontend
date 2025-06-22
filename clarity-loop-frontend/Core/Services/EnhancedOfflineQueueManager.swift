@@ -400,7 +400,7 @@ final class EnhancedOfflineQueueManager: ObservableObject {
 
 @Observable
 class OfflineOperation: Identifiable {
-    let id = UUID()
+    var id = UUID()
     let type: OperationType
     let payload: [String: Any]
     let timestamp: Date

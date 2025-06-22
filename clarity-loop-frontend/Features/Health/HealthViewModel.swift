@@ -198,12 +198,12 @@ final class HealthViewModel: BaseViewModel {
             // Convert to exportable format
             let exportData = metrics.map { metric in
                 [
-                    "id": metric.localID.uuidString,
-                    "type": metric.type.rawValue,
-                    "value": metric.value,
-                    "unit": metric.unit,
-                    "timestamp": ISO8601DateFormatter().string(from: metric.timestamp),
-                    "source": metric.source,
+                    "id": metric.localID?.uuidString ?? UUID().uuidString,
+                    "type": metric.type?.rawValue ?? "unknown",
+                    "value": metric.value ?? 0.0,
+                    "unit": metric.unit ?? "",
+                    "timestamp": ISO8601DateFormatter().string(from: metric.timestamp ?? Date()),
+                    "source": metric.source ?? "unknown",
                 ] as [String: Any]
             }
 
