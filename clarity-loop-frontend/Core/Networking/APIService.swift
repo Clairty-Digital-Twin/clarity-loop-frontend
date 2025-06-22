@@ -195,14 +195,14 @@ final class APIService: ObservableObject {
         switch endpoint {
         case let authEndpoint as AuthEndpoint:
             return try await handleAuthEndpoint(authEndpoint)
-        case let healthEndpoint as HealthEndpoint:
-            return try await handleHealthEndpoint(healthEndpoint)
+        case let healthDataEndpoint as HealthDataEndpoint:
+            return try await handleHealthDataEndpoint(healthDataEndpoint)
         case let insightEndpoint as InsightEndpoint:
             return try await handleInsightEndpoint(insightEndpoint)
         case let patEndpoint as PATEndpoint:
             return try await handlePATEndpoint(patEndpoint)
         default:
-            throw APIError.invalidRequest
+            throw APIError.notImplemented
         }
     }
 
@@ -232,7 +232,7 @@ final class APIService: ObservableObject {
         }
     }
 
-    private func handleHealthEndpoint<T>(_ endpoint: HealthDataEndpoint) async throws -> T {
+    private func handleHealthDataEndpoint<T>(_ endpoint: HealthDataEndpoint) async throws -> T {
         throw APIError.notImplemented
     }
 

@@ -26,6 +26,7 @@ protocol APIClientProtocol {
     // Endpoints for Insights
     func getInsightHistory(userId: String, limit: Int, offset: Int) async throws -> InsightHistoryResponseDTO
     func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> InsightGenerationResponseDTO
+    func chatWithAI(requestDTO: ChatRequestDTO) async throws -> ChatResponseDTO
     func getInsight(id: String) async throws -> InsightGenerationResponseDTO
     func getInsightsServiceStatus() async throws -> ServiceStatusResponseDTO
 
@@ -130,6 +131,11 @@ final class APIClient: APIClientProtocol {
 
     func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> InsightGenerationResponseDTO {
         let endpoint = InsightEndpoint.generate(dto: requestDTO)
+        return try await performRequest(for: endpoint)
+    }
+    
+    func chatWithAI(requestDTO: ChatRequestDTO) async throws -> ChatResponseDTO {
+        let endpoint = InsightEndpoint.chat(dto: requestDTO)
         return try await performRequest(for: endpoint)
     }
 

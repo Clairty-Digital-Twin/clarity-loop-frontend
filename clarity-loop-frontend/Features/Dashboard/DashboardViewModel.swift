@@ -66,34 +66,49 @@ final class DashboardViewModel {
     }
 
     #if targetEnvironment(simulator)
-        /// Loads sample data for simulator testing
+        /// Loads sample data for simulator testing ONLY when no real data exists
         func loadSampleData() async {
             viewState = .loading
 
-            // Create sample data for simulator
+            // First, try to load real data even in simulator
+            do {
+                // Request HealthKit authorization
+                try await healthKitService.requestAuthorization()
+
+                // Try to fetch real health metrics and insights
+                async let metrics = healthKitService.fetchAllDailyMetrics(for: Date())
+                let userId = await authService.currentUser?.id ?? "unknown"
+                async let insightsResponse = insightsRepo.getInsightHistory(userId: userId, limit: 1, offset: 0)
+
+                let (dailyMetrics, insights) = try await (metrics, insightsResponse)
+
+                let hasRealData = dailyMetrics.stepCount > 0 || 
+                                  dailyMetrics.restingHeartRate != nil || 
+                                  dailyMetrics.sleepData != nil ||
+                                  !insights.data.insights.isEmpty
+
+                if hasRealData {
+                    // Use real data
+                    let data = DashboardData(metrics: dailyMetrics, insightOfTheDay: insights.data.insights.first)
+                    viewState = .loaded(data)
+                    return
+                }
+            } catch {
+                // If real data fetch fails, continue with sample data
+                print("Failed to load real data in simulator: \(error)")
+            }
+
+            // Only show sample data if no real data exists
             let sampleMetrics = DailyHealthMetrics(
                 date: Date(),
-                stepCount: 8247,
-                restingHeartRate: 65.0,
-                sleepData: SleepData(
-                    totalTimeInBed: 28800, // 8 hours
-                    totalTimeAsleep: 25200, // 7 hours
-                    sleepEfficiency: 0.875
-                )
-            )
-
-            let sampleInsight: InsightPreviewDTO? = InsightPreviewDTO(
-                id: UUID().uuidString,
-                narrative: "You achieved 7 hours of sleep with 87.5% efficiency. This is excellent for recovery and cognitive function. Your resting heart rate of 65 BPM indicates good cardiovascular fitness.",
-                generatedAt: Date(),
-                confidenceScore: 0.92,
-                keyInsightsCount: 2,
-                recommendationsCount: 1
+                stepCount: 0,
+                restingHeartRate: nil,
+                sleepData: nil
             )
 
             let data = DashboardData(
                 metrics: sampleMetrics,
-                insightOfTheDay: sampleInsight
+                insightOfTheDay: nil
             )
 
             // Small delay to simulate loading

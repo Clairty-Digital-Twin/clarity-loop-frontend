@@ -284,6 +284,11 @@ final class BackendAPIClient: APIClientProtocol {
         let endpoint = InsightEndpoint.generate(dto: requestDTO)
         return try await performBackendRequest(for: endpoint, requiresAuth: true)
     }
+    
+    func chatWithAI(requestDTO: ChatRequestDTO) async throws -> ChatResponseDTO {
+        let endpoint = InsightEndpoint.chat(dto: requestDTO)
+        return try await performBackendRequest(for: endpoint, requiresAuth: true)
+    }
 
     func getInsight(id: String) async throws -> InsightGenerationResponseDTO {
         let endpoint = InsightEndpoint.getInsight(id: id)

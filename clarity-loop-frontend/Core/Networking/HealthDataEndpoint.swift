@@ -15,13 +15,13 @@ extension HealthDataEndpoint: Endpoint {
         case .getMetrics:
             "/api/v1/health-data"
         case .uploadHealthKit:
-            "/api/v1/health-data/upload"
+            "/api/v1/healthkit"
         case .syncHealthKit:
-            "/api/v1/health-data/sync"
+            "/api/v1/healthkit/sync"
         case let .getSyncStatus(syncId):
-            "/api/v1/health-data/sync/\(syncId)"
+            "/api/v1/healthkit/sync/\(syncId)"
         case let .getUploadStatus(uploadId):
-            "/api/v1/health-data/upload/\(uploadId)/status"
+            "/api/v1/healthkit/status/\(uploadId)"
         case let .getProcessingStatus(id):
             "/api/v1/health-data/processing/\(id.uuidString)"
         }

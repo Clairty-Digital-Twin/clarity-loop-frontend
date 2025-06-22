@@ -87,36 +87,32 @@ final class InsightAIService {
         conversationHistory: [ChatMessage] = [],
         healthContext: [String: Any]? = nil
     ) async throws -> HealthInsightDTO {
-        // Build context from conversation history
-        var contextParts: [String] = []
-
-        // Add recent conversation for context
-        let recentMessages = conversationHistory.suffix(6) // Last 6 messages for context
-        for message in recentMessages {
-            let role = message.sender == .user ? "User" : "Assistant"
-            contextParts.append("\(role): \(message.text)")
-        }
-
-        // Add current user message
-        contextParts.append("User: \(userMessage)")
-
-        let conversationContext = contextParts.joined(separator: "\n")
-
-        var analysisResults: [String: Any] = [
-            "user_question": userMessage,
-            "conversation_context": conversationContext,
-        ]
-
-        // Include health context if available
-        if let healthContext {
-            analysisResults["health_data_context"] = healthContext
-        }
-
-        return try await generateInsight(
-            from: analysisResults,
-            context: "Respond to the user's health-related question in a conversational manner. Be helpful, accurate, and empathetic. If medical advice is requested, remind the user to consult healthcare professionals.",
-            insightType: "chat_response",
-            includeRecommendations: false
+        // Get conversation ID from last message or generate new one
+        let conversationId = conversationHistory.last?.id.uuidString ?? UUID().uuidString
+        
+        // Create chat request
+        let chatRequest = ChatRequestDTO(
+            message: userMessage,
+            context: ChatContext(
+                conversationId: conversationId,
+                focusTimeframe: "last_week"
+            )
+        )
+        
+        // Call the real chat endpoint
+        let response = try await apiClient.chatWithAI(requestDTO: chatRequest)
+        
+        // Convert chat response to HealthInsightDTO format
+        // Get user ID from conversation ID or use default
+        let userId = conversationHistory.first?.id.uuidString ?? UUID().uuidString
+        
+        return HealthInsightDTO(
+            userId: userId,
+            narrative: response.response,
+            keyInsights: response.followUpQuestions ?? [],
+            recommendations: [],
+            confidenceScore: 0.95, // Chat responses have high confidence
+            generatedAt: Date()
         )
     }
 

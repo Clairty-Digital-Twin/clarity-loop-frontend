@@ -27,6 +27,11 @@ final class PATAnalysis: @unchecked Sendable {
     var deepSleepMinutes: Int?
     var lightSleepMinutes: Int?
     var awakeMinutes: Int?
+    
+    // Sleep stage percentages
+    var deepSleepPercentage: Double?
+    var remSleepPercentage: Double?
+    var lightSleepPercentage: Double?
 
     // Analysis scores - all optional with defaults
     var overallScore: Double?
@@ -70,6 +75,9 @@ final class PATAnalysis: @unchecked Sendable {
         self.deepSleepMinutes = 0
         self.lightSleepMinutes = 0
         self.awakeMinutes = 0
+        self.deepSleepPercentage = 0
+        self.remSleepPercentage = 0
+        self.lightSleepPercentage = 0
         self.overallScore = 0
         self.confidenceScore = 0
         self.qualityMetrics = SleepQualityMetrics()

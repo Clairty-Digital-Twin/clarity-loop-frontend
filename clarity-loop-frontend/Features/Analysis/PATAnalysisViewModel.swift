@@ -190,8 +190,6 @@ final class PATAnalysisViewModel: BaseViewModel {
     }
 
     private func saveAnalysisResult(_ result: PATAnalysisResult) async {
-        // Create a new PATAnalysis with default values for now
-        // In a real implementation, we'd parse the patFeatures to extract sleep data
         let analysis = PATAnalysis(
             startDate: Date().addingTimeInterval(-8 * 60 * 60), // 8 hours ago
             endDate: Date(),
@@ -203,12 +201,32 @@ final class PATAnalysisViewModel: BaseViewModel {
         analysis.confidenceScore = result.confidence ?? 0
         analysis.syncStatus = result.isCompleted ? .synced : .pending
 
-        // TODO: Parse patFeatures to extract actual sleep stage data
-        if let _ = result.patFeatures {
-            // This would parse the features dictionary to extract sleep metrics
-            // For now, using placeholder values
-            analysis.totalSleepMinutes = 420 // 7 hours
-            analysis.sleepEfficiency = 0.85
+        // Parse actual PAT features if available
+        if let patFeatures = result.patFeatures {
+            // Extract sleep metrics from PAT features
+            if let sleepEfficiency = patFeatures["sleep_efficiency"]?.value as? Double {
+                analysis.sleepEfficiency = sleepEfficiency
+            }
+            
+            if let totalSleepHours = patFeatures["total_sleep_hours"]?.value as? Double {
+                analysis.totalSleepMinutes = Int(totalSleepHours * 60)
+            } else if let totalSleepMinutes = patFeatures["total_sleep_minutes"]?.value as? Double {
+                analysis.totalSleepMinutes = Int(totalSleepMinutes)
+            }
+            
+            // Extract sleep stages if available
+            if let deepSleepPercentage = patFeatures["deep_sleep_percentage"]?.value as? Double {
+                // Store these percentages for later use
+                analysis.deepSleepPercentage = deepSleepPercentage
+            }
+            
+            if let remSleepPercentage = patFeatures["rem_sleep_percentage"]?.value as? Double {
+                analysis.remSleepPercentage = remSleepPercentage
+            }
+            
+            if let lightSleepPercentage = patFeatures["light_sleep_percentage"]?.value as? Double {
+                analysis.lightSleepPercentage = lightSleepPercentage
+            }
         }
 
         do {

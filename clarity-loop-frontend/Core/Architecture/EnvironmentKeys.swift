@@ -451,6 +451,16 @@ final class DummyAPIClient: APIClientProtocol {
             metadata: ["error": AnyCodable("Background launch fallback")]
         )
     }
+    
+    func chatWithAI(requestDTO: ChatRequestDTO) async throws -> ChatResponseDTO {
+        print("⚠️ DummyAPIClient: chatWithAI called during background launch")
+        return ChatResponseDTO(
+            response: "Background launch fallback - chat not available",
+            conversationId: requestDTO.context?.conversationId ?? UUID().uuidString,
+            followUpQuestions: [],
+            relevantData: nil
+        )
+    }
 
     func getInsight(id: String) async throws -> InsightGenerationResponseDTO {
         print("⚠️ DummyAPIClient: getInsight called during background launch")
