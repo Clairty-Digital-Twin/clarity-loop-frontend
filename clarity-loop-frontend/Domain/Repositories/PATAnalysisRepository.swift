@@ -95,11 +95,11 @@ final class PATAnalysisRepository: ObservableBaseRepository<PATAnalysis>, PATAna
         let failedStatus = SyncStatus.failed.rawValue
 
         let predicate = #Predicate<PATAnalysis> { analysis in
-            analysis.syncStatus.rawValue == pendingStatus || analysis.syncStatus.rawValue == failedStatus
+            (analysis.syncStatus?.rawValue ?? "") == pendingStatus || (analysis.syncStatus?.rawValue ?? "") == failedStatus
         }
 
         var descriptor = FetchDescriptor<PATAnalysis>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.analysisDate)]
+        descriptor.sortBy = [SortDescriptor(\PATAnalysis.analysisDate)]
 
         return try await fetch(descriptor: descriptor)
     }
