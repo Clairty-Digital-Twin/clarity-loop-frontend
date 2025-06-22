@@ -10,18 +10,18 @@ final class PATAnalysisRepository: ObservableBaseRepository<PATAnalysis>, PATAna
 
     func fetchAnalyses(between startDate: Date, and endDate: Date) async throws -> [PATAnalysis] {
         let predicate = #Predicate<PATAnalysis> { analysis in
-            analysis.startDate >= startDate && analysis.endDate <= endDate
+            (analysis.startDate ?? Date.distantPast) >= startDate && (analysis.endDate ?? Date.distantFuture) <= endDate
         }
 
         var descriptor = FetchDescriptor<PATAnalysis>(predicate: predicate)
-        descriptor.sortBy = [SortDescriptor(\.startDate, order: .reverse)]
+        descriptor.sortBy = [SortDescriptor(\PATAnalysis.startDate, order: .reverse)]
 
         return try await fetch(descriptor: descriptor)
     }
 
     func fetchLatestAnalysis() async throws -> PATAnalysis? {
         var descriptor = FetchDescriptor<PATAnalysis>()
-        descriptor.sortBy = [SortDescriptor(\.analysisDate, order: .reverse)]
+        descriptor.sortBy = [SortDescriptor(\PATAnalysis.analysisDate, order: .reverse)]
         descriptor.fetchLimit = 1
 
         let results = try await fetch(descriptor: descriptor)

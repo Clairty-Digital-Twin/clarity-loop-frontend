@@ -38,18 +38,18 @@ final class AIInsightViewModel: BaseViewModel {
 
         // Filter by timeframe
         let cutoffDate = selectedTimeframe.cutoffDate
-        filtered = filtered.filter { $0.timestamp >= cutoffDate }
+        filtered = filtered.filter { ($0.timestamp ?? Date.distantPast) >= cutoffDate }
 
         return filtered
     }
 
     var hasUnreadInsights: Bool {
-        insights.contains { !$0.isRead }
+        insights.contains { !($0.isRead ?? false) }
     }
 
     var insightStats: InsightStats {
         let total = insights.count
-        let unread = insights.filter { !$0.isRead }.count
+        let unread = insights.filter { !($0.isRead ?? false) }.count
         let highPriority = insights.filter { $0.priority == .high }.count
         let averageConfidence = insights.isEmpty ? 0 : insights.compactMap(\.confidenceScore)
             .reduce(0, +) / Double(insights.count)
@@ -163,7 +163,7 @@ final class AIInsightViewModel: BaseViewModel {
     }
 
     func toggleBookmark(_ insight: AIInsight) async {
-        insight.isFavorite.toggle()
+        insight.isFavorite = !(insight.isFavorite ?? false)
 
         do {
             try await insightRepository.update(insight)

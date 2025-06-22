@@ -190,7 +190,7 @@ final class CloudKitSyncManager: ObservableObject {
         let pendingHealthMetrics = try modelContext.fetch(
             FetchDescriptor<HealthMetric>(
                 predicate: #Predicate { metric in
-                    metric.syncStatus.rawValue == "pending"
+                    metric.syncStatus?.rawValue == "pending"
                 }
             )
         )
@@ -198,7 +198,7 @@ final class CloudKitSyncManager: ObservableObject {
         let pendingInsights = try modelContext.fetch(
             FetchDescriptor<AIInsight>(
                 predicate: #Predicate { insight in
-                    insight.syncStatus.rawValue == "pending"
+                    insight.syncStatus?.rawValue == "pending"
                 }
             )
         )
@@ -206,7 +206,7 @@ final class CloudKitSyncManager: ObservableObject {
         let pendingAnalyses = try modelContext.fetch(
             FetchDescriptor<PATAnalysis>(
                 predicate: #Predicate { analysis in
-                    analysis.syncStatus.rawValue == "pending"
+                    analysis.syncStatus?.rawValue == "pending"
                 }
             )
         )
@@ -238,7 +238,7 @@ final class CloudKitSyncManager: ObservableObject {
                 Task { @MainActor in
                     switch result {
                     case .success:
-                        if let metric = chunk.first(where: { $0.localID.uuidString == recordID.recordName }) {
+                        if let metric = chunk.first(where: { $0.localID?.uuidString == recordID.recordName }) {
                             metric.syncStatus = SyncStatus.synced
                             metric.lastSyncedAt = Date()
                         }
@@ -339,7 +339,7 @@ final class CloudKitSyncManager: ObservableObject {
             // Update if remote is newer
             if
                 let remoteModified = record.modificationDate,
-                remoteModified > existing.timestamp {
+                remoteModified > (existing.timestamp ?? Date.distantPast) {
                 updateHealthMetric(existing, from: record)
             }
         } else {
@@ -360,14 +360,14 @@ final class CloudKitSyncManager: ObservableObject {
     // MARK: - Record Conversion
 
     private func createRecord(from metric: HealthMetric) -> CKRecord {
-        let recordID = CKRecord.ID(recordName: metric.localID.uuidString, zoneID: recordZoneID)
+        let recordID = CKRecord.ID(recordName: metric.localID?.uuidString ?? UUID().uuidString, zoneID: recordZoneID)
         let record = CKRecord(recordType: "HealthMetric", recordID: recordID)
 
-        record["type"] = metric.type.rawValue
-        record["value"] = metric.value
-        record["unit"] = metric.unit
-        record["timestamp"] = metric.timestamp
-        record["source"] = metric.source
+        record["type"] = metric.type?.rawValue ?? "unknown"
+        record["value"] = metric.value ?? 0.0
+        record["unit"] = metric.unit ?? ""
+        record["timestamp"] = metric.timestamp ?? Date()
+        record["source"] = metric.source ?? "unknown"
         if let metadata = metric.metadata {
             record["metadata"] = try? JSONSerialization.data(withJSONObject: metadata) as CKRecordValue
         }
@@ -397,8 +397,8 @@ final class CloudKitSyncManager: ObservableObject {
     }
 
     private func updateHealthMetric(_ metric: HealthMetric, from record: CKRecord) {
-        metric.value = record["value"] as! Double
-        metric.timestamp = record["timestamp"] as! Date
+        metric.value = record["value"] as? Double ?? 0.0
+        metric.timestamp = record["timestamp"] as? Date ?? Date()
         metric.metadata = record["metadata"] as? [String: String]
         metric.syncStatus = SyncStatus.synced
         metric.lastSyncedAt = Date()
