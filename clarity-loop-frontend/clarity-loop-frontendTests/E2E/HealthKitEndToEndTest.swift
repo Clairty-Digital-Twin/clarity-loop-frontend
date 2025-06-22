@@ -12,7 +12,7 @@ final class HealthKitEndToEndTest: XCTestCase {
     override func setUp() {
         super.setUp()
         // Create mock API client for testing
-        let mockAPIClient = BackendAPIClient(tokenProvider: { "test-token" })
+        let mockAPIClient = BackendAPIClient(tokenProvider: { "test-token" })!
         healthKitService = HealthKitService(apiClient: mockAPIClient)
         mockHealthStore = HKHealthStore()
     }
