@@ -184,6 +184,16 @@ class MockAPIClient: APIClientProtocol {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }
 
+    func chatWithAI(requestDTO: ChatRequestDTO) async throws -> ChatResponseDTO {
+        guard shouldSucceed else { throw mockError }
+        return ChatResponseDTO(
+            response: "Mock AI response",
+            conversationId: UUID().uuidString,
+            followUpQuestions: ["What else would you like to know?"],
+            relevantData: nil
+        )
+    }
+
     func getInsight(id: String) async throws -> InsightGenerationResponseDTO {
         throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
     }

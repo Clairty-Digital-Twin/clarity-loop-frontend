@@ -123,14 +123,12 @@
 				Domain/UseCases/FetchDailyHealthSummaryUseCase.swift = (ios, );
 				Domain/UseCases/GenerateInsightUseCase.swift = (ios, );
 				Domain/UseCases/SyncHealthDataUseCase.swift = (ios, );
-				Features/Analysis/PATAnalysisView.swift = (ios, );
 				Features/Analysis/PATAnalysisViewModel.swift = (ios, );
 				Features/Authentication/AuthViewModel.swift = (ios, );
 				Features/Authentication/EmailVerificationView.swift = (ios, );
 				Features/Authentication/EmailVerificationViewModel.swift = (ios, );
 				Features/Authentication/LoginView.swift = (ios, );
 				Features/Authentication/LoginViewModel.swift = (ios, );
-				Features/Authentication/OnboardingView.swift = (ios, );
 				Features/Authentication/OnboardingViewModel.swift = (ios, );
 				Features/Authentication/RegistrationView.swift = (ios, );
 				Features/Authentication/RegistrationViewModel.swift = (ios, );
@@ -161,6 +159,9 @@
 		};
 		7171570C2DF3DE8600F8B4D7 /* Exceptions for "clarity-loop-frontendUITests" folder in "clarity-loop-frontendUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				HealthDataContractValidationTests.swift,
+			);
 			platformFiltersByRelativePath = {
 				Features/Authentication/AuthenticationUITests.swift = (ios, );
 				UI/Layout/LayoutStabilityUITests.swift = (ios, );
@@ -176,6 +177,16 @@
 			);
 			platformFiltersByRelativePath = {
 				"clarity-loop-frontendTests/E2E/HealthKitEndToEndTest.swift" = (ios, );
+			};
+			target = 71B2A8D92DF35EBB00F2784F /* clarity-loop-frontendTests */;
+		};
+		719D291C2E098EBC00E96A58 /* Exceptions for "clarity-loop-frontendUITests" folder in "clarity-loop-frontendTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				HealthDataContractValidationTests.swift,
+			);
+			platformFiltersByRelativePath = {
+				HealthDataContractValidationTests.swift = (ios, );
 			};
 			target = 71B2A8D92DF35EBB00F2784F /* clarity-loop-frontendTests */;
 		};
@@ -219,7 +230,6 @@
 				Integration/AuthenticationIntegrationTests.swift = (ios, );
 				Integration/BackendContractValidationTests.swift = (ios, );
 				Integration/BackendIntegrationTests.swift = (ios, );
-				Integration/HealthDataContractValidationTests.swift = (ios, );
 				Integration/PATContractValidationTests.swift = (ios, );
 				IntegrationTests.swift = (ios, );
 				Mocks/CorrectMockAPIClient.swift = (ios, );
@@ -257,6 +267,7 @@
 		71B2A8E72DF35EBB00F2784F /* clarity-loop-frontendUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				719D291C2E098EBC00E96A58 /* Exceptions for "clarity-loop-frontendUITests" folder in "clarity-loop-frontendTests" target */,
 				7171570C2DF3DE8600F8B4D7 /* Exceptions for "clarity-loop-frontendUITests" folder in "clarity-loop-frontendUITests" target */,
 			);
 			path = "clarity-loop-frontendUITests";

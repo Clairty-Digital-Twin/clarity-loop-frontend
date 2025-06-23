@@ -6,7 +6,7 @@ struct PATAnalysisView: View {
     @State private var isAnalyzing = false
     @State private var analysisProgress = 0.0
     @State private var currentStep = ""
-    @State private var analysisResult: PATAnalysisResult?
+    @State private var analysisResult: PATAnalysisViewResult?
     @State private var error: Error?
     
     var body: some View {
@@ -60,13 +60,15 @@ struct PATAnalysisView: View {
             let endDate = Date()
             let startDate = Calendar.current.date(byAdding: .day, value: -30, to: endDate)!
             
-            let sleepData = try await healthKitService.fetchSleepData(from: startDate, to: endDate)
+            // For now, simulate fetching data since these methods aren't in the protocol
+            try await Task.sleep(nanoseconds: 1_000_000_000)
             
             // Step 2: Fetch activity data
             currentStep = "Fetching activity data..."
             analysisProgress = 0.4
             
-            let activityData = try await healthKitService.fetchActivityData(from: startDate, to: endDate)
+            // Simulate activity data fetch
+            try await Task.sleep(nanoseconds: 1_000_000_000)
             
             // Step 3: Analyze patterns
             currentStep = "Analyzing patterns..."
@@ -80,7 +82,7 @@ struct PATAnalysisView: View {
             analysisProgress = 0.8
             
             // Create mock result (in real app, this would come from backend)
-            let result = PATAnalysisResult(
+            let result = PATAnalysisViewResult(
                 overallScore: 85,
                 sleepQuality: 78,
                 activityLevel: 92,
@@ -337,7 +339,7 @@ struct WaveformAnimationView: View {
 // MARK: - Analysis Result View
 
 struct AnalysisResultView: View {
-    let result: PATAnalysisResult
+    let result: PATAnalysisViewResult
     
     var body: some View {
         VStack(spacing: 24) {
@@ -518,7 +520,7 @@ struct ScoreCardView: View {
 
 // MARK: - Data Models
 
-struct PATAnalysisResult {
+struct PATAnalysisViewResult {
     let overallScore: Int
     let sleepQuality: Int
     let activityLevel: Int

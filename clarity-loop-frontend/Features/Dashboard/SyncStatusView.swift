@@ -252,33 +252,20 @@ struct StepIndicator: View {
 
 // MARK: - Preview
 
+#if DEBUG
 #Preview("Sync Status - Idle") {
-    let syncManager = HealthDataSyncManager(
-        healthKitService: MockHealthKitService(),
-        authService: MockAuthService()
-    )
-    return SyncStatusView(syncManager: syncManager)
+    Text("Preview unavailable - Mock services not available in this target")
         .padding()
 }
 
 #Preview("Sync Status - Progress") {
-    let syncManager = HealthDataSyncManager(
-        healthKitService: MockHealthKitService(),
-        authService: MockAuthService()
-    )
-    syncManager.isSyncing = true
-    syncManager.syncProgress = 0.45
-    return SyncStatusView(syncManager: syncManager)
+    Text("Preview unavailable - Mock services not available in this target")
         .padding()
 }
 
 #Preview("Sync Progress Card") {
-    let syncManager = HealthDataSyncManager(
-        healthKitService: MockHealthKitService(),
-        authService: MockAuthService()
-    )
-    syncManager.isSyncing = true
-    syncManager.syncProgress = 0.75
-    return SyncProgressCard(syncManager: syncManager)
+    Text("Preview unavailable - Mock services not available in this target")
         .padding()
 }
+#endif
+
