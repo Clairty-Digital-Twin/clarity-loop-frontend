@@ -35,9 +35,6 @@ final class DashboardViewModel {
         self.healthKitService = healthKitService
         self.authService = authService
         
-        // Health sync manager will be created later on main actor
-        self.healthSyncManager = nil
-        
         // Listen for health data sync notifications
         NotificationCenter.default.publisher(for: .healthDataSynced)
             .sink { [weak self] _ in
@@ -50,8 +47,22 @@ final class DashboardViewModel {
 
     // MARK: - Public Methods
 
+    /// Initializes the health sync manager on the main actor
+    @MainActor
+    func initializeHealthSyncManager() async {
+        if healthSyncManager == nil {
+            healthSyncManager = HealthDataSyncManager(
+                healthKitService: healthKitService,
+                authService: authService
+            )
+        }
+    }
+    
     /// Loads all necessary data for the dashboard.
     func loadDashboard() async {
+        // Initialize health sync manager if needed
+        await initializeHealthSyncManager()
+        
         viewState = .loading
 
         do {

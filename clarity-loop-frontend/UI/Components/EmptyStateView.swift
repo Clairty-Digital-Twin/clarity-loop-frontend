@@ -6,6 +6,8 @@ struct EmptyStateView: View {
     let systemImage: String
     let actionTitle: String?
     let action: (() -> Void)?
+    
+    @State private var animateIcon = false
 
     init(
         title: String,
@@ -22,36 +24,87 @@ struct EmptyStateView: View {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 16) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 60))
-                    .foregroundColor(.secondary)
+        VStack(spacing: 32) {
+            Spacer()
+            
+            VStack(spacing: 24) {
+                // Animated icon
+                ZStack {
+                    Circle()
+                        .fill(iconBackgroundColor.opacity(0.1))
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(animateIcon ? 1.0 : 0.9)
+                    
+                    Image(systemName: systemImage)
+                        .font(.system(size: 56))
+                        .foregroundColor(iconColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .scaleEffect(animateIcon ? 1.0 : 0.8)
+                }
+                .animation(
+                    .spring(response: 0.6, dampingFraction: 0.7)
+                        .repeatForever(autoreverses: true),
+                    value: animateIcon
+                )
+                .onAppear {
+                    animateIcon = true
+                }
 
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     Text(title)
                         .font(.title2)
-                        .fontWeight(.semibold)
+                        .fontWeight(.bold)
                         .multilineTextAlignment(.center)
+                        .foregroundColor(.primary)
 
                     Text(message)
-                        .font(.body)
+                        .font(.callout)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(3)
                 }
+                .padding(.horizontal)
             }
 
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                Button(action: action) {
+                    Label(actionTitle, systemImage: "arrow.right")
+                        .font(.callout)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .padding(.top, 8)
             }
+            
+            Spacer()
         }
         .padding(.horizontal, 32)
-        .padding(.vertical, 24)
+        .padding(.vertical, 40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
+    }
+    
+    private var iconColor: Color {
+        switch systemImage {
+        case let icon where icon.contains("heart"):
+            return .red
+        case let icon where icon.contains("lightbulb"):
+            return .yellow
+        case let icon where icon.contains("message"):
+            return .blue
+        case let icon where icon.contains("chart"):
+            return .green
+        case let icon where icon.contains("magnifying"):
+            return .purple
+        default:
+            return .accentColor
+        }
+    }
+    
+    private var iconBackgroundColor: Color {
+        iconColor
     }
 }
 
@@ -62,9 +115,9 @@ struct NoHealthDataView: View {
 
     var body: some View {
         EmptyStateView(
-            title: "No Health Data",
-            message: "Start tracking your health by connecting to HealthKit. We'll analyze your sleep, activity, and wellness patterns.",
-            systemImage: "heart.fill",
+            title: "Track Your Health Journey",
+            message: "Connect HealthKit to start monitoring your sleep, activity, and wellness patterns. Get personalized insights to optimize your health.",
+            systemImage: "heart.text.square.fill",
             actionTitle: "Connect HealthKit",
             action: onSetupHealthKit
         )
@@ -80,10 +133,10 @@ struct NoInsightsView: View {
 
     var body: some View {
         EmptyStateView(
-            title: "No Insights Yet",
-            message: "Once you have health data, we'll generate personalized insights about your wellness patterns.",
-            systemImage: "lightbulb.fill",
-            actionTitle: onGenerateInsight != nil ? "Generate Insight" : nil,
+            title: "Discover Your Patterns",
+            message: "Sync your health data to unlock AI-powered insights about your sleep quality, activity levels, and wellness trends.",
+            systemImage: "lightbulb.max.fill",
+            actionTitle: onGenerateInsight != nil ? "Generate First Insight" : nil,
             action: onGenerateInsight
         )
     }
@@ -109,10 +162,10 @@ struct NoConversationView: View {
 
     var body: some View {
         EmptyStateView(
-            title: "Start a Conversation",
-            message: "Ask me anything about your health data, patterns, or get personalized wellness recommendations.",
-            systemImage: "message.fill",
-            actionTitle: "Start Chatting",
+            title: "Your Health Assistant Awaits",
+            message: "Ask questions about your health data, explore trends, or get personalized wellness recommendations. I'm here to help!",
+            systemImage: "bubble.left.and.bubble.right.fill",
+            actionTitle: "Start Your First Chat",
             action: onStartChat
         )
     }
@@ -183,71 +236,6 @@ struct LoadingStateView: View {
     }
 }
 
-// MARK: - Skeleton Loading View
-
-struct SkeletonLoadingView: View {
-    @State private var animateGradient = false
-    let numberOfRows: Int
-
-    init(numberOfRows: Int = 3) {
-        self.numberOfRows = numberOfRows
-    }
-
-    var body: some View {
-        VStack(spacing: 16) {
-            ForEach(0..<numberOfRows, id: \.self) { _ in
-                SkeletonRow()
-            }
-        }
-        .padding()
-    }
-}
-
-private struct SkeletonRow: View {
-    @State private var animateGradient = false
-
-    var body: some View {
-        HStack {
-            // Icon placeholder
-            Circle()
-                .fill(skeletonGradient)
-                .frame(width: 40, height: 40)
-
-            VStack(alignment: .leading, spacing: 8) {
-                // Title placeholder
-                Rectangle()
-                    .fill(skeletonGradient)
-                    .frame(height: 16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Subtitle placeholder
-                Rectangle()
-                    .fill(skeletonGradient)
-                    .frame(height: 12)
-                    .frame(maxWidth: 200, alignment: .leading)
-            }
-
-            Spacer()
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-                animateGradient.toggle()
-            }
-        }
-    }
-
-    private var skeletonGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(.systemGray5),
-                Color(.systemGray4),
-                Color(.systemGray5),
-            ],
-            startPoint: animateGradient ? .leading : .trailing,
-            endPoint: animateGradient ? .trailing : .leading
-        )
-    }
-}
 
 // MARK: - Preview
 
@@ -261,10 +249,6 @@ private struct SkeletonRow: View {
 
 #Preview("Loading State") {
     LoadingStateView(message: "Analyzing your health data...")
-}
-
-#Preview("Skeleton Loading") {
-    SkeletonLoadingView(numberOfRows: 4)
 }
 
 #Preview("Maintenance Mode") {

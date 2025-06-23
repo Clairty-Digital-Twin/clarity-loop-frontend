@@ -99,30 +99,41 @@ final class BackgroundTaskManager: BackgroundTaskManagerProtocol {
         logger.info("Starting background health data sync")
 
         do {
+            // Check if user is authenticated
+            guard let userId = ServiceLocator.shared.currentUserId else {
+                logger.info("User not authenticated, skipping health sync")
+                return false
+            }
+            
             // Get the date range for sync
             let endDate = Date()
             let startDate = endDate.addingTimeInterval(-Constants.maxDataAge)
 
-            // Sync health data
-            let syncRequest = HealthKitSyncRequestDTO(
-                userId: ServiceLocator.shared.currentUserId ?? "",
-                startDate: startDate,
-                endDate: endDate,
-                dataTypes: ["stepCount", "heartRate", "sleepAnalysis"],
-                forceRefresh: false
+            // Fetch health data for upload
+            let uploadRequest = try await healthKitService.fetchHealthDataForUpload(
+                from: startDate,
+                to: endDate,
+                userId: userId
             )
+            
+            // Skip if no data to upload
+            if uploadRequest.samples.isEmpty {
+                logger.info("No health data to sync")
+                return true
+            }
+            
+            // Upload health data
+            let uploadResponse = try await healthKitService.uploadHealthKitData(uploadRequest)
 
-            let syncResponse = try await healthDataRepository.syncHealthKitData(requestDTO: syncRequest)
-
-            if syncResponse.success {
-                logger.info("Background health data sync completed successfully")
+            if uploadResponse.success {
+                logger.info("Background health data sync completed successfully: \(uploadResponse.processedSamples) samples processed")
 
                 // Schedule next sync
                 scheduleHealthDataSync()
 
                 return true
             } else {
-                logger.error("Background health data sync failed: \(syncResponse.message ?? "Unknown error")")
+                logger.error("Background health data sync failed: \(uploadResponse.message ?? "Unknown error")")
                 return false
             }
 

@@ -186,60 +186,11 @@ extension ErrorView {
                 systemImage: "doc.text.fill",
                 retryAction: onRetry
             )
-        case .invalidURL:
+        default:
             self.init(
-                title: "Configuration Error",
-                message: "There's a problem with the app configuration. Please contact support.",
-                systemImage: "gear.badge.xmark",
-                retryAction: onRetry
-            )
-        case let .unknown(error):
-            self.init(
-                title: "Unexpected Error",
-                message: error.localizedDescription,
-                systemImage: "questionmark.circle.fill",
-                retryAction: onRetry
-            )
-        case .notImplemented:
-            self.init(
-                title: "Feature Unavailable",
-                message: "This feature is not yet implemented. Please check back later.",
-                systemImage: "wrench.and.screwdriver",
-                retryAction: nil
-            )
-        case let .validationError(message):
-            self.init(
-                title: "Invalid Data",
-                message: message,
+                title: "Something Went Wrong",
+                message: apiError.localizedDescription,
                 systemImage: "exclamationmark.triangle.fill",
-                retryAction: onRetry
-            )
-        case let .httpError(statusCode, _):
-            self.init(
-                title: "HTTP Error \(statusCode)",
-                message: "An error occurred while communicating with the server.",
-                systemImage: "network.badge.shield.half.filled",
-                retryAction: onRetry
-            )
-        case .missingAuthToken:
-            self.init(
-                title: "Authentication Missing",
-                message: "Please sign in to continue.",
-                systemImage: "person.badge.key.fill",
-                retryAction: onRetry
-            )
-        case .invalidResponse:
-            self.init(
-                title: "Invalid Response",
-                message: "The server response was not in the expected format.",
-                systemImage: "exclamationmark.arrow.circlepath",
-                retryAction: onRetry
-            )
-        case .emailVerificationRequired:
-            self.init(
-                title: "Email Verification Required",
-                message: "Please verify your email address to continue.",
-                systemImage: "envelope.badge.shield.half.filled",
                 retryAction: onRetry
             )
         }

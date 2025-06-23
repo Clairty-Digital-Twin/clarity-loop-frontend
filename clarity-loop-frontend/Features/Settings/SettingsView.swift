@@ -10,13 +10,16 @@ struct SettingsView: View {
             if let viewModel {
                 SettingsContentView(viewModel: viewModel)
             } else {
-                ProgressView("Loading...")
-                    .onAppear {
-                        viewModel = SettingsViewModel(
-                            authService: authService,
-                            healthKitService: healthKitService
-                        )
-                    }
+                LoadingView(
+                    message: "Loading settings...",
+                    style: .fullScreen
+                )
+                .onAppear {
+                    viewModel = SettingsViewModel(
+                        authService: authService,
+                        healthKitService: healthKitService
+                    )
+                }
             }
         }
     }
@@ -62,20 +65,39 @@ struct SettingsContentView: View {
                     }
                     .padding(.vertical, 8)
                 } else {
-                    HStack {
+                    HStack(spacing: 16) {
+                        // Profile Avatar
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.2))
+                                .frame(width: 60, height: 60)
+                            
+                            Text(viewModel.userInitials)
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.accentColor)
+                        }
+                        
                         VStack(alignment: .leading, spacing: 4) {
                             Text(viewModel.userName)
                                 .font(.headline)
                             Text(viewModel.userEmail)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
+                            if viewModel.userVerified {
+                                Label("Verified", systemImage: "checkmark.seal.fill")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
                         }
                         
                         Spacer()
                         
-                        Image(systemName: "pencil.circle")
+                        Image(systemName: "pencil.circle.fill")
                             .foregroundColor(.accentColor)
+                            .font(.title2)
                     }
+                    .padding(.vertical, 8)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         Task {
@@ -105,24 +127,29 @@ struct SettingsContentView: View {
                     }
                 }
 
-                Button("Request HealthKit Authorization") {
-                    Task {
-                        await viewModel.requestHealthKitAuthorization()
-                    }
-                }
-                .disabled(viewModel.isLoading)
-
-                Button("Sync Health Data") {
-                    Task {
-                        await viewModel.syncHealthData()
-                    }
-                }
-                .disabled(viewModel.isLoading)
-
                 Toggle("Auto Sync", isOn: Binding(
                     get: { viewModel.autoSyncEnabled },
                     set: { _ in viewModel.toggleAutoSync() }
                 ))
+                
+                if !viewModel.autoSyncEnabled {
+                    Button("Sync Now") {
+                        Task {
+                            await viewModel.syncHealthData()
+                        }
+                    }
+                    .font(.callout)
+                    .disabled(viewModel.isLoading)
+                }
+                
+                if viewModel.healthKitAuthorizationStatus != "Authorized" {
+                    Button("Grant HealthKit Access") {
+                        Task {
+                            await viewModel.requestHealthKitAuthorization()
+                        }
+                    }
+                    .disabled(viewModel.isLoading)
+                }
             }
 
             // App Preferences Section
@@ -178,10 +205,10 @@ struct SettingsContentView: View {
         .navigationTitle("Settings")
         .overlay {
             if viewModel.isLoading {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.3))
+                LoadingView(
+                    message: nil,
+                    style: .overlay
+                )
             }
         }
         .alert("Success", isPresented: .constant(viewModel.successMessage != nil)) {

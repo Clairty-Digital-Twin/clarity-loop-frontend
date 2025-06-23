@@ -3,10 +3,15 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AuthViewModel.self) private var authViewModel
     @Environment(\.authService) private var authService
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     var body: some View {
         if authViewModel.isLoggedIn {
-            MainTabView()
+            if hasCompletedOnboarding {
+                MainTabView()
+            } else {
+                OnboardingView()
+            }
         } else {
             // The LoginView should be wrapped in a NavigationStack for proper UI flow.
             NavigationStack {

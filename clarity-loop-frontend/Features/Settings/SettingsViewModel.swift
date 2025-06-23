@@ -38,6 +38,25 @@ final class SettingsViewModel {
     var userName = ""
     var userEmail = ""
     var isLoadingUser = true
+    
+    // Computed properties for UI
+    var userInitials: String {
+        let components = userName.split(separator: " ")
+        if components.count >= 2 {
+            let firstInitial = components[0].prefix(1).uppercased()
+            let lastInitial = components[1].prefix(1).uppercased()
+            return "\(firstInitial)\(lastInitial)"
+        } else if !userName.isEmpty {
+            return String(userName.prefix(2)).uppercased()
+        } else {
+            return "U"
+        }
+    }
+    
+    var userVerified: Bool {
+        // Check if we have a current user from auth service
+        return currentUser != "Not logged in" && !userEmail.isEmpty
+    }
 
     var hasUnsavedChanges: Bool {
         // Check if any profile fields have been modified

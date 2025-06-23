@@ -9,13 +9,16 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            ZStack {
                 if let viewModel {
                     switch viewModel.viewState {
                     case .idle:
                         Color.clear // Nothing shown
                     case .loading:
-                        ProgressView("Loading your pulse...")
+                        LoadingView(
+                            message: "Loading your health data...",
+                            style: .fullScreen
+                        )
                     case let .loaded(data):
                         ScrollView {
                             LazyVStack(spacing: 16) {
@@ -56,72 +59,36 @@ struct DashboardView: View {
                             await viewModel.loadDashboard()
                         }
                     case .empty:
-                        VStack(spacing: 16) {
-                            Image(systemName: "heart.text.square")
-                                .font(.system(size: 60))
-                                .foregroundColor(.gray)
-
-                            Text("Welcome to CLARITY Pulse!")
-                                .font(.title2)
-                                .fontWeight(.bold)
-
-                            #if targetEnvironment(simulator)
-                                Text(
-                                    "You're running in the simulator. To see real health data, run the app on a physical device with HealthKit data."
-                                )
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-
-                                Button("Load Sample Data") {
+                        #if targetEnvironment(simulator)
+                            EmptyStateView(
+                                title: "Welcome to CLARITY Pulse",
+                                message: "You're running in the simulator. To see real health data, run the app on a physical device with HealthKit data.",
+                                systemImage: "iphone.and.arrow.forward",
+                                actionTitle: "Load Sample Data",
+                                action: {
                                     Task {
                                         await viewModel.loadSampleData()
                                     }
                                 }
-                                .buttonStyle(.borderedProminent)
-                            #else
-                                Text(
-                                    "Start tracking your health by walking around with your iPhone or connecting your Apple Watch."
-                                )
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-
-                                Button("Enable HealthKit") {
+                            )
+                        #else
+                            NoHealthDataView(
+                                onSetupHealthKit: {
                                     Task {
                                         await viewModel.loadDashboard()
                                     }
                                 }
-                                .buttonStyle(.borderedProminent)
-                            #endif
-                        }
-                        .padding()
-                    case .error:
-                        VStack(spacing: 16) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 50))
-                                .foregroundColor(.orange)
-
-                            Text("Oops, something went wrong.")
-                                .font(.headline)
-
-                            Text(viewModel.viewState.errorMessage ?? "An unexpected error occurred")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-
-                            Button("Try Again") {
+                            )
+                        #endif
+                    case .error(let error):
+                        ErrorView(
+                            apiError: error as? APIError ?? APIError.unknown(error),
+                            onRetry: {
                                 Task {
                                     await viewModel.loadDashboard()
                                 }
                             }
-                            .buttonStyle(.borderedProminent)
-                            .padding(.top)
-                        }
-                        .padding()
+                        )
                     }
                 } else {
                     ProgressView("Loading...")
