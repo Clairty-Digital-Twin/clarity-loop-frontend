@@ -87,33 +87,40 @@ final class InsightAIService {
         conversationHistory: [ChatMessage] = [],
         healthContext: [String: Any]? = nil
     ) async throws -> HealthInsightDTO {
-        // Get conversation ID from last message or generate new one
-        let conversationId = conversationHistory.last?.id.uuidString ?? UUID().uuidString
+        // Since the chat endpoint doesn't exist, use the insights generation endpoint
+        // Format the conversation history as context
+        var context = userMessage
+        if !conversationHistory.isEmpty {
+            context = "Previous conversation:\n"
+            for msg in conversationHistory.suffix(5) { // Keep last 5 messages for context
+                context += "\(msg.sender.rawValue.capitalized): \(msg.text)\n"
+            }
+            context += "\nUser: \(userMessage)\n\nPlease provide a helpful response based on the conversation."
+        }
         
-        // Create chat request
-        let chatRequest = ChatRequestDTO(
-            message: userMessage,
-            context: ChatContext(
-                conversationId: conversationId,
-                focusTimeframe: "last_week"
-            )
+        // Create analysis results with conversation context
+        var analysisResults: [String: AnyCodable] = [
+            "conversation_type": AnyCodable("chat"),
+            "message": AnyCodable(userMessage)
+        ]
+        
+        // Add health context if provided
+        if let healthContext {
+            for (key, value) in healthContext {
+                analysisResults[key] = AnyCodable(value)
+            }
+        }
+        
+        // Use the insights endpoint instead of non-existent chat endpoint
+        let response = try await generateInsight(
+            from: analysisResults,
+            context: context,
+            insightType: "chat_response",
+            includeRecommendations: false,
+            language: "en"
         )
         
-        // Call the real chat endpoint
-        let response = try await apiClient.chatWithAI(requestDTO: chatRequest)
-        
-        // Convert chat response to HealthInsightDTO format
-        // Get user ID from conversation ID or use default
-        let userId = conversationHistory.first?.id.uuidString ?? UUID().uuidString
-        
-        return HealthInsightDTO(
-            userId: userId,
-            narrative: response.response,
-            keyInsights: response.followUpQuestions ?? [],
-            recommendations: [],
-            confidenceScore: 0.95, // Chat responses have high confidence
-            generatedAt: Date()
-        )
+        return response
     }
 
     func getInsightHistory(userId: String, limit: Int = 20, offset: Int = 0) async throws -> InsightHistoryResponseDTO {

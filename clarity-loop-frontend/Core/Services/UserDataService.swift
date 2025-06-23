@@ -13,8 +13,11 @@ final class UserDataService {
     /// Save or update user profile data
     func saveUser(_ user: AuthUser) async throws {
         // Check if user already exists
+        let userIdToCheck = user.id
         let descriptor = FetchDescriptor<UserProfileModel>(
-            predicate: #Predicate { $0.userId == user.id }
+            predicate: #Predicate { model in
+                model.userID == userIdToCheck
+            }
         )
         
         let existingUsers = try modelContext.fetch(descriptor)
@@ -23,17 +26,15 @@ final class UserDataService {
             // Update existing user
             existingUser.email = user.email
             existingUser.displayName = user.fullName ?? user.email
-            existingUser.lastLoginAt = Date()
+            existingUser.lastSync = Date()
         } else {
             // Create new user
             let userModel = UserProfileModel(
-                userId: user.id,
+                userID: user.id,
                 email: user.email,
-                displayName: user.fullName ?? user.email,
-                avatarUrl: nil,
-                createdAt: Date(),
-                lastLoginAt: Date()
+                displayName: user.fullName ?? user.email
             )
+            userModel.lastSync = Date()
             modelContext.insert(userModel)
         }
         
@@ -43,7 +44,9 @@ final class UserDataService {
     /// Get cached user profile
     func getUser(id: String) async throws -> UserProfileModel? {
         let descriptor = FetchDescriptor<UserProfileModel>(
-            predicate: #Predicate { $0.userId == id }
+            predicate: #Predicate { model in
+                model.userID == id
+            }
         )
         return try modelContext.fetch(descriptor).first
     }

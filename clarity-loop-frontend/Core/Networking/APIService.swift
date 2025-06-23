@@ -191,71 +191,12 @@ final class APIService: ObservableObject {
     }
 
     private func performRequest<T>(_ endpoint: APIEndpoint) async throws -> T {
-        // Route to appropriate backend client based on endpoint type
-        switch endpoint {
-        case let authEndpoint as AuthEndpoint:
-            return try await handleAuthEndpoint(authEndpoint)
-        case let healthDataEndpoint as HealthDataEndpoint:
-            return try await handleHealthDataEndpoint(healthDataEndpoint)
-        case let insightEndpoint as InsightEndpoint:
-            return try await handleInsightEndpoint(insightEndpoint)
-        case let patEndpoint as PATEndpoint:
-            return try await handlePATEndpoint(patEndpoint)
-        default:
-            throw APIError.notImplemented
-        }
-    }
-
-    private func handleAuthEndpoint<T>(_ endpoint: AuthEndpoint) async throws -> T {
-        switch endpoint {
-        case let .login(dto):
-            let response = try await apiClient.login(requestDTO: dto)
-            return response as! T
-        case let .register(dto):
-            let response = try await apiClient.register(requestDTO: dto)
-            return response as! T
-        case let .verifyEmail(email, code):
-            let response = try await apiClient.verifyEmail(email: email, code: code)
-            return response as! T
-        case let .refreshToken(dto):
-            let response = try await apiClient.refreshToken(requestDTO: dto)
-            return response as! T
-        case .logout:
-            let response = try await apiClient.logout()
-            return response as! T
-        case .getCurrentUser:
-            let response = try await apiClient.getCurrentUser()
-            return response as! T
-        case let .resendVerificationEmail(email):
-            let response = try await apiClient.resendVerificationEmail(email: email)
-            return response as! T
-        }
-    }
-
-    private func handleHealthDataEndpoint<T>(_ endpoint: HealthDataEndpoint) async throws -> T {
+        // APIService is deprecated - all calls should go through BackendAPIClient directly
+        // This routing never worked because endpoints don't conform to APIEndpoint
         throw APIError.notImplemented
     }
 
-    private func handleInsightEndpoint<T>(_ endpoint: InsightEndpoint) async throws -> T {
-        throw APIError.notImplemented
-    }
-
-    private func handlePATEndpoint<T>(_ endpoint: PATEndpoint) async throws -> T {
-        switch endpoint {
-        case let .analyzeStepData(dto):
-            let response = try await apiClient.analyzeStepData(requestDTO: dto)
-            return response as! T
-        case let .analyzeActigraphy(dto):
-            let response = try await apiClient.analyzeActigraphy(requestDTO: dto)
-            return response as! T
-        case let .getAnalysis(id):
-            let response = try await apiClient.getPATAnalysis(id: id)
-            return response as! T
-        case .getServiceHealth:
-            let response = try await apiClient.getPATServiceHealth()
-            return response as! T
-        }
-    }
+    // Removed broken endpoint handlers - use BackendAPIClient directly
 
     private func shouldRetry(error: Error, policy: RetryPolicy) -> Bool {
         guard policy != .none else { return false }
