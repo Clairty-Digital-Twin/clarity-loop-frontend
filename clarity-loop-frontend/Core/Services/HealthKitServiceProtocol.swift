@@ -47,4 +47,12 @@ protocol HealthKitServiceProtocol {
 
     /// Sets up observer queries to monitor HealthKit data changes
     func setupObserverQueries()
+    
+    /// Fetch all health data for upload in the correct format
+    /// - Parameters:
+    ///   - startDate: The start date for data collection
+    ///   - endDate: The end date for data collection
+    ///   - userId: The user ID for the upload
+    /// - Returns: A HealthKitUploadRequestDTO ready for upload
+    func fetchHealthDataForUpload(from startDate: Date, to endDate: Date, userId: String) async throws -> HealthKitUploadRequestDTO
 }

@@ -19,6 +19,11 @@ struct DashboardView: View {
                     case let .loaded(data):
                         ScrollView {
                             LazyVStack(spacing: 16) {
+                                // Health sync status card
+                                if let syncManager = viewModel.healthSyncManager {
+                                    SyncStatusView(syncManager: syncManager)
+                                }
+                                
                                 if let insight = data.insightOfTheDay {
                                     InsightCardView(insight: insight)
                                 }

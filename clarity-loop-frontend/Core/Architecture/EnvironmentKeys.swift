@@ -307,6 +307,16 @@ private final class DummyHealthKitService: HealthKitServiceProtocol {
         print("⚠️ DummyHealthKitService: setOfflineQueueManager called during background launch")
         // No-op - safe to ignore
     }
+    
+    func fetchHealthDataForUpload(from startDate: Date, to endDate: Date, userId: String) async throws -> HealthKitUploadRequestDTO {
+        print("⚠️ DummyHealthKitService: fetchHealthDataForUpload called during background launch")
+        return HealthKitUploadRequestDTO(
+            userId: userId,
+            samples: [],
+            deviceInfo: nil,
+            timestamp: Date()
+        )
+    }
 }
 
 /// Safe fallback APIClient for background app launches

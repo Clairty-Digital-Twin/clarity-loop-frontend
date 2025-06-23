@@ -91,4 +91,51 @@ class MockHealthKitService: HealthKitServiceProtocol {
     func setupObserverQueries() {
         // Mock implementation - no-op
     }
+    
+    func fetchHealthDataForUpload(from startDate: Date, to endDate: Date, userId: String) async throws -> HealthKitUploadRequestDTO {
+        if !shouldSucceed {
+            throw HealthKitError.dataTypeNotAvailable
+        }
+        
+        var samples: [HealthKitSampleDTO] = []
+        
+        // Add some mock step data
+        samples.append(HealthKitSampleDTO(
+            sampleType: "stepCount",
+            value: mockStepCount,
+            categoryValue: nil,
+            unit: "count",
+            startDate: startDate,
+            endDate: endDate,
+            metadata: nil,
+            sourceRevision: nil
+        ))
+        
+        // Add mock heart rate data if available
+        if let heartRate = mockRestingHeartRate {
+            samples.append(HealthKitSampleDTO(
+                sampleType: "restingHeartRate",
+                value: heartRate,
+                categoryValue: nil,
+                unit: "count/min",
+                startDate: startDate,
+                endDate: endDate,
+                metadata: nil,
+                sourceRevision: nil
+            ))
+        }
+        
+        return HealthKitUploadRequestDTO(
+            userId: userId,
+            samples: samples,
+            deviceInfo: DeviceInfoDTO(
+                deviceModel: "iPhone",
+                systemName: "iOS",
+                systemVersion: "17.0",
+                appVersion: "1.0",
+                timeZone: TimeZone.current.identifier
+            ),
+            timestamp: Date()
+        )
+    }
 }

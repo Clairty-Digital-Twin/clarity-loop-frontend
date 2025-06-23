@@ -35,19 +35,24 @@
 - PAT analysis backend not implemented
 **Result**: Backend integration issues resolved, ready for health data sync!
 
-## Phase 3: Health Data Sync (0/8 tasks)
-**Status**: Not Started | **Target**: Day 8-12
+## Phase 3: Health Data Sync (5/8 tasks)
+**Status**: In Progress | **Target**: Day 8-12
 
-- [ ] Test health upload endpoint format
-- [ ] Fix HealthKit data fetching
-- [ ] Implement batch upload service
-- [ ] Fix background task execution
-- [ ] Update dashboard to show real data
-- [ ] Add manual sync for testing
+- [x] Test health upload endpoint format (uses backend-compatible DTOs)
+- [x] Fix HealthKit data fetching (added fetchHealthDataForUpload method)
+- [x] Implement batch upload service (integrated with HealthKitService)
+- [ ] Fix background task execution (HealthDataSyncManager created)
+- [x] Update dashboard to show real data (listens for sync notifications)
+- [x] Add manual sync for testing (Settings view has sync button)
 - [ ] Create sync status UI
 - [ ] Test incremental sync
 
-**Blockers**: Unknown health endpoint format
+**Blockers**: None
+**Key Implementations**:
+- Created fetchHealthDataForUpload in HealthKitService
+- Updated SettingsViewModel to actually sync data
+- Dashboard refreshes on health sync notification
+- Backend expects specific DTO format (BackendHealthDataUpload)
 
 ## Phase 4: UI/UX Polish (0/8 tasks)
 **Status**: Not Started | **Target**: Day 13-15

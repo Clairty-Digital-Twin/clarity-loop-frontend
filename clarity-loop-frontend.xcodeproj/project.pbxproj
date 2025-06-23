@@ -70,6 +70,7 @@
 				Core/Services/CognitoAuthService.swift.disabled = (ios, );
 				Core/Services/CognitoConfiguration.swift.disabled = (ios, );
 				Core/Services/EnhancedOfflineQueueManager.swift = (ios, );
+				Core/Services/HealthDataSyncManager.swift = (ios, );
 				Core/Services/HealthKitService.swift = (ios, );
 				Core/Services/HealthKitServiceProtocol.swift = (ios, );
 				Core/Services/HealthKitSyncService.swift = (ios, );
@@ -80,6 +81,7 @@
 				Core/Services/SwiftDataConfigurator.swift = (ios, );
 				Core/Services/TokenManagementService.swift = (ios, );
 				Core/Services/TokenManager.swift = (ios, );
+				Core/Services/UserDataService.swift = (ios, );
 				Core/Services/WebSocketManager.swift = (ios, );
 				Core/Utilities/AppConfig.swift = (ios, );
 				Core/Utilities/DeviceInfoHelper.swift = (ios, );
@@ -88,6 +90,7 @@
 				Data/DTOs/AuthMiscDTOs.swift = (ios, );
 				Data/DTOs/AuthRegistrationDTOs.swift = (ios, );
 				Data/DTOs/BackendHealthDataDTOs.swift = (ios, );
+				Data/DTOs/ChatRequestDTO.swift = (ios, );
 				Data/DTOs/HealthDataDTOs.swift = (ios, );
 				Data/DTOs/HealthKitUploadDTOs.swift = (ios, );
 				Data/DTOs/InsightsDTOs.swift = (ios, );
@@ -103,6 +106,7 @@
 				Data/SwiftDataModels/AIInsight.swift = (ios, );
 				Data/SwiftDataModels/HealthMetric.swift = (ios, );
 				Data/SwiftDataModels/PATAnalysis.swift = (ios, );
+				Data/SwiftDataModels/TestOnlyModel.swift = (ios, );
 				Data/SwiftDataModels/UserProfileModel.swift = (ios, );
 				Domain/Models/AuthUser.swift = (ios, );
 				Domain/Models/HealthKitDomainModels.swift = (ios, );
@@ -221,6 +225,7 @@
 				Mocks/CorrectMockAPIClient.swift = (ios, );
 				Mocks/MockAuthService.swift = (ios, );
 				Mocks/MockHealthKitService.swift = (ios, );
+				Mocks/MockHealthMetric.swift = (ios, );
 				Performance/MemoryLeakTests.swift = (ios, );
 				SimpleGreenTest.swift = (ios, );
 				UI/Authentication/SecureFieldRenderingTests.swift = (ios, );

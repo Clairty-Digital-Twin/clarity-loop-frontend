@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import UIKit
 
 class HealthKitService: HealthKitServiceProtocol {
     private let healthStore = HKHealthStore()
@@ -196,6 +197,179 @@ class HealthKitService: HealthKitServiceProtocol {
             sleepData: sleepData
         )
     }
+    
+    // MARK: - Health Data Sync
+    
+    /// Fetch all health data for upload in the correct format
+    func fetchHealthDataForUpload(from startDate: Date, to endDate: Date, userId: String) async throws -> HealthKitUploadRequestDTO {
+        var samples: [HealthKitSampleDTO] = []
+        
+        // Fetch step count data
+        if let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) {
+            let stepSamples = try await fetchSamples(of: stepType, from: startDate, to: endDate)
+            samples.append(contentsOf: stepSamples.map { sample in
+                HealthKitSampleDTO(
+                    sampleType: "stepCount",
+                    value: sample.quantity.doubleValue(for: .count()),
+                    categoryValue: nil,
+                    unit: "count",
+                    startDate: sample.startDate,
+                    endDate: sample.endDate,
+                    metadata: nil,
+                    sourceRevision: convertSourceRevision(sample.sourceRevision)
+                )
+            })
+        }
+        
+        // Fetch heart rate data
+        if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) {
+            let heartRateSamples = try await fetchSamples(of: heartRateType, from: startDate, to: endDate)
+            samples.append(contentsOf: heartRateSamples.map { sample in
+                HealthKitSampleDTO(
+                    sampleType: "heartRate",
+                    value: sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())),
+                    categoryValue: nil,
+                    unit: "count/min",
+                    startDate: sample.startDate,
+                    endDate: sample.endDate,
+                    metadata: nil,
+                    sourceRevision: convertSourceRevision(sample.sourceRevision)
+                )
+            })
+        }
+        
+        // Fetch resting heart rate data
+        if let restingHeartRateType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) {
+            let restingHRSamples = try await fetchSamples(of: restingHeartRateType, from: startDate, to: endDate)
+            samples.append(contentsOf: restingHRSamples.map { sample in
+                HealthKitSampleDTO(
+                    sampleType: "restingHeartRate",
+                    value: sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())),
+                    categoryValue: nil,
+                    unit: "count/min",
+                    startDate: sample.startDate,
+                    endDate: sample.endDate,
+                    metadata: nil,
+                    sourceRevision: convertSourceRevision(sample.sourceRevision)
+                )
+            })
+        }
+        
+        // Fetch sleep data
+        if let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) {
+            let sleepSamples = try await fetchCategorySamples(of: sleepType, from: startDate, to: endDate)
+            samples.append(contentsOf: sleepSamples.map { sample in
+                let duration = sample.endDate.timeIntervalSince(sample.startDate) / 60 // Convert to minutes
+                return HealthKitSampleDTO(
+                    sampleType: "sleepAnalysis",
+                    value: duration,
+                    categoryValue: sample.value,
+                    unit: "min",
+                    startDate: sample.startDate,
+                    endDate: sample.endDate,
+                    metadata: ["sleep_stage": AnyCodable(sleepStageString(from: sample.value))],
+                    sourceRevision: convertSourceRevision(sample.sourceRevision)
+                )
+            })
+        }
+        
+        // Get device info
+        let deviceInfo = DeviceInfoDTO(
+            deviceModel: UIDevice.current.model,
+            systemName: UIDevice.current.systemName,
+            systemVersion: UIDevice.current.systemVersion,
+            appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0",
+            timeZone: TimeZone.current.identifier
+        )
+        
+        return HealthKitUploadRequestDTO(
+            userId: userId,
+            samples: samples,
+            deviceInfo: deviceInfo,
+            timestamp: Date()
+        )
+    }
+    
+    private func fetchSamples(of type: HKQuantityType, from startDate: Date, to endDate: Date) async throws -> [HKQuantitySample] {
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                let quantitySamples = (samples as? [HKQuantitySample]) ?? []
+                continuation.resume(returning: quantitySamples)
+            }
+            
+            healthStore.execute(query)
+        }
+    }
+    
+    private func fetchCategorySamples(of type: HKCategoryType, from startDate: Date, to endDate: Date) async throws -> [HKCategorySample] {
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                let categorySamples = (samples as? [HKCategorySample]) ?? []
+                continuation.resume(returning: categorySamples)
+            }
+            
+            healthStore.execute(query)
+        }
+    }
+    
+    private func convertSourceRevision(_ sourceRevision: HKSourceRevision) -> SourceRevisionDTO {
+        SourceRevisionDTO(
+            source: SourceDTO(
+                name: sourceRevision.source.name,
+                bundleIdentifier: sourceRevision.source.bundleIdentifier
+            ),
+            version: sourceRevision.version,
+            productType: sourceRevision.productType,
+            operatingSystemVersion: "\(sourceRevision.operatingSystemVersion.majorVersion).\(sourceRevision.operatingSystemVersion.minorVersion).\(sourceRevision.operatingSystemVersion.patchVersion)"
+        )
+    }
+    
+    private func sleepStageString(from value: Int) -> String {
+        guard let sleepValue = HKCategoryValueSleepAnalysis(rawValue: value) else {
+            return "unknown"
+        }
+        
+        switch sleepValue {
+        case .inBed:
+            return "in_bed"
+        case .asleepUnspecified:
+            return "asleep_unspecified"
+        case .awake:
+            return "awake"
+        case .asleepCore:
+            return "asleep_core"
+        case .asleepDeep:
+            return "asleep_deep"
+        case .asleepREM:
+            return "asleep_rem"
+        @unknown default:
+            return "unknown"
+        }
+    }
 
     func uploadHealthKitData(_ uploadRequest: HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO {
         do {
@@ -308,4 +482,5 @@ extension Calendar {
 
 extension Notification.Name {
     static let healthKitDataUpdated = Notification.Name("healthKitDataUpdated")
+    static let healthDataSynced = Notification.Name("healthDataSynced")
 }

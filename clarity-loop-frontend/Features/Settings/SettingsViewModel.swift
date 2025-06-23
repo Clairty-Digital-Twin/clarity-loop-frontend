@@ -162,10 +162,45 @@ final class SettingsViewModel {
         errorMessage = nil
 
         do {
-            // In a real app, you'd trigger a health data sync
-            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 second delay
-            lastSyncDate = Date()
-            successMessage = "Health data synced successfully"
+            // Get current user
+            guard let currentUser = await authService.currentUser else {
+                errorMessage = "Please log in to sync health data"
+                isLoading = false
+                return
+            }
+            
+            // Get date range for sync (last 7 days)
+            let endDate = Date()
+            let startDate = lastSyncDate ?? Date().addingTimeInterval(-7 * 24 * 60 * 60)
+            
+            // Fetch health data from HealthKit
+            let uploadRequest = try await healthKitService.fetchHealthDataForUpload(
+                from: startDate,
+                to: endDate,
+                userId: currentUser.id
+            )
+            
+            // Check if there's data to upload
+            if uploadRequest.samples.isEmpty {
+                successMessage = "No new health data to sync"
+                lastSyncDate = endDate
+                isLoading = false
+                return
+            }
+            
+            // Upload the data
+            let response = try await healthKitService.uploadHealthKitData(uploadRequest)
+            
+            if response.success {
+                lastSyncDate = endDate
+                successMessage = "Synced \(response.processedSamples) health samples"
+                
+                // Post notification for dashboard refresh
+                NotificationCenter.default.post(name: .healthDataSynced, object: nil)
+            } else {
+                errorMessage = response.message ?? "Failed to sync health data"
+            }
+            
         } catch {
             errorMessage = "Failed to sync health data: \(error.localizedDescription)"
         }

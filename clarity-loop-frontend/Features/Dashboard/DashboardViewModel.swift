@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import Combine
 
 /// A struct to hold all the necessary data for the dashboard.
 /// This will be expanded as more data sources are integrated.
@@ -14,12 +15,14 @@ final class DashboardViewModel {
     // MARK: - Properties
 
     var viewState: ViewState<DashboardData> = .idle
+    var healthSyncManager: HealthDataSyncManager?
 
     // MARK: - Dependencies
 
     private let insightsRepo: InsightsRepositoryProtocol
     private let healthKitService: HealthKitServiceProtocol
     private let authService: AuthServiceProtocol
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initializer
 
@@ -31,6 +34,18 @@ final class DashboardViewModel {
         self.insightsRepo = insightsRepo
         self.healthKitService = healthKitService
         self.authService = authService
+        
+        // Health sync manager will be created later on main actor
+        self.healthSyncManager = nil
+        
+        // Listen for health data sync notifications
+        NotificationCenter.default.publisher(for: .healthDataSynced)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.loadDashboard()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Public Methods
