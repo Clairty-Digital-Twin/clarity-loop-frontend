@@ -201,7 +201,27 @@ final class RegistrationViewModelTests: XCTestCase {
 
     @MainActor func testSuccessfulRegistration() async throws {
         // Test successful registration flow
-        XCTSkip("Registration flow now uses Amplify Auth - test needs update")
+        
+        // Setup valid form data
+        viewModel.firstName = "John"
+        viewModel.lastName = "Doe"
+        viewModel.email = "john.doe@example.com"
+        viewModel.password = "ValidPassword123"
+        viewModel.confirmPassword = "ValidPassword123"
+        viewModel.hasAcceptedTerms = true
+        viewModel.hasAcceptedPrivacy = true
+        
+        // Mock successful response
+        mockAuthService.shouldSucceed = true
+        
+        // Attempt registration
+        await viewModel.register()
+        
+        // Verify success state
+        XCTAssertTrue(viewModel.isRegistrationSuccessful, "Registration should be successful")
+        XCTAssertFalse(viewModel.needsEmailVerification, "Should not need email verification for 200 response")
+        XCTAssertNil(viewModel.errorMessage, "No error message should be present")
+        XCTAssertFalse(viewModel.isLoading, "Loading should be false after completion")
     }
 
     @MainActor func testRegistrationWithPasswordMismatch() async throws {
@@ -271,5 +291,31 @@ final class RegistrationViewModelTests: XCTestCase {
 
         // Should show form validation errors
         XCTAssertFalse(viewModel.isFormValid, "Form should be invalid")
+    }
+    
+    @MainActor func testRegistrationRequiringEmailVerification() async throws {
+        // Test registration that returns 202 (email verification required)
+        
+        // Setup valid form data
+        viewModel.firstName = "Jane"
+        viewModel.lastName = "Smith"
+        viewModel.email = "jane.smith@example.com"
+        viewModel.password = "ValidPassword123"
+        viewModel.confirmPassword = "ValidPassword123"
+        viewModel.hasAcceptedTerms = true
+        viewModel.hasAcceptedPrivacy = true
+        
+        // Mock email verification required response
+        mockAuthService.shouldSucceed = false
+        mockAuthService.mockError = APIError.emailVerificationRequired
+        
+        // Attempt registration
+        await viewModel.register()
+        
+        // Verify email verification required state
+        XCTAssertTrue(viewModel.isRegistrationSuccessful, "Registration should be successful even with email verification required")
+        XCTAssertTrue(viewModel.needsEmailVerification, "Should need email verification for 202 response")
+        XCTAssertNil(viewModel.errorMessage, "No error message should be present for 202 response")
+        XCTAssertFalse(viewModel.isLoading, "Loading should be false after completion")
     }
 }

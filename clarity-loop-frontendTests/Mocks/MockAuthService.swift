@@ -32,6 +32,17 @@ class MockAuthService: AuthServiceProtocol {
     
     // Tracking properties
     var signOutCalled = false
+    var signInCalled = false
+    var capturedEmail: String?
+    var capturedPassword: String?
+    var sendPasswordResetCalled = false
+    var capturedResetEmail: String?
+    
+    // Control properties
+    var shouldFailSignIn = false
+    var shouldFailPasswordReset = false
+    var shouldDelayLogin = false
+    var mockError: Error = APIError.unauthorized
 
     // MARK: - AuthServiceProtocol Implementation
 
@@ -47,6 +58,18 @@ class MockAuthService: AuthServiceProtocol {
     }
 
     func signIn(withEmail email: String, password: String) async throws -> UserSessionResponseDTO {
+        signInCalled = true
+        capturedEmail = email
+        capturedPassword = password
+        
+        if shouldDelayLogin {
+            try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+        }
+        
+        if shouldFailSignIn {
+            throw mockError
+        }
+        
         if shouldSucceed {
             mockCurrentUser = AuthUser(uid: "signed-in-uid", email: email, isEmailVerified: true)
             return mockUserSession
@@ -61,7 +84,7 @@ class MockAuthService: AuthServiceProtocol {
         details: UserRegistrationRequestDTO
     ) async throws -> RegistrationResponseDTO {
         if shouldSucceed {
-            RegistrationResponseDTO(
+            return RegistrationResponseDTO(
                 userId: UUID(),
                 email: email,
                 status: "pending_verification",
@@ -69,7 +92,7 @@ class MockAuthService: AuthServiceProtocol {
                 createdAt: Date()
             )
         } else {
-            throw APIError.serverError(statusCode: 400, message: "Registration failed")
+            throw mockError
         }
     }
 
@@ -79,6 +102,13 @@ class MockAuthService: AuthServiceProtocol {
     }
 
     func sendPasswordReset(to email: String) async throws {
+        sendPasswordResetCalled = true
+        capturedResetEmail = email
+        
+        if shouldFailPasswordReset {
+            throw mockError
+        }
+        
         if !shouldSucceed {
             throw APIError.serverError(statusCode: 400, message: "Password reset failed")
         }

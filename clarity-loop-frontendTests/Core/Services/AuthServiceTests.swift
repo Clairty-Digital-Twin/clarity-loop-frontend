@@ -27,9 +27,8 @@ final class AuthServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(userSession.email, email)
-        XCTAssertEqual(userSession.firstName, "Test")
-        XCTAssertEqual(userSession.lastName, "User")
-        XCTAssertTrue(userSession.emailVerified)
+        XCTAssertEqual(userSession.displayName, "Test User")
+        XCTAssertTrue(userSession.isEmailVerified)
 
         // Verify auth state updated
         XCTAssertNotNil(authService.currentUser)
@@ -47,7 +46,7 @@ final class AuthServiceTests: XCTestCase {
         // When/Then
         do {
             _ = try await authService.signIn(withEmail: email, password: password)
-            XCTSkip("Skipping test: " + "Expected sign in to fail")
+            XCTFail("Expected sign in to fail")
         } catch {
             XCTAssertTrue(error is APIError)
         }
@@ -111,7 +110,7 @@ final class AuthServiceTests: XCTestCase {
         // When/Then
         do {
             _ = try await authService.getCurrentUserToken()
-            XCTSkip("Skipping test: " + "Expected token retrieval to fail")
+            XCTFail("Expected token retrieval to fail")
         } catch {
             XCTAssertTrue(error is APIError)
         }
@@ -157,7 +156,7 @@ final class AuthServiceTests: XCTestCase {
         // When/Then
         do {
             _ = try await authService.signIn(withEmail: "test@example.com", password: "wrongpassword")
-            XCTSkip("Skipping test: " + "Expected sign in to fail")
+            XCTFail("Expected sign in to fail")
         } catch {
             XCTAssertTrue(error is APIError)
         }
@@ -206,7 +205,7 @@ final class AuthServiceTests: XCTestCase {
         // When/Then
         do {
             _ = try await authService.register(withEmail: details.email, password: details.password, details: details)
-            XCTSkip("Skipping test: " + "Expected registration to fail")
+            XCTFail("Expected registration to fail")
         } catch {
             XCTAssertTrue(error is APIError)
         }
