@@ -63,8 +63,7 @@ final class PushNotificationManagerTests: XCTestCase {
     }
     
     func testRequestAuthorizationDenied() async throws {
-        // Given - Initial state
-        let initialStatus = notificationManager.authorizationStatus
+        // Given - Initial state ready
         
         // When - request authorization (simulating denial)
         _ = try? await notificationManager.requestAuthorization()
@@ -111,10 +110,11 @@ final class PushNotificationManagerTests: XCTestCase {
     
     func testRegisterDeviceTokenSuccess() async throws {
         // Given - User is authenticated
-        mockAuthService.currentUser = User(
+        mockAuthService.mockCurrentUser = AuthUser(
             id: "test-user-123",
             email: "test@example.com",
-            profile: UserProfile(userId: "test-user-123", firstName: "Test", lastName: "User")
+            fullName: "Test User",
+            isEmailVerified: true
         )
         
         // Create mock device token
@@ -143,10 +143,11 @@ final class PushNotificationManagerTests: XCTestCase {
     
     func testUpdateDeviceTokenWhenChanged() async throws {
         // Given - User is authenticated and has existing token
-        mockAuthService.currentUser = User(
+        mockAuthService.mockCurrentUser = AuthUser(
             id: "test-user-123",
             email: "test@example.com",
-            profile: UserProfile(userId: "test-user-123", firstName: "Test", lastName: "User")
+            fullName: "Test User",
+            isEmailVerified: true
         )
         
         // Register first token
@@ -295,10 +296,9 @@ final class PushNotificationManagerTests: XCTestCase {
     func testHandleRemoteNotificationHealthUpdate() async throws {
         // Given - Subscribe to health insight notifications
         let expectation = XCTestExpectation(description: "Notification handled")
-        var receivedNotification: NotificationInfo?
         
         let cancellable = notificationManager.subscribe(to: .healthInsight) { info in
-            receivedNotification = info
+            XCTAssertEqual(info.type, .healthInsight)
             expectation.fulfill()
         }
         
@@ -493,10 +493,11 @@ final class PushNotificationManagerTests: XCTestCase {
     
     func testUpdateNotificationPreferences() async throws {
         // Given - User is authenticated
-        mockAuthService.currentUser = User(
+        mockAuthService.mockCurrentUser = AuthUser(
             id: "test-user-123",
             email: "test@example.com",
-            profile: UserProfile(userId: "test-user-123", firstName: "Test", lastName: "User")
+            fullName: "Test User",
+            isEmailVerified: true
         )
         
         // Create custom preferences
@@ -520,10 +521,11 @@ final class PushNotificationManagerTests: XCTestCase {
     
     func testSyncNotificationSettingsWithBackend() async throws {
         // Given - User is authenticated
-        mockAuthService.currentUser = User(
+        mockAuthService.mockCurrentUser = AuthUser(
             id: "test-user-123",
             email: "test@example.com",
-            profile: UserProfile(userId: "test-user-123", firstName: "Test", lastName: "User")
+            fullName: "Test User",
+            isEmailVerified: true
         )
         
         // Create preferences
