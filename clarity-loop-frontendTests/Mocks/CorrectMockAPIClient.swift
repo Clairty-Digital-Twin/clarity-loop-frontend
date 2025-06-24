@@ -160,7 +160,14 @@ class MockAPIClient: APIClientProtocol {
     // MARK: - Health Data
 
     func getHealthData(page: Int, limit: Int) async throws -> PaginatedMetricsResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = getHealthDataHandler {
+            return try await handler(page, limit)
+        }
+        
+        // Default empty response
+        return PaginatedMetricsResponseDTO(data: [])
     }
 
     func uploadHealthKitData(requestDTO: HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO {
@@ -181,19 +188,80 @@ class MockAPIClient: APIClientProtocol {
     }
 
     func syncHealthKitData(requestDTO: HealthKitSyncRequestDTO) async throws -> HealthKitSyncResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = syncHealthKitDataHandler {
+            return try await handler(requestDTO)
+        }
+        
+        // Default response
+        return HealthKitSyncResponseDTO(
+            success: true,
+            syncId: UUID().uuidString,
+            status: "initiated",
+            estimatedDuration: 60.0,
+            message: "Sync initiated successfully"
+        )
     }
 
     func getHealthKitSyncStatus(syncId: String) async throws -> HealthKitSyncStatusDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = getHealthKitSyncStatusHandler {
+            return try await handler(syncId)
+        }
+        
+        // Default response
+        return HealthKitSyncStatusDTO(
+            syncId: syncId,
+            status: "in_progress",
+            progress: 0.5,
+            processedSamples: 50,
+            totalSamples: 100,
+            errors: nil,
+            completedAt: nil
+        )
     }
 
     func getHealthKitUploadStatus(uploadId: String) async throws -> HealthKitUploadStatusDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = getHealthKitUploadStatusHandler {
+            return try await handler(uploadId)
+        }
+        
+        // Default response
+        return HealthKitUploadStatusDTO(
+            uploadId: uploadId,
+            status: "completed",
+            progress: 1.0,
+            processedSamples: 100,
+            totalSamples: 100,
+            errors: nil,
+            completedAt: Date(),
+            message: "Upload completed successfully"
+        )
     }
 
     func getProcessingStatus(id: UUID) async throws -> HealthDataProcessingStatusDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = getProcessingStatusHandler {
+            return try await handler(id)
+        }
+        
+        // Default response
+        return HealthDataProcessingStatusDTO(
+            processingId: id,
+            status: "completed",
+            progress: 1.0,
+            processedMetrics: 100,
+            totalMetrics: 100,
+            estimatedTimeRemaining: nil,
+            completedAt: Date(),
+            errors: nil,
+            message: "Processing completed successfully"
+        )
     }
 
     // MARK: - Insights
@@ -279,15 +347,52 @@ class MockAPIClient: APIClientProtocol {
     // MARK: - PAT Analysis
 
     func analyzeStepData(requestDTO: StepDataRequestDTO) async throws -> StepAnalysisResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = analyzeStepDataHandler {
+            return try await handler(requestDTO)
+        }
+        
+        // Default response
+        return StepAnalysisResponseDTO(
+            success: true,
+            analysisId: UUID().uuidString,
+            estimatedCompletionTime: Date().addingTimeInterval(300)
+        )
     }
 
     func analyzeActigraphy(requestDTO: DirectActigraphyRequestDTO) async throws -> ActigraphyAnalysisResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = analyzeActigraphyHandler {
+            return try await handler(requestDTO)
+        }
+        
+        // Default response
+        return ActigraphyAnalysisResponseDTO(
+            success: true,
+            analysisId: UUID().uuidString,
+            estimatedCompletionTime: Date().addingTimeInterval(300)
+        )
     }
 
     func getPATAnalysis(id: String) async throws -> PATAnalysisResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = getPATAnalysisHandler {
+            return try await handler(id)
+        }
+        
+        // Default response
+        return PATAnalysisResponseDTO(
+            id: id,
+            status: "completed",
+            patFeatures: nil,
+            analysis: nil,
+            errorMessage: nil,
+            createdAt: Date(),
+            completedAt: Date()
+        )
     }
 
     func getPATServiceHealth() async throws -> ServiceStatusResponseDTO {

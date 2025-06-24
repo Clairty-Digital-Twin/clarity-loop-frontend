@@ -12,9 +12,10 @@ final class BackendContractValidationTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        // Skip all tests - Integration tests require backend running
-        throw XCTSkip("Backend contract validation tests require actual backend integration")
-
+        
+        // Initialize adapter (create mock adapter for testing)
+        adapter = BackendContractAdapter()
+        
         // Configure encoder to match backend expectations
         encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
