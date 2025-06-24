@@ -135,8 +135,50 @@ final class HealthViewModelTests: XCTestCase {
     }
     
     func testDateRangeFiltersMetricsCorrectly() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Create metrics spanning different date ranges
+        let today = Date()
+        let calendar = Calendar.current
+        
+        // Add metrics for different time periods
+        // Today
+        mockHealthRepository.addMockMetric(type: .steps, value: 1000, date: today)
+        
+        // Yesterday
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: today) {
+            mockHealthRepository.addMockMetric(type: .steps, value: 2000, date: yesterday)
+        }
+        
+        // Last week
+        if let lastWeek = calendar.date(byAdding: .day, value: -5, to: today) {
+            mockHealthRepository.addMockMetric(type: .steps, value: 3000, date: lastWeek)
+        }
+        
+        // Last month
+        if let lastMonth = calendar.date(byAdding: .day, value: -20, to: today) {
+            mockHealthRepository.addMockMetric(type: .steps, value: 4000, date: lastMonth)
+        }
+        
+        // Act & Assert - Test day view
+        viewModel.selectDateRange(.day)
+        await viewModel.loadMetrics()
+        
+        let dayMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(dayMetrics.count, 1, "Day view should show only today's metrics")
+        XCTAssertEqual(dayMetrics.first?.value, 1000, "Should show today's metric")
+        
+        // Test week view
+        viewModel.selectDateRange(.week)
+        await viewModel.loadMetrics()
+        
+        let weekMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(weekMetrics.count, 3, "Week view should show last 7 days of metrics")
+        
+        // Test month view
+        viewModel.selectDateRange(.month)
+        await viewModel.loadMetrics()
+        
+        let monthMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(monthMetrics.count, 4, "Month view should show all metrics")
     }
     
     // MARK: - Metric Type Selection Tests
@@ -157,8 +199,36 @@ final class HealthViewModelTests: XCTestCase {
     }
     
     func testMultipleMetricTypeSelection() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add different metric types
+        mockHealthRepository.addMockMetric(type: .steps, value: 10000)
+        mockHealthRepository.addMockMetric(type: .heartRate, value: 72)
+        mockHealthRepository.addMockMetric(type: .sleepDuration, value: 8)
+        mockHealthRepository.addMockMetric(type: .activeEnergy, value: 250)
+        
+        // Act - Select steps first
+        viewModel.selectMetricType(.steps)
+        await viewModel.loadMetrics()
+        
+        // Assert
+        XCTAssertEqual(viewModel.selectedMetricType, .steps)
+        XCTAssertEqual(mockHealthRepository.capturedFetchType, .steps)
+        
+        // Act - Change to heart rate
+        viewModel.selectMetricType(.heartRate)
+        await viewModel.loadMetrics()
+        
+        // Assert
+        XCTAssertEqual(viewModel.selectedMetricType, .heartRate)
+        XCTAssertEqual(mockHealthRepository.capturedFetchType, .heartRate)
+        
+        // Act - Deselect (show all types)
+        viewModel.selectMetricType(nil)
+        await viewModel.loadMetrics()
+        
+        // Assert
+        XCTAssertNil(viewModel.selectedMetricType, "Should have no selected type")
+        let allMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(allMetrics.count, 4, "Should show all metric types when none selected")
     }
     
     // MARK: - HealthKit Sync Tests
@@ -285,54 +355,411 @@ final class HealthViewModelTests: XCTestCase {
     }
     
     func testCalculateSummaryForHeartRate() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add heart rate data
+        let heartRates = [60.0, 65.0, 70.0, 75.0, 80.0, 72.0, 68.0]
+        for (index, value) in heartRates.enumerated() {
+            mockHealthRepository.addMockMetric(
+                type: .heartRate,
+                value: value,
+                date: Date().addingTimeInterval(TimeInterval(-index * 3600)) // Past hours
+            )
+        }
+        
+        // Act
+        await viewModel.loadMetrics()
+        
+        // Assert
+        let heartRateMetrics = viewModel.filteredMetrics.filter { $0.type == .heartRate }
+        XCTAssertEqual(heartRateMetrics.count, heartRates.count, "Should have all heart rate metrics")
+        
+        // Calculate statistics
+        let values = heartRateMetrics.compactMap { $0.value }
+        let average = values.reduce(0, +) / Double(values.count)
+        let min = values.min() ?? 0
+        let max = values.max() ?? 0
+        
+        XCTAssertEqual(average, 70.0, accuracy: 0.1, "Average heart rate should be 70")
+        XCTAssertEqual(min, 60.0, "Minimum heart rate should be 60")
+        XCTAssertEqual(max, 80.0, "Maximum heart rate should be 80")
     }
     
     func testCalculateSummaryForSleep() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add sleep duration data (in hours)
+        let sleepHours = [6.5, 7.0, 8.0, 7.5, 6.0, 9.0, 7.5]
+        for (index, value) in sleepHours.enumerated() {
+            mockHealthRepository.addMockMetric(
+                type: .sleepDuration,
+                value: value,
+                date: Date().addingTimeInterval(TimeInterval(-index * 86400)) // Past days
+            )
+        }
+        
+        // Act
+        await viewModel.loadMetrics()
+        
+        // Assert
+        let sleepMetrics = viewModel.filteredMetrics.filter { $0.type == .sleepDuration }
+        XCTAssertEqual(sleepMetrics.count, sleepHours.count, "Should have all sleep metrics")
+        
+        // Calculate statistics
+        let values = sleepMetrics.compactMap { $0.value }
+        let average = values.reduce(0, +) / Double(values.count)
+        let totalSleep = values.reduce(0, +)
+        
+        XCTAssertEqual(average, 7.36, accuracy: 0.01, "Average sleep should be ~7.36 hours")
+        XCTAssertEqual(totalSleep, 51.5, "Total sleep should be 51.5 hours")
+        
+        // Check if any nights had less than recommended 7 hours
+        let poorSleepNights = values.filter { $0 < 7.0 }.count
+        XCTAssertEqual(poorSleepNights, 2, "Should have 2 nights with less than 7 hours sleep")
     }
     
     // MARK: - Mock Data Generation Tests
     
     func testGenerateMockDataCreatesValidMetrics() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange
+        XCTAssertEqual(mockHealthRepository.mockMetrics.count, 0, "Should start with no metrics")
+        
+        // Act - Generate mock data for multiple days
+        mockHealthRepository.setupMockData(days: 7)
+        
+        // Assert
+        XCTAssertGreaterThan(mockHealthRepository.mockMetrics.count, 0, "Should have generated metrics")
+        
+        // Verify each metric type is present
+        let metricTypes = Set(mockHealthRepository.mockMetrics.map { $0.type })
+        XCTAssertTrue(metricTypes.contains(.steps), "Should have step metrics")
+        XCTAssertTrue(metricTypes.contains(.heartRate), "Should have heart rate metrics")
+        XCTAssertTrue(metricTypes.contains(.sleepDuration), "Should have sleep metrics")
+        
+        // Verify all metrics have valid values
+        for metric in mockHealthRepository.mockMetrics {
+            XCTAssertNotNil(metric.timestamp, "Metric should have timestamp")
+            XCTAssertGreaterThan(metric.value, 0, "Metric value should be positive")
+            XCTAssertNotNil(metric.unit, "Metric should have unit")
+            
+            // Verify realistic ranges
+            switch metric.type {
+            case .steps:
+                XCTAssertTrue((5000...15000).contains(metric.value), "Steps should be in realistic range")
+            case .heartRate:
+                XCTAssertTrue((60...80).contains(metric.value), "Heart rate should be in realistic range")
+            case .sleepDuration:
+                XCTAssertTrue((6...9).contains(metric.value), "Sleep hours should be in realistic range")
+            default:
+                break
+            }
+        }
     }
     
     func testGenerateMockDataRespectsDateRange() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange
+        let daysToGenerate = 10
+        let now = Date()
+        let calendar = Calendar.current
+        
+        // Act
+        mockHealthRepository.setupMockData(days: daysToGenerate)
+        
+        // Assert
+        let uniqueDates = Set(mockHealthRepository.mockMetrics.compactMap { metric in
+            guard let timestamp = metric.timestamp else { return nil }
+            return calendar.startOfDay(for: timestamp)
+        })
+        
+        // Should have metrics for the specified number of days
+        XCTAssertEqual(uniqueDates.count, daysToGenerate, "Should have metrics for \(daysToGenerate) unique days")
+        
+        // All dates should be within the last N days
+        for date in uniqueDates {
+            let daysDifference = calendar.dateComponents([.day], from: date, to: now).day ?? 0
+            XCTAssertTrue(daysDifference >= 0, "Date should not be in the future")
+            XCTAssertTrue(daysDifference < daysToGenerate, "Date should be within the last \(daysToGenerate) days")
+        }
+        
+        // Each day should have all metric types
+        for date in uniqueDates {
+            let metricsForDate = mockHealthRepository.mockMetrics.filter { metric in
+                guard let timestamp = metric.timestamp else { return false }
+                return calendar.isDate(timestamp, inSameDayAs: date)
+            }
+            
+            let typesForDate = Set(metricsForDate.map { $0.type })
+            XCTAssertTrue(typesForDate.contains(.steps), "Each day should have step data")
+            XCTAssertTrue(typesForDate.contains(.heartRate), "Each day should have heart rate data")
+            XCTAssertTrue(typesForDate.contains(.sleepDuration), "Each day should have sleep data")
+        }
     }
     
     // MARK: - Chart Data Tests
     
     func testChartDataGenerationForDayView() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add hourly data for today
+        let today = Date()
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: today)
+        
+        // Add hourly heart rate data
+        for hour in 0..<24 {
+            if let hourDate = calendar.date(byAdding: .hour, value: hour, to: startOfDay) {
+                let value = 60 + Double(hour % 12) // Vary between 60-72 bpm
+                mockHealthRepository.addMockMetric(type: .heartRate, value: value, date: hourDate)
+            }
+        }
+        
+        // Act
+        viewModel.selectDateRange(.day)
+        viewModel.selectMetricType(.heartRate)
+        await viewModel.loadMetrics()
+        
+        // Assert
+        let dayMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(dayMetrics.count, 24, "Should have 24 hourly data points for day view")
+        
+        // Verify data is sorted by time
+        for i in 1..<dayMetrics.count {
+            let previous = dayMetrics[i-1].timestamp ?? Date.distantPast
+            let current = dayMetrics[i].timestamp ?? Date.distantPast
+            XCTAssertTrue(previous <= current, "Metrics should be sorted by timestamp")
+        }
+        
+        // Verify all metrics are from today
+        for metric in dayMetrics {
+            if let timestamp = metric.timestamp {
+                XCTAssertTrue(calendar.isDateInToday(timestamp), "All metrics should be from today")
+            }
+        }
     }
     
     func testChartDataGenerationForWeekView() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add daily data for past week
+        let today = Date()
+        let calendar = Calendar.current
+        
+        // Add daily step counts for the past 7 days
+        for dayOffset in 0..<7 {
+            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
+                let steps = 8000 + (dayOffset * 1000) // Vary from 8000 to 14000
+                mockHealthRepository.addMockMetric(type: .steps, value: Double(steps), date: date)
+            }
+        }
+        
+        // Act
+        viewModel.selectDateRange(.week)
+        viewModel.selectMetricType(.steps)
+        await viewModel.loadMetrics()
+        
+        // Assert
+        let weekMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(weekMetrics.count, 7, "Should have 7 daily data points for week view")
+        
+        // Verify date range
+        let sortedMetrics = weekMetrics.sorted { ($0.timestamp ?? Date.distantPast) < ($1.timestamp ?? Date.distantPast) }
+        if let firstDate = sortedMetrics.first?.timestamp,
+           let lastDate = sortedMetrics.last?.timestamp {
+            let daysBetween = calendar.dateComponents([.day], from: firstDate, to: lastDate).day ?? 0
+            XCTAssertEqual(daysBetween, 6, "Should span exactly 7 days (6 days between first and last)")
+        }
+        
+        // Verify step progression
+        let values = weekMetrics.compactMap { $0.value }
+        XCTAssertTrue(values.min() ?? 0 >= 8000, "Minimum steps should be at least 8000")
+        XCTAssertTrue(values.max() ?? 0 <= 14000, "Maximum steps should be at most 14000")
     }
     
     func testChartDataGenerationForMonthView() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add data for past 30 days
+        let today = Date()
+        let calendar = Calendar.current
+        
+        // Add sleep data for the past 30 days
+        for dayOffset in 0..<30 {
+            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
+                // Vary sleep between 6-9 hours with some pattern
+                let sleepHours = 7.5 + sin(Double(dayOffset) * 0.2) * 1.5
+                mockHealthRepository.addMockMetric(type: .sleepDuration, value: sleepHours, date: date)
+            }
+        }
+        
+        // Act
+        viewModel.selectDateRange(.month)
+        viewModel.selectMetricType(.sleepDuration)
+        await viewModel.loadMetrics()
+        
+        // Assert
+        let monthMetrics = viewModel.filteredMetrics
+        XCTAssertEqual(monthMetrics.count, 30, "Should have 30 daily data points for month view")
+        
+        // Verify all metrics are within the past 30 days
+        for metric in monthMetrics {
+            if let timestamp = metric.timestamp {
+                let daysDiff = calendar.dateComponents([.day], from: timestamp, to: today).day ?? 999
+                XCTAssertTrue(daysDiff >= 0, "No future dates")
+                XCTAssertTrue(daysDiff < 30, "All dates within 30 days")
+            }
+        }
+        
+        // Calculate weekly averages for chart grouping
+        var weeklyAverages: [Double] = []
+        for weekStart in stride(from: 0, to: 30, by: 7) {
+            let weekEnd = min(weekStart + 7, 30)
+            let weekMetrics = monthMetrics.filter { metric in
+                guard let timestamp = metric.timestamp else { return false }
+                let daysDiff = calendar.dateComponents([.day], from: timestamp, to: today).day ?? 999
+                return daysDiff >= weekStart && daysDiff < weekEnd
+            }
+            
+            if !weekMetrics.isEmpty {
+                let average = weekMetrics.compactMap { $0.value }.reduce(0, +) / Double(weekMetrics.count)
+                weeklyAverages.append(average)
+            }
+        }
+        
+        XCTAssertGreaterThan(weeklyAverages.count, 0, "Should have weekly averages for chart")
+        XCTAssertLessThanOrEqual(weeklyAverages.count, 5, "Should have at most 5 weeks of data")
     }
     
     // MARK: - Performance Tests
     
     func testLoadingLargeDatasetPerformance() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Create a large dataset
+        let metricsCount = 1000
+        let startTime = Date()
+        
+        // Add many metrics
+        for i in 0..<metricsCount {
+            let date = Date().addingTimeInterval(TimeInterval(-i * 3600)) // Hourly data
+            let type: HealthMetricType = [.steps, .heartRate, .sleepDuration][i % 3]
+            let value: Double
+            
+            switch type {
+            case .steps:
+                value = Double.random(in: 5000...15000)
+            case .heartRate:
+                value = Double.random(in: 60...80)
+            case .sleepDuration:
+                value = Double.random(in: 6...9)
+            default:
+                value = 0
+            }
+            
+            mockHealthRepository.addMockMetric(type: type, value: value, date: date)
+        }
+        
+        // Act - Measure loading time
+        let loadStartTime = Date()
+        await viewModel.loadMetrics()
+        let loadEndTime = Date()
+        
+        // Assert
+        let loadDuration = loadEndTime.timeIntervalSince(loadStartTime)
+        XCTAssertLessThan(loadDuration, 2.0, "Loading \(metricsCount) metrics should take less than 2 seconds")
+        
+        // Verify all metrics loaded
+        if case .loaded(let metrics) = viewModel.metricsState {
+            XCTAssertEqual(metrics.count, metricsCount, "Should load all metrics")
+        } else {
+            XCTFail("Expected loaded state")
+        }
+        
+        // Test filtering performance
+        let filterStartTime = Date()
+        viewModel.selectMetricType(.steps)
+        let filteredMetrics = viewModel.filteredMetrics
+        let filterEndTime = Date()
+        
+        let filterDuration = filterEndTime.timeIntervalSince(filterStartTime)
+        XCTAssertLessThan(filterDuration, 0.1, "Filtering should be nearly instant")
+        
+        // Verify filtering worked correctly
+        XCTAssertTrue(filteredMetrics.allSatisfy { $0.type == .steps }, "All filtered metrics should be steps")
+        XCTAssertEqual(filteredMetrics.count, metricsCount / 3, accuracy: 1, "Should have ~1/3 of metrics as steps")
     }
     
     func testMemoryUsageWithMultipleMetricTypes() async throws {
-        // TODO: Implement test
-        XCTSkip("Placeholder test - needs implementation")
+        // Arrange - Add metrics of all supported types
+        let metricTypes: [HealthMetricType] = [
+            .steps, .heartRate, .heartRateVariability,
+            .sleepDuration, .sleepREM, .sleepDeep, .sleepLight, .sleepAwake,
+            .bloodPressureSystolic, .bloodPressureDiastolic,
+            .activeEnergy, .restingEnergy,
+            .exerciseMinutes, .standHours,
+            .respiratoryRate, .bodyTemperature, .oxygenSaturation,
+            .weight, .height, .bodyMassIndex
+        ]
+        
+        // Add 10 data points for each metric type
+        for type in metricTypes {
+            for dayOffset in 0..<10 {
+                let date = Date().addingTimeInterval(TimeInterval(-dayOffset * 86400))
+                let value: Double
+                
+                // Generate realistic values based on type
+                switch type {
+                case .steps:
+                    value = Double.random(in: 5000...15000)
+                case .heartRate, .restingEnergy:
+                    value = Double.random(in: 60...80)
+                case .heartRateVariability:
+                    value = Double.random(in: 20...60)
+                case .sleepDuration, .sleepREM, .sleepDeep, .sleepLight:
+                    value = Double.random(in: 1...9)
+                case .sleepAwake:
+                    value = Double.random(in: 0.5...2)
+                case .bloodPressureSystolic:
+                    value = Double.random(in: 110...130)
+                case .bloodPressureDiastolic:
+                    value = Double.random(in: 70...85)
+                case .activeEnergy:
+                    value = Double.random(in: 200...500)
+                case .exerciseMinutes:
+                    value = Double.random(in: 20...60)
+                case .standHours:
+                    value = Double.random(in: 8...14)
+                case .respiratoryRate:
+                    value = Double.random(in: 12...20)
+                case .bodyTemperature:
+                    value = Double.random(in: 36.5...37.5)
+                case .oxygenSaturation:
+                    value = Double.random(in: 95...100)
+                case .weight:
+                    value = Double.random(in: 60...80)
+                case .height:
+                    value = Double.random(in: 160...180)
+                case .bodyMassIndex:
+                    value = Double.random(in: 20...25)
+                }
+                
+                mockHealthRepository.addMockMetric(type: type, value: value, date: date)
+            }
+        }
+        
+        // Act
+        await viewModel.loadMetrics()
+        
+        // Assert
+        let totalMetrics = metricTypes.count * 10
+        if case .loaded(let metrics) = viewModel.metricsState {
+            XCTAssertEqual(metrics.count, totalMetrics, "Should load all \(totalMetrics) metrics")
+            
+            // Verify all metric types are represented
+            let loadedTypes = Set(metrics.map { $0.type })
+            XCTAssertEqual(loadedTypes.count, metricTypes.count, "All metric types should be loaded")
+            
+            // Test filtering by each type
+            for type in metricTypes {
+                viewModel.selectMetricType(type)
+                let filtered = viewModel.filteredMetrics
+                XCTAssertEqual(filtered.count, 10, "Should have 10 metrics for \(type)")
+                XCTAssertTrue(filtered.allSatisfy { $0.type == type }, "All filtered metrics should be of type \(type)")
+            }
+        } else {
+            XCTFail("Expected loaded state")
+        }
+        
+        // Verify repository handled all operations
+        XCTAssertTrue(mockHealthRepository.fetchMetricsCalled, "Should have fetched metrics")
+        XCTAssertEqual(mockHealthRepository.mockMetrics.count, totalMetrics, "Repository should contain all metrics")
     }
 }
 

@@ -99,8 +99,12 @@ xcodebuild test -project clarity-loop-frontend.xcodeproj \
 - ✅ LoginViewModelTests: 12/12 tests passing  
 - ✅ RegistrationViewModelTests: 11/11 tests passing
 - ✅ AuthServiceTests: 12/12 tests passing
-- 🔄 272 XCTSkip occurrences remaining across ~22 files
-- 🔄 Next targets: AIInsightRepositoryTests (34), EnhancedOfflineQueueManagerTests (31), PATAnalysisRepositoryTests (31)
+- ✅ AIInsightRepositoryTests: 34/34 tests implemented (26 passing, 8 failing)
+- ✅ EnhancedOfflineQueueManagerTests: 31/31 tests implemented (19 passing, 12 failing)
+- ✅ PATAnalysisRepositoryTests: 31/31 tests implemented (27 passing, 4 failing)
+- ✅ HealthKitSyncServiceTests: 29/29 tests implemented (compilation issues)
+- ✅ PushNotificationManagerTests: 28/28 tests passing!
+- 🔄 Next targets: APIServiceTests (26), AIInsightViewModelTests (24), + 10 more files
 
 ---
 

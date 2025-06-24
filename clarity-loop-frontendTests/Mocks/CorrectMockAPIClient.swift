@@ -22,6 +22,13 @@ class MockAPIClient: APIClientProtocol {
         ),
         metadata: nil
     )
+    
+    var mockInsightGeneration: InsightGenerationResponseDTO?
+    var mockServiceStatus: ServiceStatusResponseDTO?
+    
+    // Tracking
+    var generateInsightCalled = false
+    var capturedInsightRequest: InsightGenerationRequestDTO?
 
     // MARK: - Authentication
 
@@ -181,7 +188,28 @@ class MockAPIClient: APIClientProtocol {
     }
 
     func generateInsight(requestDTO: InsightGenerationRequestDTO) async throws -> InsightGenerationResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        generateInsightCalled = true
+        capturedInsightRequest = requestDTO
+        
+        guard shouldSucceed else { throw mockError }
+        
+        if let mockResponse = mockInsightGeneration {
+            return mockResponse
+        }
+        
+        // Default response
+        return InsightGenerationResponseDTO(
+            success: true,
+            data: HealthInsightDTO(
+                userId: "test-user",
+                narrative: "Generated insight",
+                keyInsights: ["Key insight 1", "Key insight 2"],
+                recommendations: ["Recommendation 1"],
+                confidenceScore: 0.85,
+                generatedAt: Date()
+            ),
+            metadata: nil
+        )
     }
 
     func chatWithAI(requestDTO: ChatRequestDTO) async throws -> ChatResponseDTO {
@@ -199,7 +227,37 @@ class MockAPIClient: APIClientProtocol {
     }
 
     func getInsightsServiceStatus() async throws -> ServiceStatusResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let mockStatus = mockServiceStatus {
+            return mockStatus
+        }
+        
+        // Default healthy response
+        return ServiceStatusResponseDTO(
+            service: "insights",
+            status: "healthy",
+            version: "1.0.0",
+            timestamp: Date(),
+            dependencies: [
+                DependencyStatusDTO(
+                    name: "database",
+                    status: "healthy",
+                    responseTime: 50
+                ),
+                DependencyStatusDTO(
+                    name: "ai-model",
+                    status: "healthy",
+                    responseTime: 200
+                )
+            ],
+            metrics: ServiceMetricsDTO(
+                requestsPerMinute: 100,
+                averageResponseTime: 250,
+                errorRate: 0.01,
+                uptime: 0.999
+            )
+        )
     }
 
     // MARK: - PAT Analysis
