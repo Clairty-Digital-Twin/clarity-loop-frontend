@@ -64,7 +64,7 @@ final class UserProfileViewModelTests: XCTestCase {
     
     func testLoadProfileFromLocalStorage() async throws {
         // Arrange
-        let existingProfile = mockUserProfileRepository.setupMockProfile()
+        _ = mockUserProfileRepository.setupMockProfile()
         
         // Act
         await viewModel.loadProfile()
@@ -350,7 +350,7 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(ActivityLevel.lightlyActive.multiplier, 1.375)
         XCTAssertEqual(ActivityLevel.moderatelyActive.multiplier, 1.55)
         XCTAssertEqual(ActivityLevel.veryActive.multiplier, 1.725)
-        XCTAssertEqual(ActivityLevel.extraActive.multiplier, 1.9)
+        XCTAssertEqual(ActivityLevel.extremelyActive.multiplier, 1.9)
     }
     
     func testActivityLevelDescriptions() async throws {
@@ -359,7 +359,7 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(ActivityLevel.lightlyActive.description, "Exercise 1-3 days/week")
         XCTAssertEqual(ActivityLevel.moderatelyActive.description, "Exercise 3-5 days/week")
         XCTAssertEqual(ActivityLevel.veryActive.description, "Exercise 6-7 days/week")
-        XCTAssertEqual(ActivityLevel.extraActive.description, "Very intense exercise daily")
+        XCTAssertEqual(ActivityLevel.extremelyActive.description, "Very hard exercise daily")
     }
     
     // MARK: - Sync Tests
