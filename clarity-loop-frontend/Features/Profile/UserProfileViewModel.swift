@@ -17,7 +17,7 @@ final class UserProfileViewModel: BaseViewModel {
 
     // MARK: - Dependencies
 
-    private let userProfileRepository: UserProfileRepository
+    private let userProfileRepository: any UserProfileRepositoryProtocol
     private let authService: AuthServiceProtocol
     private let apiClient: APIClientProtocol
 
@@ -54,7 +54,7 @@ final class UserProfileViewModel: BaseViewModel {
 
     init(
         modelContext: ModelContext,
-        userProfileRepository: UserProfileRepository,
+        userProfileRepository: any UserProfileRepositoryProtocol,
         authService: AuthServiceProtocol,
         apiClient: APIClientProtocol
     ) {

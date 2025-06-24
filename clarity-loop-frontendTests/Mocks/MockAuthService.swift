@@ -29,6 +29,9 @@ class MockAuthService: AuthServiceProtocol {
 
     // Mock user state
     var mockCurrentUser: AuthUser? = AuthUser(uid: "test-uid", email: "test@example.com", isEmailVerified: true)
+    
+    // Tracking properties
+    var signOutCalled = false
 
     // MARK: - AuthServiceProtocol Implementation
 
@@ -71,6 +74,7 @@ class MockAuthService: AuthServiceProtocol {
     }
 
     func signOut() async throws {
+        signOutCalled = true
         mockCurrentUser = nil
     }
 

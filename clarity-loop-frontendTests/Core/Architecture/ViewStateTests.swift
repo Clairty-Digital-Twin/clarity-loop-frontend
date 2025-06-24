@@ -30,14 +30,14 @@ final class ViewStateTests: XCTestCase {
         case .idle:
             break // Valid state
         default:
-            XCTSkip("Skipping test: " + "Idle state should be .idle")
+            XCTFail("Idle state should be .idle, but was \(idleState)")
         }
 
         switch loadingState {
         case .loading:
             break // Valid state
         default:
-            XCTSkip("Skipping test: " + "Loading state should be .loading")
+            XCTFail("Loading state should be .loading, but was \(loadingState)")
         }
 
         switch loadedState {
@@ -45,7 +45,7 @@ final class ViewStateTests: XCTestCase {
             XCTAssertEqual(data, "test data")
             XCTAssertFalse(data.isEmpty, "Loaded data should not be empty")
         default:
-            XCTSkip("Skipping test: " + "Loaded state should contain data")
+            XCTFail("Loaded state should contain data, but was \(loadedState)")
         }
 
         switch errorState {
@@ -55,14 +55,14 @@ final class ViewStateTests: XCTestCase {
             XCTAssertFalse(errorMessage.contains("nan"), "Error message should not contain 'nan'")
             XCTAssertFalse(errorMessage.contains("NaN"), "Error message should not contain 'NaN'")
         default:
-            XCTSkip("Skipping test: " + "Error state should contain error")
+            XCTFail("Error state should contain error, but was \(errorState)")
         }
 
         switch emptyState {
         case .empty:
             break // Valid state
         default:
-            XCTSkip("Skipping test: " + "Empty state should be .empty")
+            XCTFail("Empty state should be .empty, but was \(emptyState)")
         }
     }
 
@@ -157,7 +157,7 @@ final class ViewStateTests: XCTestCase {
         case .loading:
             break // Expected
         default:
-            XCTSkip("Skipping test: " + "Initial state should be loading")
+            XCTFail("Initial state should be loading, but was \(model.state)")
         }
 
         // Test loaded transition
@@ -166,7 +166,7 @@ final class ViewStateTests: XCTestCase {
         case let .loaded(data):
             XCTAssertEqual(data, "loaded data")
         default:
-            XCTSkip("Skipping test: " + "State should be loaded after update")
+            XCTFail("State should be loaded after update, but was \(model.state)")
         }
 
         // Test error transition
@@ -178,7 +178,7 @@ final class ViewStateTests: XCTestCase {
             XCTAssertEqual(errorMessage, testErrorMessage)
             XCTAssertFalse(errorMessage.isEmpty)
         default:
-            XCTSkip("Skipping test: " + "State should be error after update")
+            XCTFail("State should be error after update, but was \(model.state)")
         }
 
         // Test loading transition
@@ -187,7 +187,7 @@ final class ViewStateTests: XCTestCase {
         case .loading:
             break // Expected
         default:
-            XCTSkip("Skipping test: " + "State should be loading after update")
+            XCTFail("State should be loading after update, but was \(model.state)")
         }
     }
 
@@ -208,7 +208,7 @@ final class ViewStateTests: XCTestCase {
             XCTAssertFalse(errorText.contains("NaN"), "Error message should not contain 'NaN'")
             XCTAssertEqual(errorText, errorMessage, "Error message should match expected")
         default:
-            XCTSkip("Skipping test: " + "Error state should contain error")
+            XCTFail("Error state should contain error, but was \(errorState)")
         }
     }
 
@@ -226,7 +226,7 @@ final class ViewStateTests: XCTestCase {
             XCTAssertFalse(errorText.contains("NaN"), "Error message should not contain 'NaN'")
             XCTAssertEqual(errorText, errorMessage, "Error message should match expected")
         default:
-            XCTSkip("Skipping test: " + "Error state should contain error")
+            XCTFail("Error state should contain error, but was \(errorState)")
         }
 
         // Test that we can recover from error states without NaN propagation
@@ -236,7 +236,7 @@ final class ViewStateTests: XCTestCase {
             XCTAssertFalse(value.isNaN, "Recovered value should not be NaN")
             XCTAssertEqual(value, 42.0, "Recovered value should be correct")
         default:
-            XCTSkip("Skipping test: " + "Recovery should result in loaded state")
+            XCTFail("Recovery should result in loaded state, but was \(recoveredState)")
         }
     }
 
@@ -257,7 +257,7 @@ final class ViewStateTests: XCTestCase {
         let state: ViewState<String> = .loaded(successData)
 
         guard case let .loaded(data) = state else {
-            XCTSkip("Skipping test: " + "State should be .loaded")
+            XCTFail("State should be .loaded, but was \(state)")
             return
         }
         XCTAssertEqual(data, successData, "Loaded data does not match expected data.")
@@ -269,7 +269,7 @@ final class ViewStateTests: XCTestCase {
         let state: ViewState<String> = .error(error)
 
         guard case let .error(actualError) = state else {
-            XCTSkip("Skipping test: " + "State should be .error")
+            XCTFail("State should be .error, but was \(state)")
             return
         }
         XCTAssertEqual(actualError.localizedDescription, errorMessage, "Error message does not match expected message.")

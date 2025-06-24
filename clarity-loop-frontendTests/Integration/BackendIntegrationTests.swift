@@ -97,7 +97,7 @@ final class BackendIntegrationTests: XCTestCase {
                 statusCode == 409 {
                 print("User already exists - expected in integration tests")
             } else {
-                XCTSkip("Skipping test: " + "Unexpected error: \(error)")
+                XCTFail("Unexpected registration error: \(error)")
             }
         }
     }
@@ -117,7 +117,7 @@ final class BackendIntegrationTests: XCTestCase {
         // When/Then
         do {
             _ = try await apiClient.register(requestDTO: invalidRequest)
-            XCTSkip("Skipping test: " + "Should have thrown validation error")
+            XCTFail("Should have thrown validation error for invalid email")
         } catch {
             // Expected error
             print("Got expected error: \(error)")
@@ -256,7 +256,7 @@ final class BackendIntegrationTests: XCTestCase {
                 expectation.fulfill()
 
             } catch {
-                XCTSkip("Skipping test: " + "E2E flow failed: \(error)")
+                XCTFail("E2E flow failed with error: \(error)")
                 expectation.fulfill()
             }
         }
