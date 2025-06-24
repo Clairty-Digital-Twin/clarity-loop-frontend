@@ -6,12 +6,15 @@ class MockHealthKitService: HealthKitServiceProtocol {
     var shouldSucceed = true
     var mockDailyMetrics: DailyHealthMetrics?
     var mockStepCount = 5000.0
+    var mockDailySteps = 5000.0
     var mockRestingHeartRate: Double? = 72.0
     var mockSleepData: SleepData? = SleepData(
         totalTimeInBed: 28800, // 8 hours
         totalTimeAsleep: 25200, // 7 hours
         sleepEfficiency: 0.875 // 87.5%
     )
+    var shouldFailFetch = false
+    var fetchError: Error?
 
     func isHealthDataAvailable() -> Bool {
         shouldSucceed
@@ -24,10 +27,13 @@ class MockHealthKitService: HealthKitServiceProtocol {
     }
 
     func fetchDailySteps(for date: Date) async throws -> Double {
+        if shouldFailFetch {
+            throw fetchError ?? HealthKitError.dataTypeNotAvailable
+        }
         if !shouldSucceed {
             throw HealthKitError.dataTypeNotAvailable
         }
-        return mockStepCount
+        return mockDailySteps
     }
 
     func fetchRestingHeartRate(for date: Date) async throws -> Double? {

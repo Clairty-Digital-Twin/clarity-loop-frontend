@@ -29,6 +29,9 @@ class MockAPIClient: APIClientProtocol {
     // Tracking
     var generateInsightCalled = false
     var capturedInsightRequest: InsightGenerationRequestDTO?
+    
+    // Custom handlers
+    var uploadHealthKitDataHandler: ((HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO)?
 
     // MARK: - Authentication
 
@@ -161,7 +164,20 @@ class MockAPIClient: APIClientProtocol {
     }
 
     func uploadHealthKitData(requestDTO: HealthKitUploadRequestDTO) async throws -> HealthKitUploadResponseDTO {
-        throw NSError(domain: "MockError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Not implemented"])
+        guard shouldSucceed else { throw mockError }
+        
+        if let handler = uploadHealthKitDataHandler {
+            return try await handler(requestDTO)
+        }
+        
+        // Default response
+        return HealthKitUploadResponseDTO(
+            uploadId: UUID().uuidString,
+            status: "completed",
+            processedSamples: requestDTO.samples.count,
+            errors: nil,
+            timestamp: Date()
+        )
     }
 
     func syncHealthKitData(requestDTO: HealthKitSyncRequestDTO) async throws -> HealthKitSyncResponseDTO {
