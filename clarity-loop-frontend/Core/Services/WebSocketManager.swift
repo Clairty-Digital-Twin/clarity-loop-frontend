@@ -261,7 +261,7 @@ final class WebSocketManager: ObservableObject {
         }
     }
 
-    private func processData(_ data: Data) async {
+    internal func processData(_ data: Data) async {
         do {
             let message = try JSONDecoder().decode(WebSocketMessage.self, from: data)
 
